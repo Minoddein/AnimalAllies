@@ -4,12 +4,13 @@
         <TargetFramework>net9.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
-        <PackageId>NotificationService.Contracts</PackageId>
-        <Version>1.0.4</Version>
+        <PackageId>TelegramBotService.Contracts</PackageId>
+        <Version>1.0.1</Version>
         <Authors>McConderEz</Authors>
         <Company>McConderEzBy418</Company>
-        <PackageDescription>NotificationService.Contracts</PackageDescription>
+        <PackageDescription>TelegramBotService.Contracts</PackageDescription>
         <RepositoryUrl>https://gitlab.com/McConderEz/AnimalAllies.git</RepositoryUrl>
+
     </PropertyGroup>
 
 </Project>

@@ -1,5 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using NotificationService.Domain;
+using NotificationService.Domain.Models;
 using NotificationService.Options;
 
 namespace NotificationService.Infrastructure.Configurations;

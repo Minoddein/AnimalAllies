@@ -1,4 +1,4 @@
-namespace NotificationService.Options;
+namespace NotificationService.Domain.Models;
 
 public class UserNotificationSettings
 {

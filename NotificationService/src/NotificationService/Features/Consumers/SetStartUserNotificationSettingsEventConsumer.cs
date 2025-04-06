@@ -1,6 +1,8 @@
 using MassTransit;
 using Microsoft.EntityFrameworkCore;
 using NotificationService.Contracts.Requests;
+using NotificationService.Domain;
+using NotificationService.Domain.Models;
 using NotificationService.Infrastructure.DbContext;
 using NotificationService.Options;
 
