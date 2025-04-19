@@ -1,6 +1,8 @@
 using MassTransit;
 using Microsoft.Extensions.Caching.Hybrid;
+using Microsoft.Extensions.Caching.StackExchangeRedis;
 using Microsoft.Extensions.Options;
+using StackExchange.Redis;
 using Telegram.Bot;
 using TelegramBotService.Consumers;
 using TelegramBotService.Infrastructure;
@@ -119,20 +121,19 @@ public static class DependencyInjection
         services.AddStackExchangeRedisCache(options =>
         {
             options.Configuration = configuration.GetConnectionString("Redis");
+            options.InstanceName = "AnimalAllies_";
         });
-      
 
         services.AddHybridCache(options =>
         {
-            options.MaximumPayloadBytes = 1024 * 1024 * 10; 
-            options.MaximumKeyLength = 512;
-         
+            options.MaximumPayloadBytes = 1024 * 1024 * 10;
             options.DefaultEntryOptions = new HybridCacheEntryOptions
             {
                 Expiration = TimeSpan.FromMinutes(5),
-                LocalCacheExpiration = TimeSpan.FromMinutes(5)
+                LocalCacheExpiration = TimeSpan.FromMinutes(1)
             };
         });
+        
         return services;
     }
 }

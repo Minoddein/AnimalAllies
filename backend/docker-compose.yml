@@ -185,16 +185,23 @@
     restart: always
   
   redis:
-    image: redis:latest
+    image: redis:7.2-alpine
     container_name: redis
+    command: redis-server --requirepass 12345 --bind 0.0.0.0 --protected-mode yes
     environment:
       - REDIS_PASSWORD=12345
-      - REDIS_USER=admin
-      - REDIS_USER_PASSWORD=12345
     ports:
       - "6379:6379"
     volumes:
-      - ./redisdata:/data
+      - redis-data:/data
+    networks:
+      - backend-network
+    healthcheck:
+      test: [ "CMD", "redis-cli", "-a", "12345", "ping" ]
+      interval: 5s
+      timeout: 3s
+      retries: 3
+      
 volumes:
   rabbitmq_data:
   postgres-data:
