@@ -192,7 +192,7 @@
       - REDIS_USER=admin
       - REDIS_USER_PASSWORD=12345
     ports:
-      - "6380:6379"
+      - "6379:6379"
     volumes:
       - ./redisdata:/data
 volumes:

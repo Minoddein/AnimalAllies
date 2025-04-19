@@ -1,6 +1,7 @@
 ﻿using Telegram.Bot;
 using Telegram.Bot.Polling;
 using Telegram.Bot.Types;
+using Telegram.Bot.Types.Enums;
 using TelegramBotService.Infrastructure.Repository;
 
 
@@ -29,6 +30,12 @@ public class ListenerBackgroundProcess : BackgroundService
         
         var redisUserStateRepository = scope.ServiceProvider.GetRequiredService<RedisUserStateRepository>();
         
+        var receiverOptions = new ReceiverOptions
+        {
+            AllowedUpdates = [],
+            Offset = 0,
+        };
+        
         var updateHandler = new UpdateHandler(
             botClient,
             redisUserStateRepository,
@@ -37,15 +44,13 @@ public class ListenerBackgroundProcess : BackgroundService
         
         botClient.StartReceiving(
             updateHandler: updateHandler,
+            receiverOptions: receiverOptions,
             cancellationToken: stoppingToken
         );
 
         _logger.LogInformation("Бот начал прослушивание сообщений");
         
-        while (!stoppingToken.IsCancellationRequested)
-        {
-            await Task.Delay(200, stoppingToken);
-        }
+        await Task.Delay(Timeout.Infinite, stoppingToken);
     }
 }
 
@@ -88,13 +93,13 @@ public class UpdateHandler : IUpdateHandler
         CancellationToken cancellationToken)
     {
         _logger.LogError(exception, exception.Message);
-        await Task.Delay(TimeSpan.FromSeconds(5), cancellationToken);
+        await Task.Delay(TimeSpan.FromSeconds(1), cancellationToken);
     }
 
     public async Task HandlePollingErrorAsync(
         ITelegramBotClient botClient, Exception exception, CancellationToken cancellationToken)
     {
         _logger.LogError(exception, "Ошибка при polling");
-        await Task.Delay(TimeSpan.FromSeconds(5), cancellationToken);
+        await Task.Delay(TimeSpan.FromSeconds(1), cancellationToken);
     }
 }

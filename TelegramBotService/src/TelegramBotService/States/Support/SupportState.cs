@@ -16,6 +16,6 @@ public class SupportState: IState
             "Владислав",
             cancellationToken: cancellationToken );
         
-        return StateFactory.GetState(typeof(SupportState).FullName!);
+        return StateFactory.GetState(typeof(WaitingCommandState).FullName!);
     }
 }
