@@ -40,6 +40,8 @@ public static class DependencyInjection
         services.AddStates();
         services.AddDatabase();
 
+        services.AddHostedService<ListenerBackgroundProcess>();
+
         return services;
     }
 

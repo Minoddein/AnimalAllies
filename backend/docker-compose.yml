@@ -36,9 +36,11 @@
     build:
       context: ../TelegramBotService
       dockerfile: src/TelegramBotService/Dockerfile
-    env_file: ../TelegramBotService/src/TelegramBotService/.env
+    env_file: 
+      - ../TelegramBotService/src/TelegramBotService/.env
     networks:
       - backend-network
+      - bot-network
     environment:
       - ASPNETCORE_ENVIRONMENT=Docker
       - BOT_TOKEN=${BOT_TOKEN}
@@ -210,3 +212,5 @@ networks:
     driver: bridge
   fileservice-network:
     driver: bridge 
+  bot-network:
+    driver: bridge
