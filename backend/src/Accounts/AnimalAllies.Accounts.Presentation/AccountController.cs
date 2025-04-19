@@ -7,6 +7,7 @@ using AnimalAllies.Accounts.Application.AccountManagement.Commands.Refresh;
 using AnimalAllies.Accounts.Application.AccountManagement.Commands.Register;
 using AnimalAllies.Accounts.Application.AccountManagement.Queries.GetUserById;
 using AnimalAllies.Accounts.Contracts.Requests;
+using AnimalAllies.Core.DTOs.FileService;
 using AnimalAllies.Core.Models;
 using AnimalAllies.Framework;
 using AnimalAllies.Framework.Models;
@@ -14,6 +15,9 @@ using AnimalAllies.SharedKernel.Shared;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
+using FullNameDto = AnimalAllies.Core.DTOs.ValueObjects.FullNameDto;
+using SocialNetworkDto = AnimalAllies.Core.DTOs.ValueObjects.SocialNetworkDto;
+using UploadFileDto = AnimalAllies.Core.DTOs.FileService.UploadFileDto;
 
 namespace AnimalAllies.Accounts.Presentation;
 
@@ -28,7 +32,7 @@ public class AccountController: ApplicationController
         var command = new RegisterUserCommand(
             request.Email,
             request.UserName,
-            request.FullNameDto,
+            new FullNameDto(request.FullNameDto.FirstName, request.UserName, request.Password),
             request.Password);
 
         var result = await handler.Handle(command, cancellationToken);
@@ -95,7 +99,12 @@ public class AccountController: ApplicationController
         [FromServices] AddSocialNetworkHandler handler,
         CancellationToken cancellationToken = default)
     {
-        var command = new AddSocialNetworkCommand(userScopedData.UserId, request.SocialNetworkDtos);
+        var command = new AddSocialNetworkCommand(userScopedData.UserId, request.SocialNetworkDtos
+            .Select(s => new SocialNetworkDto
+        {
+            Title = s.Title,
+            Url = s.Url,
+        }));
 
         var result = await handler.Handle(command, cancellationToken);
         if (result.IsFailure)
@@ -112,7 +121,11 @@ public class AccountController: ApplicationController
         [FromServices] AddAvatarHandler handler,
         CancellationToken cancellationToken = default)
     {
-        var command = new AddAvatarCommand(userScopedData.UserId, request.UploadFileDto);
+        var command = new AddAvatarCommand(userScopedData.UserId,
+            new UploadFileDto(
+                request.UploadFileDto.BucketName,
+                request.UploadFileDto.FileName,
+                request.UploadFileDto.ContentType));
 
         var result = await handler.Handle(command, cancellationToken);
         if (result.IsFailure)

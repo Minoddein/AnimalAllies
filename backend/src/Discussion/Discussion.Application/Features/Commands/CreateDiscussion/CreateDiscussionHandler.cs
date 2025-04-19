@@ -50,7 +50,7 @@ public class CreateDiscussionHandler: ICommandHandler<CreateDiscussionCommand, D
         var firstMember = await _accountContract.IsUserExistById(command.FirstMember, cancellationToken);
         var secondMember = await _accountContract.IsUserExistById(command.FirstMember, cancellationToken);
         
-        if (!firstMember.Value || !secondMember.Value)
+        if (!firstMember || !secondMember)
             return Errors.General.NotFound(command.SecondMember);
         
         var users = Users.Create(command.FirstMember, command.SecondMember).Value;
