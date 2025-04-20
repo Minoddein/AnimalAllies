@@ -139,13 +139,58 @@ AnimalAllies - платформа волонтёрской помощи живо
 
 ## Установка и запуск
 
+0. Клонируйте репозиторий и перейдите в его папку.
+
 ### Посредством Docker
 
-`в процессе написания`
+1. Установите Docker.
+2. Установите .NET SDK (тот же, что прописан в global.json), а также EF Core. Последний можно добавить командой:
 
-### Без использования Docker
+```shell
+dotnet tool install --global dotnet-ef
+```
 
-`в процессе написания`
+3. Настройте файлы appsetting.Docker.json в каждом сервисе, прописав собственные строки
+   подключения (они должны совпадать с указанными в [compose.yaml](compose.yaml))
+
+4. В Gitlab аккаунте сгенерируйте Personal Access Token, проставьте нужные разрешения
+
+![Image](https://github.com/user-attachments/assets/5b596f5b-97a4-4af2-87ed-a4068d249681)
+
+Далее скопируйте токен:
+
+![Image](https://github.com/user-attachments/assets/a1ea47e6-ef0a-4b44-a3b9-73123d09893f)
+
+Перейдите в IDE, откройте пакет-менеджер -> источники -> добавьте источник для скачивания nuget-пакетов
+Ссылка: https://gitlab.com/api/v4/projects/63188031/packages/nuget/index.json
+
+![Image](https://github.com/user-attachments/assets/13bf2f91-aad1-4903-90d3-f760ca655472)
+
+Заполните форму, пароль - это ваш сгенерированный токен
+
+![Image](https://github.com/user-attachments/assets/c097afc3-2199-4d18-b035-81ebca543666)
+
+6. Добавить источник для скачивания nu-get пакета
+   
+7. Создайте файлы `.env`  и настройте все описанные там параметры.
+
+8. Запустите сборку и подъём контейнера:
+
+```shell
+docker-compose up -d --build
+```
+   
+8. Создайте миграции к базе данных:
+
+Воспользуйтесь заготовленным скриптом:
+
+```shell
+.\migrations-add-and-update.cmd
+```
+
+
+Теперь можно использовать бэкенд по адресу http://localhost:8080. Документация к бэкенду доступна в
+интерфейсе [Swagger](http://localhost:8080/swagger).
 
 ## Конфигурация
 
