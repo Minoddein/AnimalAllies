@@ -2,9 +2,9 @@
 
 namespace AnimalAllies.Accounts.Contracts.Requests;
 
-public record UploadFileDto(
+public record UploadFileRequest(
     string BucketName,
     string FileName, 
     string ContentType);
 
-public record AddAvatarRequest(Guid UserId, UploadFileDto UploadFileDto);
+public record AddAvatarRequest(Guid UserId, UploadFileRequest UploadFileDto);

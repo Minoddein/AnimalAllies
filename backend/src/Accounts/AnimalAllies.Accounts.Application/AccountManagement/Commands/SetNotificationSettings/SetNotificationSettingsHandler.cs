@@ -34,6 +34,18 @@ public class SetNotificationSettingsHandler:  ICommandHandler<SetNotificationSet
         if (!validationResult.IsValid)
             return validationResult.ToErrorList();
         
+        var integrationCommand = new Contracts.Commands.SetNotificationSettingsCommand(
+            command.UserId,
+            command.EmailNotifications,
+            command.TelegramNotifications,
+            command.WebNotifications);
+        
+        await _outboxRepository.AddAsync(integrationCommand, cancellationToken);
+
+        await _unitOfWorkOutbox.SaveChanges(cancellationToken);
+        
+        _logger.LogInformation("sent integration command to set notification settings to user with id {id}", command.UserId);
+        
         return Result.Success();
     }
 }

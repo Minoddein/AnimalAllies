@@ -36,6 +36,7 @@ public static class AddWebServices
     {
         services.AddSwaggerGen(c =>
         {
+            c.CustomSchemaIds(type => type.FullName);
             c.SwaggerDoc("v1", new OpenApiInfo
             {
                 Title = "My API",
