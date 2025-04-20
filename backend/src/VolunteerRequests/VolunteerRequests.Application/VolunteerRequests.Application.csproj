@@ -16,7 +16,7 @@
     </ItemGroup>
 
     <ItemGroup>
-      <PackageReference Include="NotificationService.Contracts" Version="1.0.3" />
+      <PackageReference Include="NotificationService.Contracts" Version="1.0.4" />
     </ItemGroup>
 
 </Project>

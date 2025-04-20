@@ -15,8 +15,20 @@ public class ProcessOutboxMessageService
     private readonly IPublishEndpoint _publishEndpoint;
     private readonly ILogger<ProcessOutboxMessageService> _logger;
     private readonly ConcurrentDictionary<string, Type> _typeCache = new();
-    private readonly Assembly[] _contractAssemblies = AppDomain.CurrentDomain.GetAssemblies();
+    private static readonly Assembly[] _contractAssemblies;
 
+    static ProcessOutboxMessageService()
+    {
+        var baseDirectory = AppContext.BaseDirectory; 
+        var contractAssemblies = Directory.GetFiles(
+                baseDirectory, "*.Contracts.dll", SearchOption.AllDirectories)
+            .Where(File.Exists) 
+            .Select(Assembly.LoadFrom)
+            .ToArray();
+
+        _contractAssemblies = contractAssemblies;
+    }
+    
     public ProcessOutboxMessageService(
         OutboxContext context, 
         IPublishEndpoint publishEndpoint, 

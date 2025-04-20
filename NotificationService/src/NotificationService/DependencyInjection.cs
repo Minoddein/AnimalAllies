@@ -93,6 +93,7 @@ public static class DependencyInjection
             configure.AddConsumer<CreateVolunteerRequestEventConsumer>();
             configure.AddConsumer<RejectVolunteerRequestEventConsumer>();
             configure.AddConsumer<TakeRequestForRevisionEventConsumer>();
+            configure.AddConsumer<SetNotificationSettingsConsumer>();
             
             configure.UsingRabbitMq((context, cfg) =>
             {

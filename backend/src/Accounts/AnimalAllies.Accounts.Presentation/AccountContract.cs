@@ -23,9 +23,9 @@ public class AccountContract: IAccountContract
         _isUserExistByIdHandler = isUserExistByIdHandler;
     }
     
-    public async Task<Result<bool>> IsUserExistById(Guid userId, CancellationToken cancellationToken = default)
+    public async Task<bool> IsUserExistById(Guid userId, CancellationToken cancellationToken = default)
     {
-        return await _isUserExistByIdHandler.Handle(userId, cancellationToken);
+        return (await _isUserExistByIdHandler.Handle(userId, cancellationToken)).Value;
     }
     
 }

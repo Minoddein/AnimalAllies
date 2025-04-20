@@ -4,12 +4,17 @@
         <TargetFramework>net9.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
+        <PackageId>AnimalAllies.Accounts.Contracts</PackageId>
+        <Version>1.0.0</Version>
+        <Authors>McConderEz</Authors>
+        <Company>McConderEzBy418</Company>
+        <PackageDescription>AnimalAllies.Accounts.Contracts</PackageDescription>
+        <RepositoryUrl>https://gitlab.com/McConderEz/AnimalAllies.git</RepositoryUrl>
     </PropertyGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\..\Shared\AnimalAllies.Core\AnimalAllies.Core.csproj" />
-      <ProjectReference Include="..\..\Shared\AnimalAllies.SharedKernel\AnimalAllies.SharedKernel.csproj" />
-      <ProjectReference Include="..\AnimalAllies.Accounts.Domain\AnimalAllies.Accounts.Domain.csproj" />
+      <Folder Include="Events\" />
     </ItemGroup>
+    
 
 </Project>
