@@ -2,5 +2,4 @@
 
 namespace AnimalAllies.Volunteer.Application.VolunteerManagement.Queries.GetPetsBySpeciesId;
 
-public record GetPetsBySpeciesIdQuery(
-    Guid SpeciesId) : IQuery;
+public record GetPetsBySpeciesIdQuery(Guid SpeciesId) : IQuery;
