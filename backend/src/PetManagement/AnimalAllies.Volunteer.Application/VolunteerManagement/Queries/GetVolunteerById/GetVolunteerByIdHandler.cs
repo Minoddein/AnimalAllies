@@ -10,6 +10,7 @@ using AnimalAllies.SharedKernel.Shared;
 using AnimalAllies.SharedKernel.Shared.Errors;
 using Dapper;
 using FluentValidation;
+using Microsoft.Extensions.Caching.Hybrid;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
@@ -17,17 +18,23 @@ namespace AnimalAllies.Volunteer.Application.VolunteerManagement.Queries.GetVolu
 
 public class GetVolunteerByIdHandler : IQueryHandler<VolunteerDto, GetVolunteerByIdQuery>
 {
+    private const string REDIS_KEY = "volunteers_";
+    
+    private readonly HybridCache _hybridCache;
     private readonly ISqlConnectionFactory _sqlConnectionFactory;
     private readonly ILogger<GetVolunteerByIdHandler> _logger;
     private readonly IValidator<GetVolunteerByIdQuery> _validator;
 
     public GetVolunteerByIdHandler(
         ILogger<GetVolunteerByIdHandler> logger,
-        [FromKeyedServices(Constraints.Context.PetManagement)]ISqlConnectionFactory sqlConnectionFactory, IValidator<GetVolunteerByIdQuery> validator)
+        [FromKeyedServices(Constraints.Context.PetManagement)]ISqlConnectionFactory sqlConnectionFactory,
+        IValidator<GetVolunteerByIdQuery> validator, 
+        HybridCache hybridCache)
     {
         _logger = logger;
         _sqlConnectionFactory = sqlConnectionFactory;
         _validator = validator;
+        _hybridCache = hybridCache;
     }
     
     
@@ -55,27 +62,34 @@ public class GetVolunteerByIdHandler : IQueryHandler<VolunteerDto, GetVolunteerB
                                     email,
                                     phone_number,
                                     work_experience,
-                                    requisites,
-                                    social_networks
+                                    requisites
                                     from volunteers.volunteers
                                     where id = @VolunteerId
                                     limit 1
                                     """);
-        
-        var volunteer = 
-            await connection.QueryAsync<VolunteerDto, RequisiteDto[], SocialNetworkDto[], VolunteerDto>(
-                sql.ToString(),
-                (volunteer, requisites, socialNetworks) =>
-                {
-                    volunteer.Requisites = requisites;
-                    
-                    volunteer.SocialNetworks = socialNetworks;
-                    
-                    return volunteer;
-                },
-                splitOn:"requisites, social_networks",
-                param: parameters);
 
+        var options = new HybridCacheEntryOptions
+        {
+            Expiration = TimeSpan.FromMinutes(15)
+        };
+
+        var volunteer = await _hybridCache.GetOrCreateAsync(
+            key: REDIS_KEY + query.VolunteerId,
+            factory: async _ =>
+            {
+                return await connection.QueryAsync<VolunteerDto, RequisiteDto[], VolunteerDto>(
+                    sql.ToString(),
+                    (volunteer, requisites) =>
+                    {
+                        volunteer.Requisites = requisites;
+
+                        return volunteer;
+                    },
+                    splitOn: "requisites",
+                    param: parameters);
+            },
+            options: options,
+            cancellationToken: cancellationToken);
         
         var result = volunteer.FirstOrDefault();
 
