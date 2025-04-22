@@ -10,6 +10,7 @@ using AnimalAllies.SharedKernel.Constraints;
 using AnimalAllies.SharedKernel.Shared;
 using Dapper;
 using FluentValidation;
+using Microsoft.Extensions.Caching.Hybrid;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
@@ -18,18 +19,23 @@ namespace VolunteerRequests.Application.Features.Queries.GetFilteredVolunteerReq
 public class GetFilteredVolunteerRequestsByUserIdWithPaginationHandler:
     IQueryHandler<PagedList<VolunteerRequestDto>, GetFilteredVolunteerRequestsByUserIdWithPaginationQuery>
 {
+    private const string REDIS_KEY = "volunteer-requests_";
+    
     private readonly ISqlConnectionFactory _sqlConnectionFactory;
     private readonly IValidator<GetFilteredVolunteerRequestsByUserIdWithPaginationQuery> _validator;
     private readonly ILogger<GetFilteredVolunteerRequestsByUserIdWithPaginationHandler> _logger;
-
+    private readonly HybridCache _hybridCache;
+    
     public GetFilteredVolunteerRequestsByUserIdWithPaginationHandler(
         [FromKeyedServices(Constraints.Context.VolunteerRequests)]ISqlConnectionFactory sqlConnectionFactory,
         IValidator<GetFilteredVolunteerRequestsByUserIdWithPaginationQuery> validator, 
-        ILogger<GetFilteredVolunteerRequestsByUserIdWithPaginationHandler> logger)
+        ILogger<GetFilteredVolunteerRequestsByUserIdWithPaginationHandler> logger,
+        HybridCache hybridCache)
     {
         _sqlConnectionFactory = sqlConnectionFactory;
         _validator = validator;
         _logger = logger;
+        _hybridCache = hybridCache;
     }
 
     public async Task<Result<PagedList<VolunteerRequestDto>>> Handle(
@@ -40,58 +46,73 @@ public class GetFilteredVolunteerRequestsByUserIdWithPaginationHandler:
         if (!validationResult.IsValid)
             return validationResult.ToErrorList();
         
-        var connection = _sqlConnectionFactory.Create();
+        var cacheKey = $"{REDIS_KEY}{query.UserId}_status-{query.RequestStatus}_sort-{query.SortBy}_" +
+                       $"dir-{query.SortDirection}_page-{query.Page}_size-{query.PageSize}";
 
-        var parameters = new DynamicParameters();
-        parameters.Add("@UserId", query.UserId);
-        
-        var sql = new StringBuilder("""
-                                    select 
-                                        id,
-                                        first_name,
-                                        second_name,
-                                        patronymic,
-                                        description,
-                                        email,
-                                        phone_number,
-                                        work_experience,
-                                        admin_id,
-                                        user_id,
-                                        discussion_id,
-                                        request_status,
-                                        rejection_comment,
-                                        social_networks
-                                        from volunteer_requests.volunteer_requests 
-                                        where user_id = @UserId
-                                    """);
-        bool hasWhereClause = true;
-
-        if (query.RequestStatus != null)
+        var options = new HybridCacheEntryOptions
         {
-            var stringProperties = new Dictionary<string, string>(){ { "request_status", query.RequestStatus } };
-        
-            sql.ApplyFilterByString(ref hasWhereClause, stringProperties);
-        }
+            Expiration = TimeSpan.FromMinutes(2)
+        };
 
-        sql.ApplySorting(query.SortBy,query.SortDirection);
         
-        sql.ApplyPagination(query.Page,query.PageSize);
-        
-        var volunteerRequests = 
-            await connection.QueryAsync<VolunteerRequestDto, SocialNetworkDto[], VolunteerRequestDto>(
-                sql.ToString(),
-                (volunteerRequest, socialNetworks) =>
+        var cachedVolunteerRequests = await _hybridCache.GetOrCreateAsync(
+            key: cacheKey,
+            factory: async token =>
+            {
+                var connection = _sqlConnectionFactory.Create();
+                var parameters = new DynamicParameters();
+                parameters.Add("@UserId", query.UserId);
+
+                var sql = new StringBuilder("""
+                    select 
+                        id,
+                        first_name,
+                        second_name,
+                        patronymic,
+                        description,
+                        email,
+                        phone_number,
+                        work_experience,
+                        admin_id,
+                        user_id,
+                        discussion_id,
+                        request_status,
+                        rejection_comment,
+                        social_networks
+                    from volunteer_requests.volunteer_requests 
+                    where user_id = @UserId
+                    """);
+
+                var hasWhereClause = true;
+
+                if (query.RequestStatus != null)
                 {
-                    volunteerRequest.SocialNetworks = socialNetworks;
-                    return volunteerRequest;
-                },
-                splitOn:"social_networks",
-                param: parameters);
+                    var stringProperties = new Dictionary<string, string>() { { "request_status", query.RequestStatus } };
+                    sql.ApplyFilterByString(ref hasWhereClause, stringProperties);
+                }
+
+                sql.ApplySorting(query.SortBy, query.SortDirection);
+                sql.ApplyPagination(query.Page, query.PageSize);
+
+                var result = await connection.QueryAsync<VolunteerRequestDto, SocialNetworkDto[], VolunteerRequestDto>(
+                    sql.ToString(),
+                    (volunteerRequest, socialNetworks) =>
+                    {
+                        volunteerRequest.SocialNetworks = socialNetworks;
+                        return volunteerRequest;
+                    },
+                    splitOn: "social_networks",
+                    param: parameters);
+
+                return result.ToList();
+            },
+            options: options,
+            cancellationToken: cancellationToken);
         
         _logger.LogInformation("Get volunteer requests with pagination Page: {Page}, PageSize: {PageSize}",
             query.Page, query.PageSize);
 
-        var volunteerRequestDtos = volunteerRequests.ToList();
+        var volunteerRequestDtos = cachedVolunteerRequests.ToList();
         
         return new PagedList<VolunteerRequestDto>
         {

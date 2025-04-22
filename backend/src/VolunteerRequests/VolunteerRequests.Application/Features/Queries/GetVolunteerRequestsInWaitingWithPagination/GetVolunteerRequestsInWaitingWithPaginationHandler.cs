@@ -44,36 +44,6 @@ public class GetVolunteerRequestsInWaitingWithPaginationHandler:
         var validationResult = await _validator.ValidateAsync(query, cancellationToken);
         if (!validationResult.IsValid)
             return validationResult.ToErrorList();
-        
-        var connection = _sqlConnectionFactory.Create();
-
-        var parameters = new DynamicParameters();
-        parameters.Add("@RequestStatus", RequestStatus.Waiting.Value);
-        
-        var sql = new StringBuilder("""
-                                    select 
-                                        id,
-                                        first_name,
-                                        second_name,
-                                        patronymic,
-                                        description,
-                                        email,
-                                        phone_number,
-                                        work_experience,
-                                        admin_id,
-                                        user_id,
-                                        discussion_id,
-                                        request_status,
-                                        rejection_comment,
-                                        social_networks
-                                        from volunteer_requests.volunteer_requests 
-                                        where request_status = @RequestStatus
-                                    """);
-        
-        
-        sql.ApplySorting(query.SortBy,query.SortDirection);
-        
-        sql.ApplyPagination(query.Page,query.PageSize);
 
         var options = new HybridCacheEntryOptions
         {
@@ -84,6 +54,35 @@ public class GetVolunteerRequestsInWaitingWithPaginationHandler:
             key: $"{REDIS_KEY}{query.Page}_{query.PageSize}_{query.SortBy}_{query.SortDirection}",
             factory: async _ =>
             {
+                var connection = _sqlConnectionFactory.Create();
+
+                var parameters = new DynamicParameters();
+                parameters.Add("@RequestStatus", RequestStatus.Waiting.Value);
+        
+                var sql = new StringBuilder("""
+                                            select 
+                                                id,
+                                                first_name,
+                                                second_name,
+                                                patronymic,
+                                                description,
+                                                email,
+                                                phone_number,
+                                                work_experience,
+                                                admin_id,
+                                                user_id,
+                                                discussion_id,
+                                                request_status,
+                                                rejection_comment,
+                                                social_networks
+                                                from volunteer_requests.volunteer_requests 
+                                                where request_status = @RequestStatus
+                                            """);
+                
+                sql.ApplySorting(query.SortBy,query.SortDirection);
+        
+                sql.ApplyPagination(query.Page,query.PageSize);
+                
                 var result = await connection
                     .QueryAsync<VolunteerRequestDto, SocialNetworkDto[], VolunteerRequestDto>(
                     sql.ToString(),
