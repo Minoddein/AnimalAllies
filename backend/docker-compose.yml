@@ -9,6 +9,8 @@
     networks:
       - backend-network
     depends_on:
+      redis:
+        condition: service_started
       fileservice:
         condition: service_started
       notification-service:
@@ -196,6 +198,7 @@
       - redis-data:/data
     networks:
       - backend-network
+    restart: always
     healthcheck:
       test: [ "CMD", "redis-cli", "-a", "12345", "ping" ]
       interval: 5s
