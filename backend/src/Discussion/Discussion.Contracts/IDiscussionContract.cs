@@ -1,11 +1,8 @@
-﻿using AnimalAllies.SharedKernel.Shared;
-using AnimalAllies.SharedKernel.Shared.Ids;
-
-namespace Discussion.Contracts;
+﻿namespace Discussion.Contracts;
 
 public interface IDiscussionContract
 {
-    public Task<Result<DiscussionId>> CreateDiscussionHandler(
+    public Task<Guid> CreateDiscussionHandler(
         Guid firstMember,
         Guid secondMember,
         Guid relationId,

@@ -60,6 +60,9 @@ public class GetSpeciesWithPaginationHandlerDapper : IQueryHandler<PagedList<Spe
             Expiration = TimeSpan.FromHours(24)
         };
         
+        //TODO:Сделать рефакторинг: добавить запрос на получение общего числа записей и добавлять его в TotalCount,
+        //сделать это для всех запросов
+        
         var cachedSpecies = await _hybridCache.GetOrCreateAsync(
             key: REDIS_KEY + query.GetHashCode(),
             factory: async _ => await connection.QueryAsync<SpeciesDto>(sql.ToString(), parameters),

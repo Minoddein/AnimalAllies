@@ -65,10 +65,7 @@ public class TakeRequestForSubmitHandler: ICommandHandler<TakeRequestForSubmitCo
                 command.VolunteerRequestId,
                 cancellationToken);
 
-            if (discussionId.IsFailure)
-                return discussionId.Errors;
-
-            var result = volunteerRequest.Value.TakeRequestForSubmit(command.AdminId, discussionId.Value.Id);
+            var result = volunteerRequest.Value.TakeRequestForSubmit(command.AdminId, discussionId);
             if (result.IsFailure)
                 return result.Errors;
 
