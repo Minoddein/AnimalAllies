@@ -7,6 +7,7 @@ using AnimalAllies.SharedKernel.Constraints;
 using AnimalAllies.SharedKernel.Shared;
 using Dapper;
 using FluentValidation;
+using Microsoft.Extensions.Caching.Hybrid;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
@@ -14,18 +15,23 @@ namespace AnimalAllies.Accounts.Application.AccountManagement.Queries.IsUserExis
 
 public class IsUserExistByIdHandler: IQueryHandler<bool, IsUserExistByIdQuery>
 {
+    private const string REDIS_KEY = "user_";
+    
     private readonly ILogger<IsUserExistByIdHandler> _logger;
     private readonly IValidator<IsUserExistByIdQuery> _validator;
     private readonly ISqlConnectionFactory _sqlConnectionFactory;
+    private readonly HybridCache _hybridCache;
 
     public IsUserExistByIdHandler(
         ILogger<IsUserExistByIdHandler> logger,
         IValidator<IsUserExistByIdQuery> validator, 
-        [FromKeyedServices(Constraints.Context.Accounts)]ISqlConnectionFactory sqlConnectionFactory)
+        [FromKeyedServices(Constraints.Context.Accounts)]ISqlConnectionFactory sqlConnectionFactory,
+        HybridCache hybridCache)
     {
         _logger = logger;
         _validator = validator;
         _sqlConnectionFactory = sqlConnectionFactory;
+        _hybridCache = hybridCache;
     }
 
 
@@ -49,10 +55,21 @@ public class IsUserExistByIdHandler: IQueryHandler<bool, IsUserExistByIdQuery>
                                     where u.id = @UserId limit 1
                                     """);
 
-        var user = await connection.QueryAsync<UserDto>(sql.ToString(), parameters);
+        var options = new HybridCacheEntryOptions
+        {
+            Expiration = TimeSpan.FromMinutes(15)
+        };
 
-        if (!user.Any())
+        var cacheUser = await _hybridCache.GetOrCreateAsync(
+            key: REDIS_KEY + query.UserId,
+            factory: async _ => await connection.QueryAsync<UserDto>(sql.ToString(), parameters),
+            options: options,
+            cancellationToken: cancellationToken);
+
+        if (!cacheUser.Any())
             return false;
+        
+        _logger.LogInformation("User with id {QueryUserId} found", query.UserId);
         
         return true;
     }
