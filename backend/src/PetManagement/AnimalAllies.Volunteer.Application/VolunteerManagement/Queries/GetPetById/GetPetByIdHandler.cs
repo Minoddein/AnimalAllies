@@ -78,7 +78,7 @@ public class GetPetByIdHandler : IQueryHandler<PetDto, GetPetByIdQuery>
         
         var options = new HybridCacheEntryOptions
         {
-            Expiration = TimeSpan.FromHours(8)
+            Expiration = TimeSpan.FromHours(15)
         };
         
         var cachedPet = await _hybridCache.GetOrCreateAsync(
