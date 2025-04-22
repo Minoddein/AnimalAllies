@@ -1,10 +1,8 @@
 ﻿using AnimalAllies.Core.Validators;
-using AnimalAllies.SharedKernel.Constraints;
-using AnimalAllies.SharedKernel.Shared;
 using AnimalAllies.SharedKernel.Shared.Errors;
 using FluentValidation;
 
-namespace Discussion.Application.Features.Queries;
+namespace Discussion.Application.Features.Queries.GetDiscussionByRelationId;
 
 public class GetDiscussionByRelationIdQueryValidator: AbstractValidator<GetDiscussionByRelationIdQuery>
 {

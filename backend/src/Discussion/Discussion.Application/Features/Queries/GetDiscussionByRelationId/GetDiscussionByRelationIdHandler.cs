@@ -1,19 +1,15 @@
 ﻿using System.Text;
-using System.Text.Json;
 using AnimalAllies.Core.Abstractions;
 using AnimalAllies.Core.Database;
 using AnimalAllies.Core.DTOs;
 using AnimalAllies.Core.DTOs.Accounts;
-using AnimalAllies.Core.DTOs.ValueObjects;
-using AnimalAllies.Core.Extension;
-using AnimalAllies.Core.Models;
 using AnimalAllies.SharedKernel.Constraints;
 using AnimalAllies.SharedKernel.Shared;
 using Dapper;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
-namespace Discussion.Application.Features.Queries;
+namespace Discussion.Application.Features.Queries.GetDiscussionByRelationId;
 
 public class GetDiscussionByRelationIdHandler: IQueryHandler<List<MessageDto>, GetDiscussionByRelationIdQuery>
 {

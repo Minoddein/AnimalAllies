@@ -8,6 +8,7 @@ using Discussion.Application.Features.Commands.DeleteMessage;
 using Discussion.Application.Features.Commands.PostMessage;
 using Discussion.Application.Features.Commands.UpdateMessage;
 using Discussion.Application.Features.Queries;
+using Discussion.Application.Features.Queries.GetDiscussionByRelationId;
 using Discussion.Contracts.Requests;
 using Microsoft.AspNetCore.Mvc;
 

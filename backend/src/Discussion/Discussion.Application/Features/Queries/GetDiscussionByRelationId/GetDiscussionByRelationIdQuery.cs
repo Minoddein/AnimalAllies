@@ -1,6 +1,6 @@
 ﻿using AnimalAllies.Core.Abstractions;
 
-namespace Discussion.Application.Features.Queries;
+namespace Discussion.Application.Features.Queries.GetDiscussionByRelationId;
 
 public record GetDiscussionByRelationIdQuery(
     Guid RelationId,
