@@ -120,7 +120,7 @@ public class VolunteerController: ApplicationController
     }
     
     [Permission("volunteer.read")]
-    [HttpGet("{speciesId:guid}/pet-by-species-id")]
+    [HttpGet("pet-by-breed-id")]
     public async Task<ActionResult> GetPetsByBreedIdDapper(
         [FromBody] GetPetsByBreedIdRequest request,
         [FromServices] GetPetsByBreedIdHandler handler,
