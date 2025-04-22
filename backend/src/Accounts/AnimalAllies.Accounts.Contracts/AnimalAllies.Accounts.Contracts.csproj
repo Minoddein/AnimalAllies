@@ -11,10 +11,6 @@
         <PackageDescription>AnimalAllies.Accounts.Contracts</PackageDescription>
         <RepositoryUrl>https://gitlab.com/McConderEz/AnimalAllies.git</RepositoryUrl>
     </PropertyGroup>
-
-    <ItemGroup>
-      <Folder Include="Events\" />
-    </ItemGroup>
     
 
 </Project>

@@ -104,7 +104,7 @@ public class ProcessOutboxMessageService
                 async token =>
                 {
                     await _publishEndpoint.Publish(deserializedMessage, messageType, token);
-
+                    
                     message.ProcessedOnUtc = DateTime.UtcNow;
                 }, cancellationToken);
         }
