@@ -33,6 +33,12 @@
     ports:
       - "8080:8080"
   
+  cache-invalidator-service:
+    image: cache-invalidator-service
+    build:
+      context: ../CacheInvalidatorService
+      dockerfile: src/CacheInvalidatorService/Dockerfile
+  
   telegram-bot-service:
     image: telegram-bot-service
     build:
