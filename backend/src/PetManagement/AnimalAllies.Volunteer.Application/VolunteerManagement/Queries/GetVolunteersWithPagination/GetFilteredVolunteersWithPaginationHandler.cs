@@ -135,8 +135,7 @@ public class GetFilteredVolunteersWithPaginationHandlerDapper :
                                         email,
                                         phone_number,
                                         work_experience,
-                                        requisites,
-                                        social_networks
+                                        requisites
                                         from volunteers.volunteers
                                             where is_deleted = false
                                     """);
@@ -170,17 +169,15 @@ public class GetFilteredVolunteersWithPaginationHandlerDapper :
         sql.ApplyPagination(query.Page,query.PageSize);
         
         var volunteers = 
-            await connection.QueryAsync<VolunteerDto, RequisiteDto[], SocialNetworkDto[], VolunteerDto>(
+            await connection.QueryAsync<VolunteerDto, RequisiteDto[], VolunteerDto>(
                 sql.ToString(),
-                (volunteer, requisites, socialNetworks) =>
+                (volunteer, requisites) =>
                 {
                     volunteer.Requisites = requisites;
                     
-                    volunteer.SocialNetworks = socialNetworks;
-                    
                     return volunteer;
                 },
-                splitOn:"requisites, social_networks",
+                splitOn:"requisites",
                 param: parameters);
         
         _logger.LogInformation("Get volunteers with pagination Page: {Page}, PageSize: {PageSize}",

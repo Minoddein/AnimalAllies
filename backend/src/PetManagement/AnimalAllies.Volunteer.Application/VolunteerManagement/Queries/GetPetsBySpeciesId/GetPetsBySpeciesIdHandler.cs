@@ -11,6 +11,7 @@ using AnimalAllies.SharedKernel.Shared;
 using AnimalAllies.Volunteer.Application.VolunteerManagement.Queries.GetPetById;
 using Dapper;
 using FluentValidation;
+using Microsoft.Extensions.Caching.Hybrid;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
@@ -18,6 +19,9 @@ namespace AnimalAllies.Volunteer.Application.VolunteerManagement.Queries.GetPets
 
 public class GetPetsBySpeciesIdHandler: IQueryHandler<List<PetDto>, GetPetsBySpeciesIdQuery>
 {
+    private const string REDIS_KEY = "pets_";
+
+    private readonly HybridCache _hybridCache;
     private readonly ISqlConnectionFactory _sqlConnectionFactory;
     private readonly ILogger<GetPetsBySpeciesIdHandler> _logger;
     private readonly IValidator<GetPetsBySpeciesIdQuery> _validator;
@@ -25,11 +29,13 @@ public class GetPetsBySpeciesIdHandler: IQueryHandler<List<PetDto>, GetPetsBySpe
     public GetPetsBySpeciesIdHandler(
         [FromKeyedServices(Constraints.Context.PetManagement)]ISqlConnectionFactory sqlConnectionFactory,
         ILogger<GetPetsBySpeciesIdHandler> logger,
-        IValidator<GetPetsBySpeciesIdQuery> validator)
+        IValidator<GetPetsBySpeciesIdQuery> validator,
+        HybridCache hybridCache)
     {
         _sqlConnectionFactory = sqlConnectionFactory;
         _logger = logger;
         _validator = validator;
+        _hybridCache = hybridCache;
     }
 
     public async Task<Result<List<PetDto>>> Handle(
@@ -45,7 +51,7 @@ public class GetPetsBySpeciesIdHandler: IQueryHandler<List<PetDto>, GetPetsBySpe
         var parameters = new DynamicParameters();
         
         parameters.Add("@SpeciesId", query.SpeciesId);
-        //TODO: добавить пагинацию
+        
         var sql = new StringBuilder("""
                                     select 
                                         id,
@@ -75,23 +81,35 @@ public class GetPetsBySpeciesIdHandler: IQueryHandler<List<PetDto>, GetPetsBySpe
                                             is_deleted = false
                                     """);
         
-        var pets = 
-            await connection.QueryAsync<PetDto, RequisiteDto[], PetPhotoDto[], PetDto>(
-                sql.ToString(),
-                (pet, requisites, petPhotoDtos) =>
-                {
-                    pet.Requisites = requisites;
-                    
-                    pet.PetPhotos = petPhotoDtos;
-                    
-                    return pet;
-                },
-                splitOn:"requisites, pet_photos",
-                param: parameters);
+        sql.ApplyPagination(query.Page, query.PageSize);
+
+        var options = new HybridCacheEntryOptions
+        {
+            Expiration = TimeSpan.FromHours(8)
+        };
         
+        var cachedPets = await _hybridCache.GetOrCreateAsync(
+            key:  $"{REDIS_KEY}{query.SpeciesId}_{query.Page}_{query.PageSize}",
+            factory: async _ =>
+            {
+                return await connection.QueryAsync<PetDto, RequisiteDto[], PetPhotoDto[], PetDto>(
+                    sql.ToString(),
+                    (pet, requisites, petPhotoDtos) =>
+                    {
+                        pet.Requisites = requisites;
+                    
+                        pet.PetPhotos = petPhotoDtos;
+                    
+                        return pet;
+                    },
+                    splitOn:"requisites, pet_photos",
+                    param: parameters);
+            },
+            options: options,
+            cancellationToken: cancellationToken);
         
         _logger.LogInformation("Get pets with species id {speciesId}", query.SpeciesId);
 
-        return pets.ToList();
+        return cachedPets.ToList();
     }
 }

@@ -24,6 +24,7 @@ using AnimalAllies.Volunteer.Application.VolunteerManagement.Queries.GetPetById;
 using AnimalAllies.Volunteer.Application.VolunteerManagement.Queries.GetPetsBySpeciesId;
 using AnimalAllies.Volunteer.Application.VolunteerManagement.Queries.GetVolunteerById;
 using AnimalAllies.Volunteer.Application.VolunteerManagement.Queries.GetVolunteersWithPagination;
+using AnimalAllies.Volunteer.Contracts.Requests;
 using AnimalAllies.Volunteer.Presentation.Requests.Volunteer;
 using Microsoft.AspNetCore.Mvc;
 
@@ -103,11 +104,11 @@ public class VolunteerController: ApplicationController
     [Permission("volunteer.read")]
     [HttpGet("{speciesId:guid}/pet-by-species-id")]
     public async Task<ActionResult> GetPetsBySpeciesIdDapper(
-        [FromRoute] Guid speciesId,
+        [FromBody] GetPetsBySpeciesIdRequest request,
         [FromServices] GetPetsBySpeciesIdHandler handler,
         CancellationToken cancellationToken = default)
     {
-        var query = new GetPetsBySpeciesIdQuery(speciesId);
+        var query = new GetPetsBySpeciesIdQuery(request.SpeciesId, request.Page, request.PageSize);
 
         var result = await handler.Handle(query, cancellationToken);
 
