@@ -40,20 +40,6 @@ public class IsUserExistByIdHandler: IQueryHandler<bool, IsUserExistByIdQuery>
         var validatorResult = await _validator.ValidateAsync(query, cancellationToken);
         if (!validatorResult.IsValid)
             return validatorResult.ToErrorList();
-        
-        var connection = _sqlConnectionFactory.Create();
-
-        var parameters = new DynamicParameters();
-        
-        parameters.Add("@UserId", query.UserId);
-        
-        var sql = new StringBuilder("""
-                                    select
-                                        u.id ,
-                                        u.user_name
-                                    from accounts.users u
-                                    where u.id = @UserId limit 1
-                                    """);
 
         var options = new HybridCacheEntryOptions
         {
@@ -62,7 +48,24 @@ public class IsUserExistByIdHandler: IQueryHandler<bool, IsUserExistByIdQuery>
 
         var cacheUser = await _hybridCache.GetOrCreateAsync(
             key: REDIS_KEY + query.UserId,
-            factory: async _ => await connection.QueryAsync<UserDto>(sql.ToString(), parameters),
+            factory: async _ =>
+            {
+                var connection = _sqlConnectionFactory.Create();
+
+                var parameters = new DynamicParameters();
+        
+                parameters.Add("@UserId", query.UserId);
+        
+                var sql = new StringBuilder("""
+                                            select
+                                                u.id ,
+                                                u.user_name
+                                            from accounts.users u
+                                            where u.id = @UserId limit 1
+                                            """);
+                
+                return await connection.QueryAsync<UserDto>(sql.ToString(), parameters);
+            },
             options: options,
             cancellationToken: cancellationToken);
 

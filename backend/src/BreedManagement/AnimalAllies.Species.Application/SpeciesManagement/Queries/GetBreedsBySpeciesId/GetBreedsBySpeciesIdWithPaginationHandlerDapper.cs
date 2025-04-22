@@ -87,21 +87,6 @@ public class GetBreedsBySpeciesIdWithPaginationHandlerDapper: IQueryHandler<Page
     
     public async Task<Result<List<BreedDto>>> Handle(Guid speciesId, CancellationToken cancellationToken = default)
     {
-        var connection = _sqlConnectionFactory.Create();
-
-        var parameters = new DynamicParameters();
-        
-        parameters.Add("@SpeciesId", speciesId);
-
-        var sql = new StringBuilder("""
-                                    select 
-                                        id,
-                                        name,
-                                        species_id
-                                        from species.breeds
-                                    where species_id = @SpeciesId
-                                    """);
-        
         var options = new HybridCacheEntryOptions
         {
             Expiration = TimeSpan.FromHours(24)
@@ -109,7 +94,25 @@ public class GetBreedsBySpeciesIdWithPaginationHandlerDapper: IQueryHandler<Page
         
         var cachedBreeds = await _hybridCache.GetOrCreateAsync(
             key: REDIS_KEY,
-            factory: async _ => await connection.QueryAsync<BreedDto>(sql.ToString(), parameters),
+            factory: async _ =>
+            {
+                var connection = _sqlConnectionFactory.Create();
+
+                var parameters = new DynamicParameters();
+        
+                parameters.Add("@SpeciesId", speciesId);
+
+                var sql = new StringBuilder("""
+                                            select 
+                                                id,
+                                                name,
+                                                species_id
+                                                from species.breeds
+                                            where species_id = @SpeciesId
+                                            """);
+                
+                return await connection.QueryAsync<BreedDto>(sql.ToString(), parameters);
+            },
             options: options,
             cancellationToken: cancellationToken);
         

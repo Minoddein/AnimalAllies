@@ -43,39 +43,6 @@ public class GetPetByIdHandler : IQueryHandler<PetDto, GetPetByIdQuery>
         if (!validatorResult.IsValid)
             return validatorResult.ToErrorList();
         
-        var connection = _sqlConnectionFactory.Create();
-
-        var parameters = new DynamicParameters();
-        
-        parameters.Add("@PetId", query.PetId);
-
-        var sql = new StringBuilder("""
-                                    select 
-                                        id,
-                                        volunteer_id,
-                                        name,
-                                        city,
-                                        state,
-                                        street,
-                                        zip_code,
-                                        breed_id,
-                                        species_id,
-                                        help_status,
-                                        phone_number,
-                                        birth_date,
-                                        color,
-                                        height,
-                                        weight,
-                                        is_castrated,
-                                        is_vaccinated,
-                                        position,
-                                        health_information,
-                                        pet_details_description,
-                                        requisites,
-                                        pet_photos
-                                        from volunteers.pets
-                                    """);
-        
         var options = new HybridCacheEntryOptions
         {
             Expiration = TimeSpan.FromHours(15)
@@ -85,6 +52,39 @@ public class GetPetByIdHandler : IQueryHandler<PetDto, GetPetByIdQuery>
             key:  $"{REDIS_KEY}{query.PetId}",
             factory: async _ =>
             {
+                var connection = _sqlConnectionFactory.Create();
+
+                var parameters = new DynamicParameters();
+        
+                parameters.Add("@PetId", query.PetId);
+
+                var sql = new StringBuilder("""
+                                            select 
+                                                id,
+                                                volunteer_id,
+                                                name,
+                                                city,
+                                                state,
+                                                street,
+                                                zip_code,
+                                                breed_id,
+                                                species_id,
+                                                help_status,
+                                                phone_number,
+                                                birth_date,
+                                                color,
+                                                height,
+                                                weight,
+                                                is_castrated,
+                                                is_vaccinated,
+                                                position,
+                                                health_information,
+                                                pet_details_description,
+                                                requisites,
+                                                pet_photos
+                                                from volunteers.pets
+                                            """);
+                
                 return await connection.QueryAsync<PetDto, RequisiteDto[], PetPhotoDto[], PetDto>(
                     sql.ToString(),
                     (pet, requisites, petPhotoDtos) =>

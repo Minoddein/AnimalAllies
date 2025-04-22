@@ -44,43 +44,6 @@ public class GetPetsByBreedIdHandler: IQueryHandler<List<PetDto>, GetPetsByBreed
         if (!validatorResult.IsValid)
             return validatorResult.ToErrorList();
         
-        var connection = _sqlConnectionFactory.Create();
-
-        var parameters = new DynamicParameters();
-        
-        parameters.Add("@BreedId", query.BreedId);
-        
-        var sql = new StringBuilder("""
-                                    select 
-                                        id,
-                                        volunteer_id,
-                                        name,
-                                        city,
-                                        state,
-                                        street,
-                                        zip_code,
-                                        breed_id,
-                                        species_id,
-                                        help_status,
-                                        phone_number,
-                                        birth_date,
-                                        color,
-                                        height,
-                                        weight,
-                                        is_castrated,
-                                        is_vaccinated,
-                                        position,
-                                        health_information,
-                                        pet_details_description,
-                                        requisites,
-                                        pet_photos
-                                        from volunteers.pets
-                                        where breed_id = @BreedId and
-                                              is_deleted = false
-                                    """);
-        
-        sql.ApplyPagination(query.Page, query.PageSize);
-        
         var options = new HybridCacheEntryOptions
         {
             Expiration = TimeSpan.FromHours(8)
@@ -90,6 +53,43 @@ public class GetPetsByBreedIdHandler: IQueryHandler<List<PetDto>, GetPetsByBreed
             key:  $"{REDIS_KEY}{query.BreedId}_{query.Page}_{query.PageSize}",
             factory: async _ =>
             {
+                var connection = _sqlConnectionFactory.Create();
+
+                var parameters = new DynamicParameters();
+        
+                parameters.Add("@BreedId", query.BreedId);
+        
+                var sql = new StringBuilder("""
+                                            select 
+                                                id,
+                                                volunteer_id,
+                                                name,
+                                                city,
+                                                state,
+                                                street,
+                                                zip_code,
+                                                breed_id,
+                                                species_id,
+                                                help_status,
+                                                phone_number,
+                                                birth_date,
+                                                color,
+                                                height,
+                                                weight,
+                                                is_castrated,
+                                                is_vaccinated,
+                                                position,
+                                                health_information,
+                                                pet_details_description,
+                                                requisites,
+                                                pet_photos
+                                                from volunteers.pets
+                                                where breed_id = @BreedId and
+                                                      is_deleted = false
+                                            """);
+        
+                sql.ApplyPagination(query.Page, query.PageSize);
+                
                 return await connection.QueryAsync<PetDto, RequisiteDto[], PetPhotoDto[], PetDto>(
                     sql.ToString(),
                     (pet, requisites, petPhotoDtos) =>

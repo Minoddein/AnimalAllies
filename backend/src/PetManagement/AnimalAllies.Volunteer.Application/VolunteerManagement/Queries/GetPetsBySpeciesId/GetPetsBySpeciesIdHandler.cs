@@ -45,43 +45,6 @@ public class GetPetsBySpeciesIdHandler: IQueryHandler<List<PetDto>, GetPetsBySpe
         var validatorResult = await _validator.ValidateAsync(query, cancellationToken);
         if (!validatorResult.IsValid)
             return validatorResult.ToErrorList();
-        
-        var connection = _sqlConnectionFactory.Create();
-
-        var parameters = new DynamicParameters();
-        
-        parameters.Add("@SpeciesId", query.SpeciesId);
-        
-        var sql = new StringBuilder("""
-                                    select 
-                                        id,
-                                        volunteer_id,
-                                        name,
-                                        city,
-                                        state,
-                                        street,
-                                        zip_code,
-                                        breed_id,
-                                        species_id,
-                                        help_status,
-                                        phone_number,
-                                        birth_date,
-                                        color,
-                                        height,
-                                        weight,
-                                        is_castrated,
-                                        is_vaccinated,
-                                        position,
-                                        health_information,
-                                        pet_details_description,
-                                        requisites,
-                                        pet_photos
-                                        from volunteers.pets
-                                        where species_id = @SpeciesId and
-                                            is_deleted = false
-                                    """);
-        
-        sql.ApplyPagination(query.Page, query.PageSize);
 
         var options = new HybridCacheEntryOptions
         {
@@ -92,6 +55,43 @@ public class GetPetsBySpeciesIdHandler: IQueryHandler<List<PetDto>, GetPetsBySpe
             key:  $"{REDIS_KEY}{query.SpeciesId}_{query.Page}_{query.PageSize}",
             factory: async _ =>
             {
+                var connection = _sqlConnectionFactory.Create();
+
+                var parameters = new DynamicParameters();
+        
+                parameters.Add("@SpeciesId", query.SpeciesId);
+        
+                var sql = new StringBuilder("""
+                                            select 
+                                                id,
+                                                volunteer_id,
+                                                name,
+                                                city,
+                                                state,
+                                                street,
+                                                zip_code,
+                                                breed_id,
+                                                species_id,
+                                                help_status,
+                                                phone_number,
+                                                birth_date,
+                                                color,
+                                                height,
+                                                weight,
+                                                is_castrated,
+                                                is_vaccinated,
+                                                position,
+                                                health_information,
+                                                pet_details_description,
+                                                requisites,
+                                                pet_photos
+                                                from volunteers.pets
+                                                where species_id = @SpeciesId and
+                                                    is_deleted = false
+                                            """);
+        
+                sql.ApplyPagination(query.Page, query.PageSize);
+                
                 return await connection.QueryAsync<PetDto, RequisiteDto[], PetPhotoDto[], PetDto>(
                     sql.ToString(),
                     (pet, requisites, petPhotoDtos) =>

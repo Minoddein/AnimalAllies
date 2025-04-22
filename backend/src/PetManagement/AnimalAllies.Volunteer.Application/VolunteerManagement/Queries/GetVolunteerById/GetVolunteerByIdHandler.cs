@@ -45,28 +45,6 @@ public class GetVolunteerByIdHandler : IQueryHandler<VolunteerDto, GetVolunteerB
         var validatorResult = await _validator.ValidateAsync(query, cancellationToken);
         if (!validatorResult.IsValid)
             return validatorResult.ToErrorList();
-        
-        var connection = _sqlConnectionFactory.Create();
-
-        var parameters = new DynamicParameters();
-        
-        parameters.Add("@VolunteerId", query.VolunteerId);
-
-        var sql = new StringBuilder("""
-                                    select 
-                                    id,
-                                    first_name,
-                                    second_name,
-                                    patronymic,
-                                    description,
-                                    email,
-                                    phone_number,
-                                    work_experience,
-                                    requisites
-                                    from volunteers.volunteers
-                                    where id = @VolunteerId
-                                    limit 1
-                                    """);
 
         var options = new HybridCacheEntryOptions
         {
@@ -77,6 +55,28 @@ public class GetVolunteerByIdHandler : IQueryHandler<VolunteerDto, GetVolunteerB
             key: REDIS_KEY + query.VolunteerId,
             factory: async _ =>
             {
+                var connection = _sqlConnectionFactory.Create();
+
+                var parameters = new DynamicParameters();
+        
+                parameters.Add("@VolunteerId", query.VolunteerId);
+
+                var sql = new StringBuilder("""
+                                            select 
+                                            id,
+                                            first_name,
+                                            second_name,
+                                            patronymic,
+                                            description,
+                                            email,
+                                            phone_number,
+                                            work_experience,
+                                            requisites
+                                            from volunteers.volunteers
+                                            where id = @VolunteerId
+                                            limit 1
+                                            """);
+                
                 return await connection.QueryAsync<VolunteerDto, RequisiteDto[], VolunteerDto>(
                     sql.ToString(),
                     (volunteer, requisites) =>

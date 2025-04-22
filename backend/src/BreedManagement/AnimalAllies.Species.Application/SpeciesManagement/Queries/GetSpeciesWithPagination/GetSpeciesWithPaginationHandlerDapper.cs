@@ -40,20 +40,6 @@ public class GetSpeciesWithPaginationHandlerDapper : IQueryHandler<PagedList<Spe
         var validatorResult = await _validator.ValidateAsync(query, cancellationToken);
         if (!validatorResult.IsValid)
             return validatorResult.ToErrorList();
-
-        var connection = _sqlConnectionFactory.Create();
-
-        var parameters = new DynamicParameters();
-
-        var sql = new StringBuilder("""
-                                    select 
-                                        id,
-                                        name
-                                        from species.species
-                                    """);
-        
-        sql.ApplySorting(query.SortBy, query.SortDirection);
-        sql.ApplyPagination(query.Page,query.PageSize);
         
         var options = new HybridCacheEntryOptions
         {
@@ -65,7 +51,24 @@ public class GetSpeciesWithPaginationHandlerDapper : IQueryHandler<PagedList<Spe
         
         var cachedSpecies = await _hybridCache.GetOrCreateAsync(
             key: REDIS_KEY + query.GetHashCode(),
-            factory: async _ => await connection.QueryAsync<SpeciesDto>(sql.ToString(), parameters),
+            factory: async _ =>
+            {
+                var connection = _sqlConnectionFactory.Create();
+
+                var parameters = new DynamicParameters();
+
+                var sql = new StringBuilder("""
+                                            select 
+                                                id,
+                                                name
+                                                from species.species
+                                            """);
+        
+                sql.ApplySorting(query.SortBy, query.SortDirection);
+                sql.ApplyPagination(query.Page,query.PageSize);
+                
+                return await connection.QueryAsync<SpeciesDto>(sql.ToString(), parameters);
+            },
             options: options,
             cancellationToken: cancellationToken);
         

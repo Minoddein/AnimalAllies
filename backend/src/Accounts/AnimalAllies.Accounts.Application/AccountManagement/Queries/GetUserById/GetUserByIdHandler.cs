@@ -45,12 +45,6 @@ public class GetUserByIdHandler: IQueryHandler<UserDto?, GetUserByIdQuery>
         if (!validatorResult.IsValid)
             return validatorResult.ToErrorList();
         
-        var connection = _sqlConnectionFactory.Create();
-
-        var parameters = new DynamicParameters();
-        
-        parameters.Add("@UserId", query.UserId);
-        
         var options = new HybridCacheEntryOptions
         {
             Expiration = TimeSpan.FromMinutes(15)
@@ -58,7 +52,16 @@ public class GetUserByIdHandler: IQueryHandler<UserDto?, GetUserByIdQuery>
 
         var cacheUser = await _hybridCache.GetOrCreateAsync(
             key: REDIS_KEY + query.UserId,
-            factory: async _ => (await GetUser(connection, parameters)).FirstOrDefault(),
+            factory: async _ =>
+            {
+                var connection = _sqlConnectionFactory.Create();
+
+                var parameters = new DynamicParameters();
+        
+                parameters.Add("@UserId", query.UserId);
+                
+                return (await GetUser(connection, parameters)).FirstOrDefault();
+            },
             options: options,
             cancellationToken: cancellationToken);
         
