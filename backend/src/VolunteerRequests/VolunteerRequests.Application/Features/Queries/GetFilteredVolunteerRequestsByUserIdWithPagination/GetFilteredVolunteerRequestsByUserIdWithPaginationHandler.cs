@@ -66,10 +66,13 @@ public class GetFilteredVolunteerRequestsByUserIdWithPaginationHandler:
                                     """);
         bool hasWhereClause = true;
 
-        var stringProperties = new Dictionary<string, string>(){ { "request_status", query.RequestStatus } };
+        if (query.RequestStatus != null)
+        {
+            var stringProperties = new Dictionary<string, string>(){ { "request_status", query.RequestStatus } };
         
-        sql.ApplyFilterByString(ref hasWhereClause, stringProperties);
-        
+            sql.ApplyFilterByString(ref hasWhereClause, stringProperties);
+        }
+
         sql.ApplySorting(query.SortBy,query.SortDirection);
         
         sql.ApplyPagination(query.Page,query.PageSize);

@@ -6,6 +6,7 @@ using AnimalAllies.Core.DTOs.Accounts;
 using AnimalAllies.SharedKernel.Constraints;
 using AnimalAllies.SharedKernel.Shared;
 using Dapper;
+using Microsoft.Extensions.Caching.Hybrid;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
@@ -13,15 +14,20 @@ namespace Discussion.Application.Features.Queries.GetDiscussionByRelationId;
 
 public class GetDiscussionByRelationIdHandler: IQueryHandler<List<MessageDto>, GetDiscussionByRelationIdQuery>
 {
+    private const string REDIS_KEY = "discussions_";
+    
     private readonly ISqlConnectionFactory _sqlConnectionFactory;
     private readonly ILogger<GetDiscussionByRelationIdHandler> _logger;
+    private readonly HybridCache _hybridCache;
 
     public GetDiscussionByRelationIdHandler(
         [FromKeyedServices(Constraints.Context.Discussion)]ISqlConnectionFactory sqlConnectionFactory, 
-        ILogger<GetDiscussionByRelationIdHandler> logger)
+        ILogger<GetDiscussionByRelationIdHandler> logger,
+        HybridCache hybridCache)
     {
         _sqlConnectionFactory = sqlConnectionFactory;
         _logger = logger;
+        _hybridCache = hybridCache;
     }
 
     public async Task<Result<List<MessageDto>>> Handle(
@@ -54,24 +60,40 @@ public class GetDiscussionByRelationIdHandler: IQueryHandler<List<MessageDto>, G
                                     limit @PageSize
                                     """);
         
-        var discussion = 
-            await connection.QueryAsync<DiscussionDto,MessageDto, UserDto, ParticipantAccountDto, DiscussionDto>(
-                sql.ToString(),
-                (discussion, message, user, participant) =>
-                {
-                    message.FirstName = participant.FirstName;
-                    discussion.Messages = [message];
+        var options = new HybridCacheEntryOptions
+        {
+            Expiration = TimeSpan.FromMinutes(1)
+        };
+
+        var cacheMessages = await _hybridCache.GetOrCreateAsync(
+            key: REDIS_KEY + query.RelationId,
+            factory: async _ =>
+            {
+                var discussion = 
+                    await connection.QueryAsync<DiscussionDto,MessageDto, UserDto, ParticipantAccountDto, DiscussionDto>(
+                        sql.ToString(),
+                        (discussion, message, user, participant) =>
+                        {
+                            message.FirstName = participant.FirstName;
+                            discussion.Messages = [message];
                     
-                    return discussion;
-                },
-                splitOn:"message_id,user_id,participant_id",
-                param: parameters);
+                            return discussion;
+                        },
+                        splitOn:"message_id,user_id,participant_id",
+                        param: parameters);
 
-        if (discussion is null)
-            return new List<MessageDto>();
+                if (discussion is null)
+                    return [];
 
-        var messages = discussion.SelectMany(d => d.Messages).ToList();
+                var messages = discussion.SelectMany(d => d.Messages).ToList();
 
-        return messages;
+                return messages;
+            },
+            options: options,
+            cancellationToken: cancellationToken);
+        
+        _logger.LogInformation("Got message from discussion with relation id {id}", query.RelationId);
+
+        return cacheMessages;
     }
 }
