@@ -10,6 +10,7 @@ using AnimalAllies.SharedKernel.Shared;
 using AnimalAllies.SharedKernel.Shared.Errors;
 using Dapper;
 using FluentValidation;
+using Microsoft.Extensions.Caching.Hybrid;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
@@ -17,18 +18,23 @@ namespace AnimalAllies.Volunteer.Application.VolunteerManagement.Queries.GetPetB
 
 public class GetPetByIdHandler : IQueryHandler<PetDto, GetPetByIdQuery>
 {
+    private const string REDIS_KEY = "pets_";
+    
     private readonly ISqlConnectionFactory _sqlConnectionFactory;
     private readonly ILogger<GetPetByIdHandler> _logger;
     private readonly IValidator<GetPetByIdQuery> _validator;
+    private readonly HybridCache _hybridCache;
 
     public GetPetByIdHandler(
         [FromKeyedServices(Constraints.Context.PetManagement)]ISqlConnectionFactory sqlConnectionFactory,
         ILogger<GetPetByIdHandler> logger,
-        IValidator<GetPetByIdQuery> validator)
+        IValidator<GetPetByIdQuery> validator,
+        HybridCache hybridCache)
     {
         _sqlConnectionFactory = sqlConnectionFactory;
         _logger = logger;
         _validator = validator;
+        _hybridCache = hybridCache;
     }
 
     public async Task<Result<PetDto>> Handle(GetPetByIdQuery query, CancellationToken cancellationToken = default)
@@ -70,21 +76,32 @@ public class GetPetByIdHandler : IQueryHandler<PetDto, GetPetByIdQuery>
                                         from volunteers.pets
                                     """);
         
-        var pets = 
-            await connection.QueryAsync<PetDto, RequisiteDto[], PetPhotoDto[], PetDto>(
-                sql.ToString(),
-                (pet, requisites, petPhotoDtos) =>
-                {
-                    pet.Requisites = requisites;
-                    
-                    pet.PetPhotos = petPhotoDtos;
-                    
-                    return pet;
-                },
-                splitOn:"requisites, pet_photos",
-                param: parameters);
+        var options = new HybridCacheEntryOptions
+        {
+            Expiration = TimeSpan.FromHours(8)
+        };
         
-        var result = pets.FirstOrDefault();
+        var cachedPet = await _hybridCache.GetOrCreateAsync(
+            key:  $"{REDIS_KEY}{query.PetId}",
+            factory: async _ =>
+            {
+                return await connection.QueryAsync<PetDto, RequisiteDto[], PetPhotoDto[], PetDto>(
+                    sql.ToString(),
+                    (pet, requisites, petPhotoDtos) =>
+                    {
+                        pet.Requisites = requisites;
+                    
+                        pet.PetPhotos = petPhotoDtos;
+                    
+                        return pet;
+                    },
+                    splitOn:"requisites, pet_photos",
+                    param: parameters);
+            },
+            options: options,
+            cancellationToken: cancellationToken);
+        
+        var result = cachedPet.FirstOrDefault();
 
         if (result is null) 
             return Errors.General.NotFound();
