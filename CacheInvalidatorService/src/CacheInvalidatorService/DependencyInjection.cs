@@ -4,6 +4,7 @@ using MassTransit;
 using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Caching.Hybrid;
 using Microsoft.Extensions.Caching.StackExchangeRedis;
+using StackExchange.Redis;
 
 namespace CacheInvalidatorService;
 
@@ -28,15 +29,8 @@ public static class DependencyInjection
             options.InstanceName = "AnimalAllies1_";
         });
 
-        services.AddSingleton<IDistributedCache>(sp => 
-        {
-            var options = new RedisCacheOptions
-            {
-                Configuration = configuration.GetConnectionString("Redis") + ",defaultDatabase=1",
-                InstanceName = "AnimalAlliesTags_"
-            };
-            return new RedisCache(options);
-        });
+        services.AddSingleton<IConnectionMultiplexer>(_ => 
+            ConnectionMultiplexer.Connect(configuration.GetConnectionString("Redis")!));
         
         services.AddHybridCache(options =>
         {
