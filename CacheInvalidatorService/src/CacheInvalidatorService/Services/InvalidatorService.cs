@@ -1,5 +1,4 @@
 ﻿using Microsoft.Extensions.Caching.Hybrid;
-using Microsoft.Extensions.Caching.Memory;
 using StackExchange.Redis;
 
 namespace CacheInvalidatorService.Services;
@@ -21,18 +20,11 @@ public class InvalidatorService
 
     public async Task InvalidateByKey(string key)
     {
-        try
-        {
-            await _hybridCache.RemoveAsync(key);
+        await _hybridCache.RemoveAsync(key);
             
-            var fullKey = $"{REDIS_PREFIX_INSTANCE}{key}";
-            var db = _connectionMultiplexer.GetDatabase();
-            await db.KeyDeleteAsync(fullKey, CommandFlags.FireAndForget);
-        }
-        catch (Exception ex)
-        {
-            throw;
-        }
+        var fullKey = $"{REDIS_PREFIX_INSTANCE}{key}";
+        var db = _connectionMultiplexer.GetDatabase();
+        await db.KeyDeleteAsync(fullKey, CommandFlags.FireAndForget);
     }
     
 }

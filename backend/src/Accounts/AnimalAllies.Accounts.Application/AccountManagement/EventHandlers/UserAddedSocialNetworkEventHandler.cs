@@ -5,18 +5,18 @@ using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 using Outbox.Abstractions;
 
-namespace AnimalAllies.Accounts.Application.AccountManagement.EventHandlers.UserAddedAvatarEventHandler;
+namespace AnimalAllies.Accounts.Application.AccountManagement.EventHandlers;
 
-public class UserAddedAvatarEventHandler: INotificationHandler<UserAddedAvatarDomainEvent>
+public class UserAddedSocialNetworkEventHandler: INotificationHandler<UserAddedSocialNetworkDomainEvent>
 {
     private readonly ILogger<UserAddedAvatarEventHandler> _logger;
     private readonly IOutboxRepository _outboxRepository;
     private readonly IUnitOfWorkOutbox _unitOfWork;
     private readonly IMemoryCache _memoryCache;
 
-    public UserAddedAvatarEventHandler(
+    public UserAddedSocialNetworkEventHandler(
         ILogger<UserAddedAvatarEventHandler> logger,
-        IOutboxRepository outboxRepository,
+        IOutboxRepository outboxRepository, 
         IUnitOfWorkOutbox unitOfWork,
         IMemoryCache memoryCache)
     {
@@ -26,16 +26,16 @@ public class UserAddedAvatarEventHandler: INotificationHandler<UserAddedAvatarDo
         _memoryCache = memoryCache;
     }
 
-    public async Task Handle(UserAddedAvatarDomainEvent notification, CancellationToken cancellationToken)
+    public async Task Handle(UserAddedSocialNetworkDomainEvent notification, CancellationToken cancellationToken)
     {
-        var integrationEvent = new UserAddedAvatarIntegrationEvent(notification.UserId);
+        var integrationEvent = new UserAddedSocialNetworkIntegrationEvent(notification.UserId);
 
         await _outboxRepository.AddAsync(integrationEvent, cancellationToken);
 
         await _unitOfWork.SaveChanges(cancellationToken);
         
         _memoryCache.Remove($"users_{notification.UserId}");
-
-        _logger.LogInformation("User with id {id} added avatar", notification.UserId);
+        
+        _logger.LogInformation("User {NotificationUserId} has been added social networks", notification.UserId);
     }
 }
