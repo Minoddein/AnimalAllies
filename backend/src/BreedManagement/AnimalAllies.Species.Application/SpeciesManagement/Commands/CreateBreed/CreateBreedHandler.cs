@@ -1,4 +1,5 @@
-﻿using AnimalAllies.Core.Abstractions;
+﻿using System.Transactions;
+using AnimalAllies.Core.Abstractions;
 using AnimalAllies.Core.Database;
 using AnimalAllies.Core.Extension;
 using AnimalAllies.SharedKernel.Constraints;
@@ -9,6 +10,7 @@ using AnimalAllies.SharedKernel.Shared.ValueObjects;
 using AnimalAllies.Species.Application.Repository;
 using AnimalAllies.Species.Domain.Entities;
 using FluentValidation;
+using MediatR;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
@@ -40,25 +42,43 @@ public class CreateBreedHandler : ICommandHandler<CreateBreedCommand, BreedId>
         if (!validatorResult.IsValid)
             return validatorResult.ToErrorList();
 
-        var speciesId = SpeciesId.Create(command.SpeciesId);
+        using var scope = new TransactionScope(
+            TransactionScopeOption.Required,
+            new TransactionOptions { IsolationLevel = IsolationLevel.ReadCommitted },
+            TransactionScopeAsyncFlowOption.Enabled
+        );
 
-        var species = await _repository.GetById(speciesId, cancellationToken);
-        if (species.IsFailure)
-            return Errors.General.NotFound();
+        try
+        {
+            var speciesId = SpeciesId.Create(command.SpeciesId);
 
-        var breedId = BreedId.NewGuid();
-        var name = Name.Create(command.Name).Value;
+            var species = await _repository.GetById(speciesId, cancellationToken);
+            if (species.IsFailure)
+                return Errors.General.NotFound();
 
-        var breed = new Breed(breedId, name);
+            var breedId = BreedId.NewGuid();
+            var name = Name.Create(command.Name).Value;
 
-        species.Value.AddBreed(breed);
-        
-        _repository.Save(species.Value, cancellationToken);
+            var breed = new Breed(breedId, name);
 
-        await _unitOfWork.SaveChanges(cancellationToken);
-        
-        _logger.LogInformation("Breed with id {breedId} created to species with id {speciesId}", breedId.Id, speciesId.Id);
+            species.Value.AddBreed(breed);
 
-        return breedId;
+            _repository.Save(species.Value, cancellationToken);
+
+            await _unitOfWork.SaveChanges(cancellationToken);
+
+            scope.Complete();
+            
+            _logger.LogInformation("Breed with id {breedId} created to species with id {speciesId}", breedId.Id,
+                speciesId.Id);
+
+            return breedId;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Breed creation Failed");
+
+            return Error.Failure("fail.to.create.breed", "Fail to create breed");
+        }
     }
 }

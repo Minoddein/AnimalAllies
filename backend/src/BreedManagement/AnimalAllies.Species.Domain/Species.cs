@@ -3,11 +3,12 @@ using AnimalAllies.SharedKernel.Shared.Errors;
 using AnimalAllies.SharedKernel.Shared.Ids;
 using AnimalAllies.SharedKernel.Shared.Objects;
 using AnimalAllies.SharedKernel.Shared.ValueObjects;
+using AnimalAllies.Species.Domain.DomainEvents;
 using AnimalAllies.Species.Domain.Entities;
 
 namespace AnimalAllies.Species.Domain;
 
-public class Species: Entity<SpeciesId>
+public class Species: DomainEntity<SpeciesId>
 {
     private readonly List<Breed> _breeds = [];
     private Species(SpeciesId id): base(id){}
@@ -15,6 +16,10 @@ public class Species: Entity<SpeciesId>
         : base(speciesId)
     {
         Name = name;
+
+        var @event = new SpeciesCreatedDomainEvent(speciesId.Id);
+        
+        AddDomainEvent(@event);
     }
     
     public Name Name { get; private set; }
@@ -28,12 +33,10 @@ public class Species: Entity<SpeciesId>
         
         _breeds.Add(breed);
 
-        return Result.Success();
-    }
+        var @event = new BreedCreatedDomainEvent(Id.Id, breed.Id.Id);
+        
+        AddDomainEvent(@event);
 
-    public Result UpdateName(Name name)
-    {
-        Name = name;
         return Result.Success();
     }
 
@@ -54,6 +57,10 @@ public class Species: Entity<SpeciesId>
             return Errors.General.NotFound();
 
         _breeds.Remove(breed.Value);
+
+        var @event = new BreedDeletedDomainEvent(Id.Id ,id.Id);
+        
+        AddDomainEvent(@event);
         
         return Result.Success();
     }
