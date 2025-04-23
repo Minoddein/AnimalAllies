@@ -15,7 +15,7 @@ namespace AnimalAllies.Accounts.Application.AccountManagement.Queries.IsUserExis
 
 public class IsUserExistByIdHandler: IQueryHandler<bool, IsUserExistByIdQuery>
 {
-    private const string REDIS_KEY = "user_";
+    private const string REDIS_KEY = "users_";
     
     private readonly ILogger<IsUserExistByIdHandler> _logger;
     private readonly IValidator<IsUserExistByIdQuery> _validator;

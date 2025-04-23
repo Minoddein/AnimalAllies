@@ -82,6 +82,8 @@ public class AddAvatarHandler: ICommandHandler<AddAvatarCommand, AddAvatarRespon
             await _publisher.Publish(@event, cancellationToken);
 
             await _unitOfWork.SaveChanges(cancellationToken);
+            
+            scope.Complete();
 
             _logger.LogInformation("Added avatar to user with id {id}", command.UserId);
 

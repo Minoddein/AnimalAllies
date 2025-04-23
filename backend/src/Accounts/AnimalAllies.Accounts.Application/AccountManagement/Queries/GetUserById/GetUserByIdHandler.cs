@@ -19,7 +19,7 @@ namespace AnimalAllies.Accounts.Application.AccountManagement.Queries.GetUserByI
 
 public class GetUserByIdHandler: IQueryHandler<UserDto?, GetUserByIdQuery>
 {
-    private const string REDIS_KEY = "user_";
+    private const string REDIS_KEY = "users_";
     
     private readonly ILogger<GetUserByIdHandler> _logger;
     private readonly IValidator<GetUserByIdQuery> _validator;

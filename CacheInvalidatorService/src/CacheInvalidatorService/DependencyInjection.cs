@@ -1,5 +1,9 @@
-﻿using MassTransit;
+﻿using CacheInvalidatorService.Consumers;
+using CacheInvalidatorService.Services;
+using MassTransit;
+using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Caching.Hybrid;
+using Microsoft.Extensions.Caching.StackExchangeRedis;
 
 namespace CacheInvalidatorService;
 
@@ -24,6 +28,16 @@ public static class DependencyInjection
             options.InstanceName = "AnimalAllies1_";
         });
 
+        services.AddSingleton<IDistributedCache>(sp => 
+        {
+            var options = new RedisCacheOptions
+            {
+                Configuration = configuration.GetConnectionString("Redis") + ",defaultDatabase=1",
+                InstanceName = "AnimalAlliesTags_"
+            };
+            return new RedisCache(options);
+        });
+        
         services.AddHybridCache(options =>
         {
             options.MaximumPayloadBytes = 1024 * 1024 * 10;
@@ -33,6 +47,8 @@ public static class DependencyInjection
                 LocalCacheExpiration = TimeSpan.FromMinutes(1)
             };
         });
+
+        services.AddSingleton<InvalidatorService>();
         
         return services;
     }
@@ -42,6 +58,8 @@ public static class DependencyInjection
         services.AddMassTransit(configure =>
         {
             configure.SetKebabCaseEndpointNameFormatter();
+
+            configure.AddConsumer<UserAddedAvatarEventConsumer>();
             
             configure.UsingRabbitMq((context, cfg) =>
             {
