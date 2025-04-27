@@ -24,6 +24,17 @@ builder.Services.AddModules(builder.Configuration);
 
 builder.Services.AddControllers();
 
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("NextApp", builder =>
+    {
+        builder.WithOrigins("http://localhost:3000")
+            .AllowAnyHeader()
+            .AllowAnyMethod()
+            .AllowCredentials();
+    });
+});
+
 builder.Services.AddEndpointsApiExplorer();
 
 builder.Services.AddSwagger();
@@ -48,11 +59,13 @@ if (app.Environment.IsDevelopment() | app.Environment.EnvironmentName == "Docker
 
 app.UseHttpsRedirection();
 
+app.UseCors("NextApp");
 app.UseAuthentication();
 app.UseScopeDataMiddleware();
 app.UseAuthorization();
 
 app.MapControllers();
+
 
 app.Run();
 
