@@ -45,7 +45,7 @@
       - ASPNETCORE_ENVIRONMENT=Docker
       - BOT_TOKEN=${BOT_TOKEN}
     ports:
-      - "3000:3000"
+      - "4000:4000"
     secrets:
       - nuget_username
       - nuget_password
