@@ -28,7 +28,7 @@ public class AccountController: ApplicationController
         var command = new RegisterUserCommand(
             request.Email,
             request.UserName,
-            new FullNameDto(request.FirstName, request.UserName, request.Patronymic),
+            new FullNameDto(request.FirstName, request.SecondName, request.Patronymic),
             request.Password);
 
         var result = await handler.Handle(command, cancellationToken);
@@ -69,21 +69,30 @@ public class AccountController: ApplicationController
         if (result.IsFailure)
             return result.Errors.ToResponse();
         
+        HttpContext.Response.Cookies.Append("refreshToken", result.Value.RefreshToken.ToString());
+        
         return Ok(result.Value);
     }
 
     [HttpPost("refreshing")]
     public async Task<IActionResult> Refresh(
-        [FromBody] RefreshTokenRequest request,
         [FromServices] RefreshTokensHandler handler,
         CancellationToken cancellationToken = default)
     {
-        var command = new RefreshTokensCommand(request.AccessToken, request.RefreshToken);
+        if(!HttpContext.Request.Cookies.TryGetValue("refreshToken", out var refreshToken))
+        {
+            return Unauthorized();
+        }
 
-        var result = await handler.Handle(command, cancellationToken);
+        var result = await handler.Handle(
+            new RefreshTokensCommand(Guid.Parse(refreshToken)),
+            cancellationToken);
+        
         if (result.IsFailure)
             return result.Errors.ToResponse();
 
+        HttpContext.Response.Cookies.Append("refreshToken", result.Value.RefreshToken.ToString());
+        
         return Ok(result.Value);
     }
 
