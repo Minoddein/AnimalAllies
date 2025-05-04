@@ -58,6 +58,13 @@ public class RefreshTokensHandler: ICommandHandler<RefreshTokensCommand, LoginRe
             .GenerateAccessToken(refreshSession.Value.User,cancellationToken);
         var refreshToken = await _tokenProvider
             .GenerateRefreshToken(refreshSession.Value.User,accessToken.Jti, cancellationToken);
+        
+        var roles = refreshSession.Value.User.Roles.Select(r => r.Name).ToArray();
+        
+        var permissions = refreshSession.Value.User.Roles
+            .SelectMany(r => r.RolePermissions)
+            .Select(rp => rp.Permission.Code)
+            .ToArray();
 
         return new LoginResponse(
             accessToken.AccessToken,
@@ -67,6 +74,8 @@ public class RefreshTokensHandler: ICommandHandler<RefreshTokensCommand, LoginRe
             refreshSession.Value.User.Email!,
             refreshSession.Value.User.ParticipantAccount!.FullName.FirstName,
             refreshSession.Value.User.ParticipantAccount.FullName.SecondName,
-            refreshSession.Value.User.ParticipantAccount.FullName.Patronymic);
+            refreshSession.Value.User.ParticipantAccount.FullName.Patronymic,
+            roles!,
+            permissions);
     }
 }

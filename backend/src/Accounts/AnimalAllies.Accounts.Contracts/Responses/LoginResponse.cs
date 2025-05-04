@@ -8,4 +8,6 @@ public record LoginResponse(
     string Email,
     string FirstName,
     string SecondName,
-    string? Patronymic);
+    string? Patronymic,
+    string[] Roles,
+    string[] Permissions);
