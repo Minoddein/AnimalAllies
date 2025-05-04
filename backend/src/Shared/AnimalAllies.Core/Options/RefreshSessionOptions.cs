@@ -4,7 +4,7 @@ namespace AnimalAllies.Core.Options;
 
 public class RefreshSessionOptions
 {
-    public static string REFRESH_SESSION = nameof(REFRESH_SESSION);
+    public static string REFRESH_SESSION = "RefreshSession";
     
-    public int ExpiredDaysTime { get; init; }
+    public int ExpiredDaysTime { get; set; }
 }

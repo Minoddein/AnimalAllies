@@ -40,6 +40,7 @@ public class LoginUserHandler : ICommandHandler<LoginUserCommand,LoginResponse>
         
         var user = await _userManager.Users
             .Include(u => u.Roles)
+            .Include(u => u.ParticipantAccount)
             .FirstOrDefaultAsync(u => u.Email == command.Email, cancellationToken);
         
         if (user is null)
