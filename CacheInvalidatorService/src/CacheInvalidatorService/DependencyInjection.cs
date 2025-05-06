@@ -56,8 +56,7 @@ public static class DependencyInjection
         {
             configure.SetKebabCaseEndpointNameFormatter();
 
-            configure.AddConsumer<UserAddedAvatarEventConsumer>();
-            configure.AddConsumer<UserAddedSocialNetworkEventConsumer>();
+            configure.AddConsumer<CacheInvalidationEventConsumer>();
             
             configure.UsingRabbitMq((context, cfg) =>
             {
