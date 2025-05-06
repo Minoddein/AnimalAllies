@@ -12,7 +12,6 @@ public class Volunteer: Entity<VolunteerId>, ISoftDeletable
 {
     private readonly List<Pet> _pets = [];
     private List<Requisite> _requisites = [];
-    private List<SocialNetwork> _socialNetworks = [];
 
     //Ef core configuration
     private Volunteer(VolunteerId id) : base(id){}
@@ -212,7 +211,6 @@ public class Volunteer: Entity<VolunteerId>, ISoftDeletable
     
     public Result UpdateSocialNetworks(List<SocialNetwork> socialNetworks)
     {
-        _socialNetworks = socialNetworks;
         return Result.Success();
     }
     public Result UpdateRequisites(List<Requisite> requisites)
