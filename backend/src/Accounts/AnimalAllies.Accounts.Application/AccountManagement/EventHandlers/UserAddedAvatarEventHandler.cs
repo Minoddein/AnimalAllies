@@ -33,8 +33,6 @@ public class UserAddedAvatarEventHandler: INotificationHandler<UserAddedAvatarDo
         await _outboxRepository.AddAsync(integrationEvent, cancellationToken);
 
         await _unitOfWork.SaveChanges(cancellationToken);
-        
-        _memoryCache.Remove($"users_{notification.UserId}");
 
         _logger.LogInformation("User with id {id} added avatar", notification.UserId);
     }

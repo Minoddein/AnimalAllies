@@ -11,3 +11,8 @@ public static class TagsConstants
     public const string MESSAGES = "messages";
     public const string VOLUNTEER_REQUESTS = "volunteers_requests";
 }
+
+public static class CacheChannels
+{
+    public const string CACHE_CHANNEL = "cache_invalidator_channel";
+}

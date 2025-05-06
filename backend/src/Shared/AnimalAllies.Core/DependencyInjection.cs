@@ -1,6 +1,8 @@
-﻿using Microsoft.Extensions.Caching.Hybrid;
+﻿using AnimalAllies.Core.BackgroundServices;
+using Microsoft.Extensions.Caching.Hybrid;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using StackExchange.Redis;
 
 namespace AnimalAllies.Core;
 
@@ -30,6 +32,14 @@ public static class DependencyInjection
                 LocalCacheExpiration = TimeSpan.FromMinutes(1),
             };
         });
+        
+        services.AddSingleton<IConnectionMultiplexer>(_ => 
+            ConnectionMultiplexer.Connect(configuration.GetConnectionString("Redis")!));
+
+        services.AddSingleton<ISubscriber>(provider =>
+            provider.GetRequiredService<IConnectionMultiplexer>().GetSubscriber());
+        
+        services.AddHostedService<CacheInvalidatorBackgroundService>();
         
         return services;
     }

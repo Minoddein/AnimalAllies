@@ -44,6 +44,9 @@ public static class DependencyInjection
 
         services.AddSingleton<InvalidatorService>();
         
+        services.AddSingleton<ISubscriber>(provider =>
+            provider.GetRequiredService<IConnectionMultiplexer>().GetSubscriber());
+        
         return services;
     }
     

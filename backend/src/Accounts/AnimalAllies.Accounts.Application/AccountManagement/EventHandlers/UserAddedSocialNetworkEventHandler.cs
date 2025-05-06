@@ -34,8 +34,6 @@ public class UserAddedSocialNetworkEventHandler: INotificationHandler<UserAddedS
 
         await _unitOfWork.SaveChanges(cancellationToken);
         
-        _memoryCache.Remove($"users_{notification.UserId}");
-        
         _logger.LogInformation("User {NotificationUserId} has been added social networks", notification.UserId);
     }
 }
