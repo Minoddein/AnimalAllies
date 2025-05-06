@@ -16,8 +16,8 @@
         <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="9.0.3" />
         <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.3" />
         <PackageReference Include="Minio" Version="6.0.4" />
-        <PackageReference Include="MongoDB.Bson" Version="3.3.0" />
-        <PackageReference Include="MongoDB.Driver" Version="3.3.0" />
+        <PackageReference Include="MongoDB.Bson" Version="3.4.0" />
+        <PackageReference Include="MongoDB.Driver" Version="3.4.0" />
         <PackageReference Include="MongoDB.Driver.Core" Version="2.30.0" />
         <PackageReference Include="Serilog.AspNetCore" Version="9.0.0" />
         <PackageReference Include="Microsoft.Extensions.Configuration" Version="9.0.3" />
