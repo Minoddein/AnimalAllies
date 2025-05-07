@@ -22,17 +22,20 @@ public class CreateBreedHandler : ICommandHandler<CreateBreedCommand, BreedId>
     private readonly IValidator<CreateBreedCommand> _validator;
     private readonly IUnitOfWork _unitOfWork;
     private readonly ILogger<CreateBreedHandler> _logger;
+    private readonly IPublisher _publisher;
 
     public CreateBreedHandler(
         ISpeciesRepository repository,
         IValidator<CreateBreedCommand> validator,
         ILogger<CreateBreedHandler> logger,
-        [FromKeyedServices(Constraints.Context.BreedManagement)]IUnitOfWork unitOfWork)
+        [FromKeyedServices(Constraints.Context.BreedManagement)]IUnitOfWork unitOfWork,
+        IPublisher publisher)
     {
         _repository = repository;
         _validator = validator;
         _logger = logger;
         _unitOfWork = unitOfWork;
+        _publisher = publisher;
     }
 
 
@@ -64,6 +67,8 @@ public class CreateBreedHandler : ICommandHandler<CreateBreedCommand, BreedId>
             species.Value.AddBreed(breed);
 
             _repository.Save(species.Value, cancellationToken);
+            
+            await _publisher.PublishDomainEvents(species.Value, cancellationToken);
 
             await _unitOfWork.SaveChanges(cancellationToken);
 

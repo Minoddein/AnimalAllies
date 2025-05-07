@@ -1,4 +1,6 @@
-﻿using AnimalAllies.Species.Domain.DomainEvents;
+﻿using AnimalAllies.Accounts.Contracts.Events;
+using AnimalAllies.SharedKernel.CachingConstants;
+using AnimalAllies.Species.Domain.DomainEvents;
 using MediatR;
 using Microsoft.Extensions.Logging;
 using Outbox.Abstractions;
@@ -10,12 +12,24 @@ public class BreedDeletedEventHandler: INotificationHandler<BreedDeletedDomainEv
     private readonly ILogger<BreedCreatedEventHandler> _logger;
     private readonly IOutboxRepository _outboxRepository;
     private readonly IUnitOfWorkOutbox _unitOfWork;
-    
+
+    public BreedDeletedEventHandler(
+        ILogger<BreedCreatedEventHandler> logger,
+        IOutboxRepository outboxRepository,
+        IUnitOfWorkOutbox unitOfWork)
+    {
+        _logger = logger;
+        _outboxRepository = outboxRepository;
+        _unitOfWork = unitOfWork;
+    }
+
     public async Task Handle(BreedDeletedDomainEvent notification, CancellationToken cancellationToken)
     {
-        //var integrationEvent = new BreedDeletedIntegrationEvent(notification.SpeciesId, notification.BreedId);
+        var integrationEvent = new CacheInvalidateIntegrationEvent(
+            null,
+            [TagsConstants.BREEDS + "_" + notification.SpeciesId]);
 
-        //await _outboxRepository.AddAsync(integrationEvent, cancellationToken);
+        await _outboxRepository.AddAsync(integrationEvent, cancellationToken);
 
         await _unitOfWork.SaveChanges(cancellationToken);
         

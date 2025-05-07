@@ -1,4 +1,6 @@
-﻿using AnimalAllies.Species.Domain.DomainEvents;
+﻿using AnimalAllies.Accounts.Contracts.Events;
+using AnimalAllies.SharedKernel.CachingConstants;
+using AnimalAllies.Species.Domain.DomainEvents;
 using MediatR;
 using Microsoft.Extensions.Logging;
 using Outbox.Abstractions;
@@ -23,9 +25,11 @@ public class BreedCreatedEventHandler: INotificationHandler<BreedCreatedDomainEv
 
     public async Task Handle(BreedCreatedDomainEvent notification, CancellationToken cancellationToken)
     {
-        //var integrationEvent = new BreedCreatedIntegrationEvent(notification.SpeciesId, notification.BreedId);
+        var integrationEvent = new CacheInvalidateIntegrationEvent(
+            null, 
+            [TagsConstants.BREEDS + "_" + notification.SpeciesId]);
 
-        //await _outboxRepository.AddAsync(integrationEvent, cancellationToken);
+        await _outboxRepository.AddAsync(integrationEvent, cancellationToken);
 
         await _unitOfWork.SaveChanges(cancellationToken);
         

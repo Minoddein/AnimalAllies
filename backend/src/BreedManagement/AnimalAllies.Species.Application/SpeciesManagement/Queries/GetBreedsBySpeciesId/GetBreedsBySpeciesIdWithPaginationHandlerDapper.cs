@@ -71,7 +71,7 @@ public class GetBreedsBySpeciesIdWithPaginationHandlerDapper: IQueryHandler<Page
                 return await connection.QueryAsync<BreedDto>(sql.ToString(), parameters);
             },
             options: options,
-            tags: [TagsConstants.BREEDS],
+            tags: [new string(TagsConstants.BREEDS + "_" + query.SpeciesId)],
             cancellationToken: cancellationToken);
         
         _logger.LogInformation("Get breeds with pagination Page: {Page}, PageSize: {PageSize}",

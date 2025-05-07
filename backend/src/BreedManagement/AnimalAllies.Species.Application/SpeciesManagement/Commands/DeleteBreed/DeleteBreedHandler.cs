@@ -8,6 +8,7 @@ using AnimalAllies.SharedKernel.Shared.Ids;
 using AnimalAllies.Species.Application.Repository;
 using AnimalAllies.Volunteer.Contracts;
 using FluentValidation;
+using MediatR;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
@@ -21,6 +22,7 @@ public class DeleteBreedHandler : ICommandHandler<DeleteBreedCommand, BreedId>
     private readonly IUnitOfWork _unitOfWork;
     private readonly ILogger<DeleteBreedHandler> _logger;
     private readonly IDateTimeProvider _dateTimeProvider;
+    private readonly IPublisher _publisher;
 
     public DeleteBreedHandler(
         ISpeciesRepository repository, 
@@ -28,7 +30,8 @@ public class DeleteBreedHandler : ICommandHandler<DeleteBreedCommand, BreedId>
         ILogger<DeleteBreedHandler> logger,
         [FromKeyedServices(Constraints.Context.BreedManagement)]IUnitOfWork unitOfWork,
         IVolunteerContract volunteerContract, 
-        IDateTimeProvider dateTimeProvider)
+        IDateTimeProvider dateTimeProvider,
+        IPublisher publisher)
     {
         _repository = repository;
         _validator = validator;
@@ -36,6 +39,7 @@ public class DeleteBreedHandler : ICommandHandler<DeleteBreedCommand, BreedId>
         _unitOfWork = unitOfWork;
         _volunteerContract = volunteerContract;
         _dateTimeProvider = dateTimeProvider;
+        _publisher = publisher;
     }
     
     
@@ -59,10 +63,12 @@ public class DeleteBreedHandler : ICommandHandler<DeleteBreedCommand, BreedId>
         if (petOfThisBreed)
             return Errors.Species.DeleteConflict();
         
-        var result = species.Value.DeleteBreed(breedId, _dateTimeProvider.UtcNow);
+        var result = species.Value.DeleteBreed(breedId);
         if (result.IsFailure)
             return result.Errors;
 
+        await _publisher.PublishDomainEvents(species.Value, cancellationToken);
+        
         await _unitOfWork.SaveChanges(cancellationToken);
 
         _logger.LogInformation("Deleted breed with id {breedId} from species with id {speciesId}",breedId.Id, speciesId.Id);

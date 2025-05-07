@@ -40,7 +40,7 @@ public class Species: DomainEntity<SpeciesId>
         return Result.Success();
     }
 
-    public Result<Breed> GetById(BreedId id)
+    private Result<Breed> GetById(BreedId id)
     {
         var breed = _breeds.FirstOrDefault(b => b.Id == id);
 
@@ -50,7 +50,7 @@ public class Species: DomainEntity<SpeciesId>
         return breed;
     }
 
-    public Result DeleteBreed(BreedId id, DateTime deletionTime)
+    public Result DeleteBreed(BreedId id)
     {
         var breed = GetById(id);
         if (breed.IsFailure)
