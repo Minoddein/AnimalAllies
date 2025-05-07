@@ -2,6 +2,7 @@
 using AnimalAllies.Accounts.Domain;
 using AnimalAllies.Core.Abstractions;
 using AnimalAllies.Core.Extension;
+using AnimalAllies.SharedKernel.CachingConstants;
 using AnimalAllies.SharedKernel.Shared;
 using FluentValidation;
 using Microsoft.AspNetCore.Identity;
@@ -12,8 +13,6 @@ namespace AnimalAllies.Accounts.Application.AccountManagement.Queries.GetPermiss
 
 public class GetPermissionsByUserIdHandler: IQueryHandler<List<string>, GetPermissionsByUserIdQuery>
 {
-    private const string REDIS_KEY = "permissions_";
-    
     private readonly IPermissionManager _permissionManager;
     private readonly ILogger<GetPermissionsByUserIdHandler> _logger;
     private readonly IValidator<GetPermissionsByUserIdQuery> _validator;
@@ -41,11 +40,12 @@ public class GetPermissionsByUserIdHandler: IQueryHandler<List<string>, GetPermi
 
         var options = new HybridCacheEntryOptions
         {
-            Expiration = TimeSpan.FromMinutes(15)
+            Expiration = TimeSpan.FromMinutes(8),
+            LocalCacheExpiration = TimeSpan.FromMinutes(3)
         };
 
         var cachePermission = await _hybridCache.GetOrCreateAsync(
-            key: REDIS_KEY + query.UserId,
+            key: TagsConstants.PERMISSIONS + "_" + query.UserId,
             factory: async _ =>
             {
                 var result = await _permissionManager.GetPermissionsByUserId(query.UserId, cancellationToken);

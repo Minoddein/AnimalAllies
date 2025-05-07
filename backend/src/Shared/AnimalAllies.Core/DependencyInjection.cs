@@ -31,6 +31,7 @@ public static class DependencyInjection
                 Expiration = TimeSpan.FromMinutes(5),
                 LocalCacheExpiration = TimeSpan.FromMinutes(1),
             };
+            options.ReportTagMetrics = true;
         });
         
         services.AddSingleton<IConnectionMultiplexer>(_ => 

@@ -1,12 +1,11 @@
 ﻿using System.Data;
 using System.Text;
-using System.Text.Json;
-using AnimalAllies.Accounts.Domain;
 using AnimalAllies.Core.Abstractions;
 using AnimalAllies.Core.Database;
 using AnimalAllies.Core.DTOs.Accounts;
 using AnimalAllies.Core.DTOs.ValueObjects;
 using AnimalAllies.Core.Extension;
+using AnimalAllies.SharedKernel.CachingConstants;
 using AnimalAllies.SharedKernel.Constraints;
 using AnimalAllies.SharedKernel.Shared;
 using Dapper;
@@ -19,8 +18,6 @@ namespace AnimalAllies.Accounts.Application.AccountManagement.Queries.GetUserByI
 
 public class GetUserByIdHandler: IQueryHandler<UserDto?, GetUserByIdQuery>
 {
-    private const string REDIS_KEY = "users_";
-    
     private readonly ILogger<GetUserByIdHandler> _logger;
     private readonly IValidator<GetUserByIdQuery> _validator;
     private readonly ISqlConnectionFactory _sqlConnectionFactory;
@@ -47,11 +44,12 @@ public class GetUserByIdHandler: IQueryHandler<UserDto?, GetUserByIdQuery>
         
         var options = new HybridCacheEntryOptions
         {
-            Expiration = TimeSpan.FromMinutes(15)
+            Expiration = TimeSpan.FromMinutes(8),
+            LocalCacheExpiration = TimeSpan.FromMinutes(3)
         };
 
         var cacheUser = await _hybridCache.GetOrCreateAsync(
-            key: REDIS_KEY + query.UserId,
+            key: TagsConstants.USERS + "_" + query.UserId,
             factory: async _ =>
             {
                 var connection = _sqlConnectionFactory.Create();

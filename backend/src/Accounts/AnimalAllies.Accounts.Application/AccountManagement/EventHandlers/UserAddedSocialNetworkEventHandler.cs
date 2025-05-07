@@ -13,18 +13,15 @@ public class UserAddedSocialNetworkEventHandler: INotificationHandler<UserAddedS
     private readonly ILogger<UserAddedAvatarEventHandler> _logger;
     private readonly IOutboxRepository _outboxRepository;
     private readonly IUnitOfWorkOutbox _unitOfWork;
-    private readonly IMemoryCache _memoryCache;
 
     public UserAddedSocialNetworkEventHandler(
         ILogger<UserAddedAvatarEventHandler> logger,
         IOutboxRepository outboxRepository, 
-        IUnitOfWorkOutbox unitOfWork,
-        IMemoryCache memoryCache)
+        IUnitOfWorkOutbox unitOfWork)
     {
         _logger = logger;
         _outboxRepository = outboxRepository;
         _unitOfWork = unitOfWork;
-        _memoryCache = memoryCache;
     }
 
     public async Task Handle(UserAddedSocialNetworkDomainEvent notification, CancellationToken cancellationToken)

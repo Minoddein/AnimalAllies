@@ -4,6 +4,7 @@ using AnimalAllies.Core.Database;
 using AnimalAllies.Core.DTOs;
 using AnimalAllies.Core.Extension;
 using AnimalAllies.Core.Models;
+using AnimalAllies.SharedKernel.CachingConstants;
 using AnimalAllies.SharedKernel.Constraints;
 using AnimalAllies.SharedKernel.Shared;
 using Dapper;
@@ -16,8 +17,6 @@ namespace AnimalAllies.Species.Application.SpeciesManagement.Queries.GetSpeciesW
 
 public class GetSpeciesWithPaginationHandlerDapper : IQueryHandler<PagedList<SpeciesDto>, GetSpeciesWithPaginationQuery>
 {
-    private const string REDIS_KEY = "species_";
-    
     private readonly ISqlConnectionFactory _sqlConnectionFactory;
     private readonly IValidator<GetSpeciesWithPaginationQuery> _validator;
     private readonly ILogger<GetSpeciesWithPaginationHandlerDapper> _logger;
@@ -43,14 +42,15 @@ public class GetSpeciesWithPaginationHandlerDapper : IQueryHandler<PagedList<Spe
         
         var options = new HybridCacheEntryOptions
         {
-            Expiration = TimeSpan.FromHours(24)
+            Expiration = TimeSpan.FromHours(3),
+            LocalCacheExpiration = TimeSpan.FromMinutes(60)
         };
         
         //TODO:Сделать рефакторинг: добавить запрос на получение общего числа записей и добавлять его в TotalCount,
         //сделать это для всех запросов
         
         var cachedSpecies = await _hybridCache.GetOrCreateAsync(
-            key: REDIS_KEY + query.GetHashCode(),
+            key: $"{TagsConstants.SPECIES}_{query.Page}_{query.PageSize}_{query.SortBy}_{query.SortDirection}",
             factory: async _ =>
             {
                 var connection = _sqlConnectionFactory.Create();
@@ -70,6 +70,7 @@ public class GetSpeciesWithPaginationHandlerDapper : IQueryHandler<PagedList<Spe
                 return await connection.QueryAsync<SpeciesDto>(sql.ToString(), parameters);
             },
             options: options,
+            tags: [TagsConstants.SPECIES],
             cancellationToken: cancellationToken);
         
         _logger.LogInformation("Get species with pagination Page: {Page}, PageSize: {PageSize}",

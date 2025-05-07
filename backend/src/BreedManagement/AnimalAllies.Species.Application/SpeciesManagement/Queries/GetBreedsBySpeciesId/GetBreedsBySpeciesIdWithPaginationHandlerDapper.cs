@@ -4,6 +4,7 @@ using AnimalAllies.Core.Database;
 using AnimalAllies.Core.DTOs;
 using AnimalAllies.Core.Extension;
 using AnimalAllies.Core.Models;
+using AnimalAllies.SharedKernel.CachingConstants;
 using AnimalAllies.SharedKernel.Constraints;
 using AnimalAllies.SharedKernel.Shared;
 using Dapper;
@@ -61,13 +62,15 @@ public class GetBreedsBySpeciesIdWithPaginationHandlerDapper: IQueryHandler<Page
         
         var options = new HybridCacheEntryOptions
         {
-            Expiration = TimeSpan.FromHours(24)
+            Expiration = TimeSpan.FromHours(3),
+            LocalCacheExpiration = TimeSpan.FromMinutes(60)
         };
         
         var cachedBreeds = await _hybridCache.GetOrCreateAsync(
             key: REDIS_KEY + query.GetHashCode(),
             factory: async _ => await connection.QueryAsync<BreedDto>(sql.ToString(), parameters),
             options: options,
+            tags: [TagsConstants.BREEDS],
             cancellationToken: cancellationToken);
         
         _logger.LogInformation("Get breeds with pagination Page: {Page}, PageSize: {PageSize}",

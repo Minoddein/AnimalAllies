@@ -7,6 +7,7 @@ using AnimalAllies.SharedKernel.Shared.Ids;
 using AnimalAllies.SharedKernel.Shared.ValueObjects;
 using AnimalAllies.Species.Application.Repository;
 using FluentValidation;
+using MediatR;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
@@ -18,17 +19,20 @@ public class CreateSpeciesHandler : ICommandHandler<CreateSpeciesCommand, Specie
     private readonly IValidator<CreateSpeciesCommand> _validator;
     private readonly IUnitOfWork _unitOfWork;
     private readonly ILogger<CreateSpeciesHandler> _logger;
+    private readonly IPublisher _publisher;
 
     public CreateSpeciesHandler(
         ISpeciesRepository repository, 
         IValidator<CreateSpeciesCommand> validator,
         ILogger<CreateSpeciesHandler> logger,
-        [FromKeyedServices(Constraints.Context.BreedManagement)]IUnitOfWork unitOfWork)
+        [FromKeyedServices(Constraints.Context.BreedManagement)]IUnitOfWork unitOfWork,
+        IPublisher publisher)
     {
         _repository = repository;
         _validator = validator;
         _logger = logger;
         _unitOfWork = unitOfWork;
+        _publisher = publisher;
     }
 
 
@@ -48,9 +52,11 @@ public class CreateSpeciesHandler : ICommandHandler<CreateSpeciesCommand, Specie
         if (result.IsFailure)
             return result.Errors;
         
-        _logger.LogInformation("Created species with id {speciesId}", speciesId.Id);
+        await _publisher.PublishDomainEvents(species, cancellationToken);
         
         await _unitOfWork.SaveChanges(cancellationToken);
+        
+        _logger.LogInformation("Created species with id {speciesId}", speciesId.Id);
         
         return result.Value;
     }

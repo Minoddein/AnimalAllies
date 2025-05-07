@@ -3,6 +3,7 @@ using AnimalAllies.Core.Abstractions;
 using AnimalAllies.Core.Database;
 using AnimalAllies.Core.DTOs.Accounts;
 using AnimalAllies.Core.Extension;
+using AnimalAllies.SharedKernel.CachingConstants;
 using AnimalAllies.SharedKernel.Constraints;
 using AnimalAllies.SharedKernel.Shared;
 using Dapper;
@@ -15,8 +16,6 @@ namespace AnimalAllies.Accounts.Application.AccountManagement.Queries.IsUserExis
 
 public class IsUserExistByIdHandler: IQueryHandler<bool, IsUserExistByIdQuery>
 {
-    private const string REDIS_KEY = "users_";
-    
     private readonly ILogger<IsUserExistByIdHandler> _logger;
     private readonly IValidator<IsUserExistByIdQuery> _validator;
     private readonly ISqlConnectionFactory _sqlConnectionFactory;
@@ -43,11 +42,12 @@ public class IsUserExistByIdHandler: IQueryHandler<bool, IsUserExistByIdQuery>
 
         var options = new HybridCacheEntryOptions
         {
-            Expiration = TimeSpan.FromMinutes(15)
+            Expiration = TimeSpan.FromMinutes(8),
+            LocalCacheExpiration = TimeSpan.FromMinutes(3)
         };
 
         var cacheUser = await _hybridCache.GetOrCreateAsync(
-            key: REDIS_KEY + query.UserId,
+            key: TagsConstants.USERS + "_" + query.UserId,
             factory: async _ =>
             {
                 var connection = _sqlConnectionFactory.Create();

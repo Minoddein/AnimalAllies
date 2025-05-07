@@ -4,6 +4,7 @@ public static class TagsConstants
 {
     public const string ACCOUNTS = "accounts";
     public const string USERS = "users";
+    public const string PERMISSIONS = "permissions";
     public const string BREEDS = "breeds";
     public const string SPECIES = "species";
     public const string PETS = "pets";
