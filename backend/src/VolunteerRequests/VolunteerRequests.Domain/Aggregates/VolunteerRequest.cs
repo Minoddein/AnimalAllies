@@ -129,7 +129,11 @@ public class VolunteerRequest: DomainEntity<VolunteerRequestId>
         RequestStatus = RequestStatus.Rejected;
         RejectionComment = rejectionComment;
 
-        var @event = new VolunteerRequestRejectedDomainEvent(AdminId, UserId, VolunteerInfo.Email.Value);
+        var @event = new VolunteerRequestRejectedDomainEvent(
+            AdminId, 
+            UserId,
+            VolunteerInfo.Email.Value, 
+            rejectionComment.Value);
         
         AddDomainEvent(@event);
         
@@ -147,8 +151,8 @@ public class VolunteerRequest: DomainEntity<VolunteerRequestId>
 
         //Возможно стоит передавать SocialNetworkDtos и CertificateDtos, но он в Core, поэтому думаем
         var @event = new ApprovedVolunteerRequestDomainEvent(
-            Id.Id,
             UserId,
+            AdminId,
             firstName,
             secondName,
             patronymic,

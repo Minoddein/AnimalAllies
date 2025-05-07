@@ -1,4 +1,6 @@
-﻿using AnimalAllies.Core.Database;
+﻿using AnimalAllies.Accounts.Contracts.Events;
+using AnimalAllies.Core.Database;
+using AnimalAllies.SharedKernel.CachingConstants;
 using AnimalAllies.SharedKernel.Constraints;
 using MediatR;
 using Microsoft.Extensions.DependencyInjection;
@@ -29,20 +31,32 @@ public class ApprovedVolunteerRequest: INotificationHandler<ApprovedVolunteerReq
 
     public async Task Handle(ApprovedVolunteerRequestDomainEvent notification, CancellationToken cancellationToken)
     {
-        var integrationEvent = new ApprovedVolunteerRequestEvent(
+        //TODO: Сделать обновление кэша в Accounts
+        var approvedIntegrationEvent = new ApprovedVolunteerRequestEvent(
             notification.UserId,
             notification.FirstName,
             notification.SecondName,
             notification.Patronymic,
             notification.WorkExperience);
         
-        await _outboxRepository.AddAsync(integrationEvent, cancellationToken);
+        await _outboxRepository.AddAsync(approvedIntegrationEvent, cancellationToken);
         
-        var integrationEventNotification = new SendNotificationApproveVolunteerRequestEvent(
+        var notificationIntegrationEvent = new SendNotificationApproveVolunteerRequestEvent(
             notification.UserId,
             notification.Email);
+        
+        var invalidationIntegrationEvent = new CacheInvalidateIntegrationEvent(
+            null, 
+            [
+                new string(TagsConstants.VOLUNTEER_REQUESTS + "_" +
+                           TagsConstants.VolunteerRequests.BY_USER + "_" + notification.UserId),
+                new string(TagsConstants.VOLUNTEER_REQUESTS + "_" + 
+                           TagsConstants.VolunteerRequests.BY_ADMIN + "_" + notification.AdminId)
+            ]);
 
-        await _outboxRepository.AddAsync(integrationEventNotification, cancellationToken);
+        await _outboxRepository.AddAsync(approvedIntegrationEvent, cancellationToken);
+
+        await _outboxRepository.AddAsync(notificationIntegrationEvent, cancellationToken);
         
         await _unitOfWork.SaveChanges(cancellationToken);
         
