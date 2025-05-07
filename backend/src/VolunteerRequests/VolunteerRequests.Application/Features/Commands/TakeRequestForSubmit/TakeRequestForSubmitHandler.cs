@@ -1,4 +1,5 @@
-﻿using AnimalAllies.Core.Abstractions;
+﻿using System.Transactions;
+using AnimalAllies.Core.Abstractions;
 using AnimalAllies.Core.Database;
 using AnimalAllies.Core.Extension;
 using AnimalAllies.SharedKernel.Constraints;
@@ -7,11 +8,9 @@ using AnimalAllies.SharedKernel.Shared.Errors;
 using AnimalAllies.SharedKernel.Shared.Ids;
 using Discussion.Contracts;
 using FluentValidation;
-using MassTransit;
 using MediatR;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using NotificationService.Contracts.Requests;
 using VolunteerRequests.Application.Repository;
 
 
@@ -24,7 +23,7 @@ public class TakeRequestForSubmitHandler: ICommandHandler<TakeRequestForSubmitCo
     private readonly IVolunteerRequestsRepository _repository;
     private readonly IDiscussionContract _discussionContract;
     private readonly IValidator<TakeRequestForSubmitCommand> _validator;
-    private readonly IPublishEndpoint _publishEndpoint;
+    private readonly IPublisher _publisher;
 
     public TakeRequestForSubmitHandler(
         ILogger<TakeRequestForSubmitHandler> logger, 
@@ -32,14 +31,14 @@ public class TakeRequestForSubmitHandler: ICommandHandler<TakeRequestForSubmitCo
         IVolunteerRequestsRepository repository, 
         IDiscussionContract discussionContract, 
         IValidator<TakeRequestForSubmitCommand> validator,
-        IPublishEndpoint publishEndpoint)
+        IPublisher publisher)
     {
         _logger = logger;
         _unitOfWork = unitOfWork;
         _repository = repository;
         _discussionContract = discussionContract;
         _validator = validator;
-        _publishEndpoint = publishEndpoint;
+        _publisher = publisher;
     }
 
     public async Task<Result> Handle(
@@ -50,7 +49,11 @@ public class TakeRequestForSubmitHandler: ICommandHandler<TakeRequestForSubmitCo
             return validatorResult.ToErrorList();
         
         
-        var transaction = await _unitOfWork.BeginTransaction(cancellationToken);
+        using var scope = new TransactionScope(
+            TransactionScopeOption.Required,
+            new TransactionOptions { IsolationLevel = IsolationLevel.ReadCommitted },
+            TransactionScopeAsyncFlowOption.Enabled
+        );
         try
         {
             var volunteerRequestId = VolunteerRequestId.Create(command.VolunteerRequestId);
@@ -68,26 +71,20 @@ public class TakeRequestForSubmitHandler: ICommandHandler<TakeRequestForSubmitCo
             var result = volunteerRequest.Value.TakeRequestForSubmit(command.AdminId, discussionId);
             if (result.IsFailure)
                 return result.Errors;
+            
+            await _publisher.PublishDomainEvents(volunteerRequest.Value, cancellationToken);
 
             await _unitOfWork.SaveChanges(cancellationToken);
             
-            transaction.Commit();
-            
-            var message = new SendNotificationTakeRequestForRevisionEvent(
-                volunteerRequest.Value.UserId,
-                volunteerRequest.Value.VolunteerInfo.Email.Value);
-
-            await _publishEndpoint.Publish(message, cancellationToken);
+            scope.Complete();
             
             _logger.LogInformation("admin with id {id} take volunteer request for submit with id {volunteerRequestId}",
                 command.AdminId, command.VolunteerRequestId);
 
             return Result.Success();
         }
-        catch (Exception e)
+        catch (Exception)
         {
-            transaction.Rollback();
-            
             _logger.LogError("Cannot take request for submit");
             
             return Error.Failure("take.request.for.submit.failure",

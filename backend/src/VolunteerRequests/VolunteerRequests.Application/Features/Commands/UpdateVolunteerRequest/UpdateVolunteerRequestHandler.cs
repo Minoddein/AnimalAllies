@@ -1,4 +1,5 @@
-﻿using AnimalAllies.Core.Abstractions;
+﻿using System.Transactions;
+using AnimalAllies.Core.Abstractions;
 using AnimalAllies.Core.Database;
 using AnimalAllies.Core.Extension;
 using AnimalAllies.SharedKernel.Constraints;
@@ -7,11 +8,10 @@ using AnimalAllies.SharedKernel.Shared.Errors;
 using AnimalAllies.SharedKernel.Shared.Ids;
 using AnimalAllies.SharedKernel.Shared.ValueObjects;
 using FluentValidation;
-using FluentValidation.Results;
+using MediatR;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using VolunteerRequests.Application.Repository;
-using VolunteerRequests.Domain.Aggregates;
 
 namespace VolunteerRequests.Application.Features.Commands.UpdateVolunteerRequest;
 
@@ -21,17 +21,20 @@ public class UpdateVolunteerRequestHandler : ICommandHandler<UpdateVolunteerRequ
     private readonly ILogger<UpdateVolunteerRequestHandler> _logger;
     private readonly IVolunteerRequestsRepository _repository;
     private readonly IValidator<UpdateVolunteerRequestCommand> _validator;
+    private readonly IPublisher _publisher;
 
     public UpdateVolunteerRequestHandler(
         [FromKeyedServices(Constraints.Context.VolunteerRequests)]IUnitOfWork unitOfWork,
         ILogger<UpdateVolunteerRequestHandler> logger,
         IVolunteerRequestsRepository repository,
-        IValidator<UpdateVolunteerRequestCommand> validator)
+        IValidator<UpdateVolunteerRequestCommand> validator,
+        IPublisher publisher)
     {
         _unitOfWork = unitOfWork;
         _logger = logger;
         _repository = repository;
         _validator = validator;
+        _publisher = publisher;
     }
 
     public async Task<Result<VolunteerRequestId>> Handle(
@@ -41,29 +44,45 @@ public class UpdateVolunteerRequestHandler : ICommandHandler<UpdateVolunteerRequ
         if (!validationResult.IsValid)
             return validationResult.ToErrorList();
 
-        var volunteerRequestId = VolunteerRequestId.Create(command.VolunteerRequestId);
-        var volunteerRequest = await _repository.GetById(volunteerRequestId, cancellationToken);
-        if (volunteerRequest.IsFailure)
-            return volunteerRequest.Errors;
-        
-        if (volunteerRequest.Value.UserId != command.UserId)
-            return volunteerRequest.Errors;
-        
-        var volunteerInfo = InitVolunteerInfo(command, cancellationToken).Value;
+        using var scope = new TransactionScope(
+            TransactionScopeOption.Required,
+            new TransactionOptions { IsolationLevel = IsolationLevel.ReadCommitted },
+            TransactionScopeAsyncFlowOption.Enabled
+        );
+        try
+        {
+            var volunteerRequestId = VolunteerRequestId.Create(command.VolunteerRequestId);
+            var volunteerRequest = await _repository.GetById(volunteerRequestId, cancellationToken);
+            if (volunteerRequest.IsFailure || volunteerRequest.Value.UserId != command.UserId)
+                return volunteerRequest.Errors;
 
-        var result = volunteerRequest.Value.UpdateVolunteerRequest(volunteerInfo);
-        if (result.IsFailure)
-            return result.Errors;
+            var volunteerInfo = InitVolunteerInfo(command).Value;
 
-        await _unitOfWork.SaveChanges(cancellationToken);
-        
-        _logger.LogInformation("volunteer request with id {id} was updated", command.VolunteerRequestId);
+            var result = volunteerRequest.Value.UpdateVolunteerRequest(volunteerInfo);
+            if (result.IsFailure)
+                return result.Errors;
 
-        return volunteerRequestId;
+            await _publisher.PublishDomainEvents(volunteerRequest.Value, cancellationToken);
+            
+            await _unitOfWork.SaveChanges(cancellationToken);
+            
+            scope.Complete();
+
+            _logger.LogInformation("volunteer request with id {id} was updated", command.VolunteerRequestId);
+
+            return volunteerRequestId;
+        }
+        catch (Exception)
+        {
+            _logger.LogError("Cannot update volunteer request");
+            
+            return Error.Failure("Fail.to.update.volunteer.request",
+                "Cannot update volunteer request");
+        }
     }
 
     private Result<VolunteerInfo> InitVolunteerInfo(
-        UpdateVolunteerRequestCommand command, CancellationToken cancellationToken)
+        UpdateVolunteerRequestCommand command)
     {
         var fullName = FullName.Create(
             command.FullNameDto.FirstName,

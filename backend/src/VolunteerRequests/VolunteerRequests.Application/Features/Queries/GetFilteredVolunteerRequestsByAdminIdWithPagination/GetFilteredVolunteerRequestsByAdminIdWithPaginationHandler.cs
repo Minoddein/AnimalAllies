@@ -1,11 +1,11 @@
 ﻿using System.Text;
-using System.Text.Json;
 using AnimalAllies.Core.Abstractions;
 using AnimalAllies.Core.Database;
 using AnimalAllies.Core.DTOs;
 using AnimalAllies.Core.DTOs.ValueObjects;
 using AnimalAllies.Core.Extension;
 using AnimalAllies.Core.Models;
+using AnimalAllies.SharedKernel.CachingConstants;
 using AnimalAllies.SharedKernel.Constraints;
 using AnimalAllies.SharedKernel.Shared;
 using Dapper;
@@ -13,15 +13,12 @@ using FluentValidation;
 using Microsoft.Extensions.Caching.Hybrid;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using VolunteerRequests.Domain.ValueObjects;
 
 namespace VolunteerRequests.Application.Features.Queries.GetFilteredVolunteerRequestsByAdminIdWithPagination;
 
 public class GetFilteredVolunteerRequestsByAdminIdWithPaginationHandler:
     IQueryHandler<PagedList<VolunteerRequestDto>, GetFilteredVolunteerRequestsByAdminIdWithPaginationQuery>
 {
-    private const string REDIS_KEY = "volunteer-requests_";
-    
     private readonly ISqlConnectionFactory _sqlConnectionFactory;
     private readonly IValidator<GetFilteredVolunteerRequestsByAdminIdWithPaginationQuery> _validator;
     private readonly ILogger<GetFilteredVolunteerRequestsByAdminIdWithPaginationHandler> _logger;
@@ -47,7 +44,7 @@ public class GetFilteredVolunteerRequestsByAdminIdWithPaginationHandler:
         if (!validationResult.IsValid)
             return validationResult.ToErrorList();
         
-        var cacheKey = $"{REDIS_KEY}{query.AdminId}" +
+        var cacheKey = $"{TagsConstants.VOLUNTEER_REQUESTS}_{query.AdminId}" +
                        $":status_{query.RequestStatus}" +
                        $":sort_{query.SortBy}" +
                        $":dir_{query.SortDirection}" +
@@ -56,12 +53,13 @@ public class GetFilteredVolunteerRequestsByAdminIdWithPaginationHandler:
 
         var options = new HybridCacheEntryOptions
         {
-            Expiration = TimeSpan.FromMinutes(2)
+            Expiration = TimeSpan.FromMinutes(3),
+            LocalCacheExpiration = TimeSpan.FromMinutes(1)
         };
         
         var result = await _hybridCache.GetOrCreateAsync(
             key:cacheKey,
-            factory:async cancelToken =>
+            factory:async _ =>
             {
                 var connection = _sqlConnectionFactory.Create();
                 var parameters = new DynamicParameters();
@@ -78,7 +76,7 @@ public class GetFilteredVolunteerRequestsByAdminIdWithPaginationHandler:
                     """);
 
                 var hasWhereClause = true;
-                var stringProperties = new Dictionary<string, string>() { { "request_status", query.RequestStatus } };
+                var stringProperties = new Dictionary<string, string> { { "request_status", query.RequestStatus } };
                 sql.ApplyFilterByString(ref hasWhereClause, stringProperties);
                 
                 sql.ApplySorting(query.SortBy, query.SortDirection);
@@ -99,6 +97,8 @@ public class GetFilteredVolunteerRequestsByAdminIdWithPaginationHandler:
                 return list;
             },
             options:options,
+            tags: [new string(TagsConstants.VOLUNTEER_REQUESTS + "_" + 
+                              TagsConstants.VolunteerRequests.BY_ADMIN + "_" + query.AdminId)],
             cancellationToken: cancellationToken);
         
         

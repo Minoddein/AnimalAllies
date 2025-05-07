@@ -25,6 +25,10 @@ public class VolunteerRequest: DomainEntity<VolunteerRequestId>
         UserId = userId;
         RequestStatus = RequestStatus.Waiting;
         RejectionComment = RejectionComment.Create(" ").Value;
+
+        var @event = new CreatedVolunteerRequestDomainEvent(id.Id, userId, VolunteerInfo.Email.Value);
+        
+        AddDomainEvent(@event);
     }
 
     public static Result<VolunteerRequest> Create(
@@ -43,7 +47,7 @@ public class VolunteerRequest: DomainEntity<VolunteerRequestId>
     public RequestStatus RequestStatus { get; private set; }
     public VolunteerInfo VolunteerInfo { get; private set; }
     public Guid AdminId { get; private set; }
-    public Guid UserId { get; private set; }
+    public Guid UserId { get; }
     public Guid DiscussionId { get; private set; }
     public RejectionComment RejectionComment { get; private set; }
 
@@ -55,6 +59,11 @@ public class VolunteerRequest: DomainEntity<VolunteerRequestId>
                 "Cannot update request that is not in revision required status");
         
         VolunteerInfo = volunteerInfo;
+
+        var @event = new UpdatedVolunteerRequestDomainEvent(AdminId, UserId);
+        
+        AddDomainEvent(@event);
+        
         return Result.Success();
     }
 
@@ -70,6 +79,10 @@ public class VolunteerRequest: DomainEntity<VolunteerRequestId>
         AdminId = adminId;
         DiscussionId = discussionId;
         
+        var @event = new TookRequestForSubmitDomainEvent(AdminId, UserId, VolunteerInfo.Email.Value);
+        
+        AddDomainEvent(@event);
+        
         return Result.Success();
     }
 
@@ -79,6 +92,10 @@ public class VolunteerRequest: DomainEntity<VolunteerRequestId>
             return Errors.General.ValueIsInvalid("volunteer request status");
         
         RequestStatus = RequestStatus.Submitted;
+        
+        var @event = new ResentVolunteerRequestDomainEvent(AdminId, UserId);
+        
+        AddDomainEvent(@event);
 
         return Result.Success();
     }
@@ -94,6 +111,10 @@ public class VolunteerRequest: DomainEntity<VolunteerRequestId>
         RequestStatus = RequestStatus.RevisionRequired;
         RejectionComment = rejectionComment;
         
+        var @event = new SentRequestForRevisionDomainEvent(Id.Id, AdminId, UserId, VolunteerInfo.Email.Value);
+        
+        AddDomainEvent(@event);
+        
         return Result.Success();
     }
     
@@ -108,7 +129,7 @@ public class VolunteerRequest: DomainEntity<VolunteerRequestId>
         RequestStatus = RequestStatus.Rejected;
         RejectionComment = rejectionComment;
 
-        var @event = new VolunteerRequestRejectedEvent(UserId);
+        var @event = new VolunteerRequestRejectedDomainEvent(AdminId, UserId, VolunteerInfo.Email.Value);
         
         AddDomainEvent(@event);
         
@@ -126,6 +147,7 @@ public class VolunteerRequest: DomainEntity<VolunteerRequestId>
 
         //Возможно стоит передавать SocialNetworkDtos и CertificateDtos, но он в Core, поэтому думаем
         var @event = new ApprovedVolunteerRequestDomainEvent(
+            Id.Id,
             UserId,
             firstName,
             secondName,

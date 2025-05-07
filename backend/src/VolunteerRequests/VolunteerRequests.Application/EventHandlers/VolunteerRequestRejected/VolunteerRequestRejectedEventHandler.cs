@@ -8,14 +8,14 @@ using VolunteerRequests.Domain.Events;
 
 namespace VolunteerRequests.Application.EventHandlers.VolunteerRequestRejected;
 
-public class VolunteerRequestRejected: INotificationHandler<VolunteerRequestRejectedEvent>
+public class VolunteerRequestRejectedEventHandler: INotificationHandler<VolunteerRequestRejectedDomainEvent>
 {
-    private readonly ILogger<VolunteerRequestRejected> _logger;
+    private readonly ILogger<VolunteerRequestRejectedEventHandler> _logger;
     private readonly IProhibitionSendingRepository _repository;
     private readonly IDateTimeProvider _dateTimeProvider;
 
-    public VolunteerRequestRejected(
-        ILogger<VolunteerRequestRejected> logger,
+    public VolunteerRequestRejectedEventHandler(
+        ILogger<VolunteerRequestRejectedEventHandler> logger,
         IProhibitionSendingRepository repository, 
         IDateTimeProvider dateTimeProvider)
     {
@@ -24,7 +24,7 @@ public class VolunteerRequestRejected: INotificationHandler<VolunteerRequestReje
         _dateTimeProvider = dateTimeProvider;
     }
 
-    public async Task Handle(VolunteerRequestRejectedEvent notification, CancellationToken cancellationToken)
+    public async Task Handle(VolunteerRequestRejectedDomainEvent notification, CancellationToken cancellationToken)
     {
         
         var prohibitionSendingId = ProhibitionSendingId.NewGuid();

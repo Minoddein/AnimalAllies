@@ -1,7 +1,6 @@
 ﻿using Hangfire;
 using Hangfire.PostgreSql;
 using MassTransit;
-using MassTransit.Middleware.Outbox;
 using Microsoft.AspNetCore.Mvc.Routing;
 using NotificationService.Api.Extensions;
 using NotificationService.Application.Abstraction;
@@ -11,8 +10,6 @@ using NotificationService.Infrastructure.DbContext;
 using NotificationService.Infrastructure.Services;
 using NotificationService.Options;
 using Outbox;
-using Outbox.Abstractions;
-using Outbox.Outbox;
 using Serilog;
 using EmailValidator = NotificationService.Validators.EmailValidator;
 

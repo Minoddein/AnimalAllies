@@ -11,7 +11,14 @@ public static class TagsConstants
     public const string VOLUNTEERS = "volunteers";
     public const string DISCUSSIONS = "discussions";
     public const string MESSAGES = "messages";
-    public const string VOLUNTEER_REQUESTS = "volunteers_requests";
+    public const string VOLUNTEER_REQUESTS = "volunteers-requests";
+
+    public static class VolunteerRequests
+    {
+        public const string IN_WAITING = "in-waiting";
+        public const string BY_ADMIN = "by-admin";
+        public const string BY_USER = "by-user";
+    }
 }
 
 public static class CacheChannels

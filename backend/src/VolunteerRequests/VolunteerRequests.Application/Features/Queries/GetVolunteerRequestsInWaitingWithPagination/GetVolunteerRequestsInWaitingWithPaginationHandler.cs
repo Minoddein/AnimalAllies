@@ -5,6 +5,7 @@ using AnimalAllies.Core.DTOs;
 using AnimalAllies.Core.DTOs.ValueObjects;
 using AnimalAllies.Core.Extension;
 using AnimalAllies.Core.Models;
+using AnimalAllies.SharedKernel.CachingConstants;
 using AnimalAllies.SharedKernel.Constraints;
 using AnimalAllies.SharedKernel.Shared;
 using Dapper;
@@ -19,8 +20,6 @@ namespace VolunteerRequests.Application.Features.Queries.GetVolunteerRequestsInW
 public class GetVolunteerRequestsInWaitingWithPaginationHandler:
     IQueryHandler<PagedList<VolunteerRequestDto>, GetVolunteerRequestsInWaitingWithPaginationQuery>
 {
-    private const string REDIS_KEY = "volunteer-requests_";
-    
     private readonly ISqlConnectionFactory _sqlConnectionFactory;
     private readonly IValidator<GetVolunteerRequestsInWaitingWithPaginationQuery> _validator;
     private readonly ILogger<GetVolunteerRequestsInWaitingWithPaginationHandler> _logger;
@@ -47,11 +46,12 @@ public class GetVolunteerRequestsInWaitingWithPaginationHandler:
 
         var options = new HybridCacheEntryOptions
         {
-            Expiration = TimeSpan.FromMinutes(1)
+            Expiration = TimeSpan.FromMinutes(1),
+            LocalCacheExpiration = TimeSpan.FromMinutes(1)
         };
         
         var cachedVolunteerRequests = await _hybridCache.GetOrCreateAsync(
-            key: $"{REDIS_KEY}{query.Page}_{query.PageSize}_{query.SortBy}_{query.SortDirection}",
+            key: $"{TagsConstants.VOLUNTEER_REQUESTS}_{query.Page}_{query.PageSize}_{query.SortBy}_{query.SortDirection}",
             factory: async _ =>
             {
                 var connection = _sqlConnectionFactory.Create();
@@ -97,6 +97,7 @@ public class GetVolunteerRequestsInWaitingWithPaginationHandler:
                 return result;
             },
             options: options,
+            tags: [new string(TagsConstants.VOLUNTEER_REQUESTS + "_" + TagsConstants.VolunteerRequests.IN_WAITING)],
             cancellationToken: cancellationToken);
         
         _logger.LogInformation("Get volunteer requests with pagination Page: {Page}, PageSize: {PageSize}",

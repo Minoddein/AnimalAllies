@@ -3,6 +3,7 @@
 namespace VolunteerRequests.Domain.Events;
 
 public record ApprovedVolunteerRequestDomainEvent(
+    Guid VolunteerRequestId,
     Guid UserId,
     string FirstName,
     string SecondName,

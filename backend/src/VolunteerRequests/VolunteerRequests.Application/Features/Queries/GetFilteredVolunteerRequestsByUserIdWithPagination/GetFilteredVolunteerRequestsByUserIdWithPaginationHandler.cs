@@ -1,11 +1,11 @@
 ﻿using System.Text;
-using System.Text.Json;
 using AnimalAllies.Core.Abstractions;
 using AnimalAllies.Core.Database;
 using AnimalAllies.Core.DTOs;
 using AnimalAllies.Core.DTOs.ValueObjects;
 using AnimalAllies.Core.Extension;
 using AnimalAllies.Core.Models;
+using AnimalAllies.SharedKernel.CachingConstants;
 using AnimalAllies.SharedKernel.Constraints;
 using AnimalAllies.SharedKernel.Shared;
 using Dapper;
@@ -19,8 +19,6 @@ namespace VolunteerRequests.Application.Features.Queries.GetFilteredVolunteerReq
 public class GetFilteredVolunteerRequestsByUserIdWithPaginationHandler:
     IQueryHandler<PagedList<VolunteerRequestDto>, GetFilteredVolunteerRequestsByUserIdWithPaginationQuery>
 {
-    private const string REDIS_KEY = "volunteer-requests_";
-    
     private readonly ISqlConnectionFactory _sqlConnectionFactory;
     private readonly IValidator<GetFilteredVolunteerRequestsByUserIdWithPaginationQuery> _validator;
     private readonly ILogger<GetFilteredVolunteerRequestsByUserIdWithPaginationHandler> _logger;
@@ -46,18 +44,20 @@ public class GetFilteredVolunteerRequestsByUserIdWithPaginationHandler:
         if (!validationResult.IsValid)
             return validationResult.ToErrorList();
         
-        var cacheKey = $"{REDIS_KEY}{query.UserId}_status-{query.RequestStatus}_sort-{query.SortBy}_" +
+        var cacheKey = $"{TagsConstants.VOLUNTEER_REQUESTS}_{query.UserId}_status-{query.RequestStatus}_sort" +
+                       $"-{query.SortBy}_" +
                        $"dir-{query.SortDirection}_page-{query.Page}_size-{query.PageSize}";
 
         var options = new HybridCacheEntryOptions
         {
-            Expiration = TimeSpan.FromMinutes(2)
+            Expiration = TimeSpan.FromMinutes(3),
+            LocalCacheExpiration = TimeSpan.FromMinutes(1)
         };
 
         
         var cachedVolunteerRequests = await _hybridCache.GetOrCreateAsync(
             key: cacheKey,
-            factory: async token =>
+            factory: async _ =>
             {
                 var connection = _sqlConnectionFactory.Create();
                 var parameters = new DynamicParameters();
@@ -87,7 +87,7 @@ public class GetFilteredVolunteerRequestsByUserIdWithPaginationHandler:
 
                 if (query.RequestStatus != null)
                 {
-                    var stringProperties = new Dictionary<string, string>() { { "request_status", query.RequestStatus } };
+                    var stringProperties = new Dictionary<string, string> { { "request_status", query.RequestStatus } };
                     sql.ApplyFilterByString(ref hasWhereClause, stringProperties);
                 }
 
@@ -107,6 +107,8 @@ public class GetFilteredVolunteerRequestsByUserIdWithPaginationHandler:
                 return result.ToList();
             },
             options: options,
+            tags: [new string(TagsConstants.VOLUNTEER_REQUESTS + "_" +
+                              TagsConstants.VolunteerRequests.BY_USER + "_" + query.UserId)],
             cancellationToken: cancellationToken);
         
         _logger.LogInformation("Get volunteer requests with pagination Page: {Page}, PageSize: {PageSize}",
@@ -119,7 +121,7 @@ public class GetFilteredVolunteerRequestsByUserIdWithPaginationHandler:
             Items = volunteerRequestDtos,
             PageSize = query.PageSize,
             Page = query.Page,
-            TotalCount = volunteerRequestDtos.Count()
+            TotalCount = volunteerRequestDtos.Count
         };
     }
 }
