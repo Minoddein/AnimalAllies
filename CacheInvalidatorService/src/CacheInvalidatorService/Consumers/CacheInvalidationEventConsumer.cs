@@ -21,12 +21,10 @@ public class CacheInvalidationEventConsumer: IConsumer<CacheInvalidateIntegratio
     {
         var message = context.Message;
 
-        var tagOrKey = message.Key.Split('_').Length > 1 ? "key" : "tag";
-        
-        if(tagOrKey == "key")
+        if(message.Key is not null)
             await _invalidatorService.InvalidateByKey(message.Key);
-        else
-            await _invalidatorService.InvalidateByTag(message.Key);
+        else if(message.Tags is not null)
+            await _invalidatorService.InvalidateByTag(message.Tags);
         
         _logger.LogInformation("User {key} has been invalidated", message.Key);
     }

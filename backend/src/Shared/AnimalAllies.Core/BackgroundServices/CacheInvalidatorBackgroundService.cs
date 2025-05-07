@@ -28,9 +28,11 @@ public class CacheInvalidatorBackgroundService: BackgroundService
         {
             try
             {
-                var key = message.ToString();
-                await _hybridCache.RemoveAsync(key, stoppingToken);
-                await _hybridCache.RemoveByTagAsync(key, stoppingToken);
+                var value = message.ToString().Split("|");
+                if(value.Length < 2)
+                    await _hybridCache.RemoveAsync(value, stoppingToken);
+                else
+                    await _hybridCache.RemoveByTagAsync(value, stoppingToken);
             }
             catch (Exception e)
             {

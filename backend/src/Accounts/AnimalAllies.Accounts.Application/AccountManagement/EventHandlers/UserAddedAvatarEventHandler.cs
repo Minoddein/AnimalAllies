@@ -28,7 +28,7 @@ public class UserAddedAvatarEventHandler: INotificationHandler<UserAddedAvatarDo
     {
         var key = TagsConstants.USERS + "_" + notification.UserId;
         
-        var integrationEvent = new CacheInvalidateIntegrationEvent(key);
+        var integrationEvent = new CacheInvalidateIntegrationEvent(key, null);
 
         await _outboxRepository.AddAsync(integrationEvent, cancellationToken);
 

@@ -7,8 +7,7 @@ public class InvalidatorService
 {
     private const string REDIS_PREFIX_INSTANCE = "AnimalAllies1_";
     private const string CACHE_CHANNEL = "cache_invalidator_channel";
-    private const string TAG_PREFIX = "tag_";
-    
+
     private readonly HybridCache _hybridCache;
     private readonly IConnectionMultiplexer _connectionMultiplexer;
     private readonly ISubscriber _subscriber;
@@ -34,11 +33,12 @@ public class InvalidatorService
         await _subscriber.PublishAsync(CACHE_CHANNEL, key);
     }
 
-    public async Task InvalidateByTag(string tag)
+    public async Task InvalidateByTag(IEnumerable<string> tags)
     {
-        await _hybridCache.RemoveByTagAsync(tag);
+        var tagsList = tags.ToList();
+        await _hybridCache.RemoveByTagAsync(tagsList);
         
-        await _subscriber.PublishAsync(CACHE_CHANNEL, tag);
+        await _subscriber.PublishAsync(CACHE_CHANNEL, string.Join('|', tagsList));
     }
 }
 

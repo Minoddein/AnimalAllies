@@ -17,8 +17,6 @@ namespace AnimalAllies.Species.Application.SpeciesManagement.Queries.GetBreedsBy
 
 public class GetBreedsBySpeciesIdWithPaginationHandlerDapper: IQueryHandler<PagedList<BreedDto>, GetBreedsBySpeciesIdWithPaginationQuery>
 {
-    private const string REDIS_KEY = "breeds_";
-    
     private readonly ISqlConnectionFactory _sqlConnectionFactory;
     private readonly IValidator<GetBreedsBySpeciesIdWithPaginationQuery> _validator;
     private readonly ILogger<GetBreedsBySpeciesIdWithPaginationHandlerDapper> _logger;
@@ -41,24 +39,6 @@ public class GetBreedsBySpeciesIdWithPaginationHandlerDapper: IQueryHandler<Page
         var validatorResult = await _validator.ValidateAsync(query, cancellationToken);
         if (!validatorResult.IsValid)
             return validatorResult.ToErrorList();
-
-        var connection = _sqlConnectionFactory.Create();
-
-        var parameters = new DynamicParameters();
-        
-        parameters.Add("@SpeciesId", query.SpeciesId);
-
-        var sql = new StringBuilder("""
-                                    select 
-                                        id,
-                                        name,
-                                        species_id
-                                        from species.breeds
-                                    where species_id = @SpeciesId
-                                    """);
-
-        sql.ApplySorting(query.SortBy, query.SortDirection);
-        sql.ApplyPagination(query.Page,query.PageSize);
         
         var options = new HybridCacheEntryOptions
         {
@@ -67,8 +47,29 @@ public class GetBreedsBySpeciesIdWithPaginationHandlerDapper: IQueryHandler<Page
         };
         
         var cachedBreeds = await _hybridCache.GetOrCreateAsync(
-            key: REDIS_KEY + query.GetHashCode(),
-            factory: async _ => await connection.QueryAsync<BreedDto>(sql.ToString(), parameters),
+            key: $"{TagsConstants.BREEDS}_{query.SpeciesId}_{query.Page}_{query.PageSize}_{query.SortBy}_{query.SortDirection}",
+            factory: async _ =>
+            {
+                var connection = _sqlConnectionFactory.Create();
+
+                var parameters = new DynamicParameters();
+        
+                parameters.Add("@SpeciesId", query.SpeciesId);
+
+                var sql = new StringBuilder("""
+                                            select 
+                                                id,
+                                                name,
+                                                species_id
+                                                from species.breeds
+                                            where species_id = @SpeciesId
+                                            """);
+
+                sql.ApplySorting(query.SortBy, query.SortDirection);
+                sql.ApplyPagination(query.Page,query.PageSize);
+                
+                return await connection.QueryAsync<BreedDto>(sql.ToString(), parameters);
+            },
             options: options,
             tags: [TagsConstants.BREEDS],
             cancellationToken: cancellationToken);
@@ -90,38 +91,26 @@ public class GetBreedsBySpeciesIdWithPaginationHandlerDapper: IQueryHandler<Page
     
     public async Task<Result<List<BreedDto>>> Handle(Guid speciesId, CancellationToken cancellationToken = default)
     {
-        var options = new HybridCacheEntryOptions
-        {
-            Expiration = TimeSpan.FromHours(24)
-        };
-        
-        var cachedBreeds = await _hybridCache.GetOrCreateAsync(
-            key: REDIS_KEY,
-            factory: async _ =>
-            {
-                var connection = _sqlConnectionFactory.Create();
+        var connection = _sqlConnectionFactory.Create();
 
-                var parameters = new DynamicParameters();
+        var parameters = new DynamicParameters();
         
-                parameters.Add("@SpeciesId", speciesId);
+        parameters.Add("@SpeciesId", speciesId);
 
-                var sql = new StringBuilder("""
-                                            select 
-                                                id,
-                                                name,
-                                                species_id
-                                                from species.breeds
-                                            where species_id = @SpeciesId
-                                            """);
-                
-                return await connection.QueryAsync<BreedDto>(sql.ToString(), parameters);
-            },
-            options: options,
-            cancellationToken: cancellationToken);
+        var sql = new StringBuilder("""
+                                    select 
+                                        id,
+                                        name,
+                                        species_id
+                                        from species.breeds
+                                    where species_id = @SpeciesId
+                                    """);
+        
+        var breeds = await connection.QueryAsync<BreedDto>(sql.ToString(), parameters);
         
         _logger.LogInformation("Get breeds with pagination with {speciesId}", speciesId);
 
-        return cachedBreeds.ToList();
+        return breeds.ToList();
     }
     
 }
