@@ -27,7 +27,7 @@ public class BreedCreatedEventHandler: INotificationHandler<BreedCreatedDomainEv
     {
         var integrationEvent = new CacheInvalidateIntegrationEvent(
             null, 
-            [TagsConstants.BREEDS + "_" + notification.SpeciesId]);
+            [new string(TagsConstants.BREEDS + "_" + notification.SpeciesId)]);
 
         await _outboxRepository.AddAsync(integrationEvent, cancellationToken);
 

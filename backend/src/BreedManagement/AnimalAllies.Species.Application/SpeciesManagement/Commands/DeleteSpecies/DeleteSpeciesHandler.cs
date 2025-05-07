@@ -6,8 +6,10 @@ using AnimalAllies.SharedKernel.Shared;
 using AnimalAllies.SharedKernel.Shared.Errors;
 using AnimalAllies.SharedKernel.Shared.Ids;
 using AnimalAllies.Species.Application.Repository;
+using AnimalAllies.Species.Domain.DomainEvents;
 using AnimalAllies.Volunteer.Contracts;
 using FluentValidation;
+using MediatR;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
@@ -20,19 +22,22 @@ public class DeleteSpeciesHandler: ICommandHandler<DeleteSpeciesCommand, Species
     private readonly IValidator<DeleteSpeciesCommand> _validator;
     private readonly IUnitOfWork _unitOfWork;
     private readonly ILogger<DeleteSpeciesHandler> _logger;
-
+    private readonly IPublisher _publisher;
+    
     public DeleteSpeciesHandler(
         ISpeciesRepository repository,
         IValidator<DeleteSpeciesCommand> validator,
         ILogger<DeleteSpeciesHandler> logger, 
         [FromKeyedServices(Constraints.Context.BreedManagement)]IUnitOfWork unitOfWork,
-        IVolunteerContract volunteerContract)
+        IVolunteerContract volunteerContract, 
+        IPublisher publisher)
     {
         _repository = repository;
         _validator = validator;
         _logger = logger;
         _unitOfWork = unitOfWork;
         _volunteerContract = volunteerContract;
+        _publisher = publisher;
     }
 
     public async Task<Result<SpeciesId>> Handle(DeleteSpeciesCommand command, CancellationToken cancellationToken = default)
@@ -57,6 +62,10 @@ public class DeleteSpeciesHandler: ICommandHandler<DeleteSpeciesCommand, Species
         if (result.IsFailure)
             return Error.Failure("delete.species.failure", "species deletion failed");
 
+        var @event = new SpeciesDeletedDomainEvent(species.Value.Id.Id);
+        
+        await _publisher.PublishDomainEvent(@event, cancellationToken);
+        
         await _unitOfWork.SaveChanges(cancellationToken);
         
         _logger.LogInformation("Species with id {speciesId} has been deleted", speciesId.Id);
