@@ -17,25 +17,21 @@ using Microsoft.Extensions.Logging;
 
 namespace AnimalAllies.Volunteer.Application.VolunteerManagement.Queries.GetPetsBySpeciesId;
 
-public class GetPetsBySpeciesIdHandler: IQueryHandler<List<PetDto>, GetPetsBySpeciesIdQuery>
+public class GetPetsBySpeciesIdHandler : IQueryHandler<List<PetDto>, GetPetsBySpeciesIdQuery>
 {
-    private const string REDIS_KEY = "pets_";
-
-    private readonly HybridCache _hybridCache;
     private readonly ISqlConnectionFactory _sqlConnectionFactory;
     private readonly ILogger<GetPetsBySpeciesIdHandler> _logger;
     private readonly IValidator<GetPetsBySpeciesIdQuery> _validator;
 
     public GetPetsBySpeciesIdHandler(
-        [FromKeyedServices(Constraints.Context.PetManagement)]ISqlConnectionFactory sqlConnectionFactory,
+        [FromKeyedServices(Constraints.Context.PetManagement)]
+        ISqlConnectionFactory sqlConnectionFactory,
         ILogger<GetPetsBySpeciesIdHandler> logger,
-        IValidator<GetPetsBySpeciesIdQuery> validator,
-        HybridCache hybridCache)
+        IValidator<GetPetsBySpeciesIdQuery> validator)
     {
         _sqlConnectionFactory = sqlConnectionFactory;
         _logger = logger;
         _validator = validator;
-        _hybridCache = hybridCache;
     }
 
     public async Task<Result<List<PetDto>>> Handle(
@@ -46,70 +42,58 @@ public class GetPetsBySpeciesIdHandler: IQueryHandler<List<PetDto>, GetPetsBySpe
         if (!validatorResult.IsValid)
             return validatorResult.ToErrorList();
 
-        var options = new HybridCacheEntryOptions
-        {
-            Expiration = TimeSpan.FromHours(8)
-        };
-        
-        var cachedPets = await _hybridCache.GetOrCreateAsync(
-            key:  $"{REDIS_KEY}{query.SpeciesId}_{query.Page}_{query.PageSize}",
-            factory: async _ =>
-            {
-                var connection = _sqlConnectionFactory.Create();
+        var connection = _sqlConnectionFactory.Create();
 
-                var parameters = new DynamicParameters();
-        
-                parameters.Add("@SpeciesId", query.SpeciesId);
-        
-                var sql = new StringBuilder("""
-                                            select 
-                                                id,
-                                                volunteer_id,
-                                                name,
-                                                city,
-                                                state,
-                                                street,
-                                                zip_code,
-                                                breed_id,
-                                                species_id,
-                                                help_status,
-                                                phone_number,
-                                                birth_date,
-                                                color,
-                                                height,
-                                                weight,
-                                                is_castrated,
-                                                is_vaccinated,
-                                                position,
-                                                health_information,
-                                                pet_details_description,
-                                                requisites,
-                                                pet_photos
-                                                from volunteers.pets
-                                                where species_id = @SpeciesId and
-                                                    is_deleted = false
-                                            """);
-        
-                sql.ApplyPagination(query.Page, query.PageSize);
-                
-                return await connection.QueryAsync<PetDto, RequisiteDto[], PetPhotoDto[], PetDto>(
-                    sql.ToString(),
-                    (pet, requisites, petPhotoDtos) =>
-                    {
-                        pet.Requisites = requisites;
-                    
-                        pet.PetPhotos = petPhotoDtos;
-                    
-                        return pet;
-                    },
-                    splitOn:"requisites, pet_photos",
-                    param: parameters);
+        var parameters = new DynamicParameters();
+
+        parameters.Add("@SpeciesId", query.SpeciesId);
+
+        var sql = new StringBuilder("""
+                                    select 
+                                        id,
+                                        volunteer_id,
+                                        name,
+                                        city,
+                                        state,
+                                        street,
+                                        zip_code,
+                                        breed_id,
+                                        species_id,
+                                        help_status,
+                                        phone_number,
+                                        birth_date,
+                                        color,
+                                        height,
+                                        weight,
+                                        is_castrated,
+                                        is_vaccinated,
+                                        position,
+                                        health_information,
+                                        pet_details_description,
+                                        requisites,
+                                        pet_photos
+                                        from volunteers.pets
+                                        where species_id = @SpeciesId and
+                                            is_deleted = false
+                                    """);
+
+        sql.ApplyPagination(query.Page, query.PageSize);
+
+        var petsQuery = await connection.QueryAsync<PetDto, RequisiteDto[], PetPhotoDto[], PetDto>(
+            sql.ToString(),
+            (pet, requisites, petPhotoDtos) =>
+            {
+                pet.Requisites = requisites;
+
+                pet.PetPhotos = petPhotoDtos;
+
+                return pet;
             },
-            options: options,
-            cancellationToken: cancellationToken);
-        
+            splitOn: "requisites, pet_photos",
+            param: parameters);
+
         _logger.LogInformation("Get pets with species id {speciesId}", query.SpeciesId);
 
-        return cachedPets.ToList();
+        return petsQuery.ToList();
     }
 }
