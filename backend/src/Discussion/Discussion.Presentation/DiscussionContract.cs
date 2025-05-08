@@ -15,12 +15,16 @@ public class DiscussionContract: IDiscussionContract
         _createDiscussionHandler = createDiscussionHandler;
     }
 
-    public async Task<Result<DiscussionId>> CreateDiscussionHandler(
+    public async Task<Guid> CreateDiscussionHandler(
         Guid firstMember, 
         Guid secondMember,
         Guid relationId,
         CancellationToken cancellationToken = default)
     {
-        return await _createDiscussionHandler.Handle(firstMember, secondMember, relationId, cancellationToken);
+        var result = await _createDiscussionHandler.Handle(firstMember, secondMember, relationId, cancellationToken);
+        if (result.IsFailure)
+            return Guid.Empty;
+        
+        return result.Value.Id;
     }
 }

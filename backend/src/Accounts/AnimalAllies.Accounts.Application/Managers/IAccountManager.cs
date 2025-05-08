@@ -1,5 +1,4 @@
 ﻿using AnimalAllies.Accounts.Domain;
-using AnimalAllies.Core.DTOs.Accounts;
 using AnimalAllies.SharedKernel.Shared;
 
 namespace AnimalAllies.Accounts.Application.Managers;

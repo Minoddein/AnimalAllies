@@ -5,11 +5,13 @@ using AnimalAllies.Core.Database;
 using AnimalAllies.Core.DTOs;
 using AnimalAllies.Core.DTOs.ValueObjects;
 using AnimalAllies.Core.Extension;
+using AnimalAllies.SharedKernel.CachingConstants;
 using AnimalAllies.SharedKernel.Constraints;
 using AnimalAllies.SharedKernel.Shared;
 using AnimalAllies.SharedKernel.Shared.Errors;
 using Dapper;
 using FluentValidation;
+using Microsoft.Extensions.Caching.Hybrid;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
@@ -20,15 +22,19 @@ public class GetPetByIdHandler : IQueryHandler<PetDto, GetPetByIdQuery>
     private readonly ISqlConnectionFactory _sqlConnectionFactory;
     private readonly ILogger<GetPetByIdHandler> _logger;
     private readonly IValidator<GetPetByIdQuery> _validator;
+    private readonly HybridCache _hybridCache;
 
     public GetPetByIdHandler(
-        [FromKeyedServices(Constraints.Context.PetManagement)]ISqlConnectionFactory sqlConnectionFactory,
+        [FromKeyedServices(Constraints.Context.PetManagement)]
+        ISqlConnectionFactory sqlConnectionFactory,
         ILogger<GetPetByIdHandler> logger,
-        IValidator<GetPetByIdQuery> validator)
+        IValidator<GetPetByIdQuery> validator,
+        HybridCache hybridCache)
     {
         _sqlConnectionFactory = sqlConnectionFactory;
         _logger = logger;
         _validator = validator;
+        _hybridCache = hybridCache;
     }
 
     public async Task<Result<PetDto>> Handle(GetPetByIdQuery query, CancellationToken cancellationToken = default)
@@ -36,11 +42,11 @@ public class GetPetByIdHandler : IQueryHandler<PetDto, GetPetByIdQuery>
         var validatorResult = await _validator.ValidateAsync(query, cancellationToken);
         if (!validatorResult.IsValid)
             return validatorResult.ToErrorList();
-        
+
         var connection = _sqlConnectionFactory.Create();
 
         var parameters = new DynamicParameters();
-        
+
         parameters.Add("@PetId", query.PetId);
 
         var sql = new StringBuilder("""
@@ -68,29 +74,29 @@ public class GetPetByIdHandler : IQueryHandler<PetDto, GetPetByIdQuery>
                                         requisites,
                                         pet_photos
                                         from volunteers.pets
+                                        where id = @PetId limit 1
                                     """);
         
-        var pets = 
-            await connection.QueryAsync<PetDto, RequisiteDto[], PetPhotoDto[], PetDto>(
-                sql.ToString(),
-                (pet, requisites, petPhotoDtos) =>
-                {
-                    pet.Requisites = requisites;
-                    
-                    pet.PetPhotos = petPhotoDtos;
-                    
-                    return pet;
-                },
-                splitOn:"requisites, pet_photos",
-                param: parameters);
-        
-        var result = pets.FirstOrDefault();
+        var petsQuery = await connection.QueryAsync<PetDto, RequisiteDto[], PetPhotoDto[], PetDto>(
+            sql.ToString(),
+            (pet, requisites, petPhotoDtos) =>
+            {
+                pet.Requisites = requisites;
 
-        if (result is null) 
+                pet.PetPhotos = petPhotoDtos;
+
+                return pet;
+            },
+            splitOn: "requisites, pet_photos",
+            param: parameters);
+
+        var result = petsQuery.FirstOrDefault();
+
+        if (result is null)
             return Errors.General.NotFound();
-        
+
         _logger.LogInformation("Get pet with id {petId}", query.PetId);
-        
+
         return result;
     }
 }

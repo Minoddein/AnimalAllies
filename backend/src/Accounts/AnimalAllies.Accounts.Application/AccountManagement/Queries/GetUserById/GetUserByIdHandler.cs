@@ -1,16 +1,16 @@
 ﻿using System.Data;
 using System.Text;
-using System.Text.Json;
-using AnimalAllies.Accounts.Domain;
 using AnimalAllies.Core.Abstractions;
 using AnimalAllies.Core.Database;
 using AnimalAllies.Core.DTOs.Accounts;
 using AnimalAllies.Core.DTOs.ValueObjects;
 using AnimalAllies.Core.Extension;
+using AnimalAllies.SharedKernel.CachingConstants;
 using AnimalAllies.SharedKernel.Constraints;
 using AnimalAllies.SharedKernel.Shared;
 using Dapper;
 using FluentValidation;
+using Microsoft.Extensions.Caching.Hybrid;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
@@ -21,15 +21,18 @@ public class GetUserByIdHandler: IQueryHandler<UserDto?, GetUserByIdQuery>
     private readonly ILogger<GetUserByIdHandler> _logger;
     private readonly IValidator<GetUserByIdQuery> _validator;
     private readonly ISqlConnectionFactory _sqlConnectionFactory;
+    private readonly HybridCache _hybridCache;
 
     public GetUserByIdHandler(
         ILogger<GetUserByIdHandler> logger,
         IValidator<GetUserByIdQuery> validator, 
-        [FromKeyedServices(Constraints.Context.Accounts)]ISqlConnectionFactory sqlConnectionFactory)
+        [FromKeyedServices(Constraints.Context.Accounts)]ISqlConnectionFactory sqlConnectionFactory,
+        HybridCache hybridCache)
     {
         _logger = logger;
         _validator = validator;
         _sqlConnectionFactory = sqlConnectionFactory;
+        _hybridCache = hybridCache;
     }
 
     public async Task<Result<UserDto?>> Handle(
@@ -39,15 +42,30 @@ public class GetUserByIdHandler: IQueryHandler<UserDto?, GetUserByIdQuery>
         if (!validatorResult.IsValid)
             return validatorResult.ToErrorList();
         
-        var connection = _sqlConnectionFactory.Create();
+        var options = new HybridCacheEntryOptions
+        {
+            Expiration = TimeSpan.FromMinutes(8),
+            LocalCacheExpiration = TimeSpan.FromMinutes(3)
+        };
 
-        var parameters = new DynamicParameters();
-        
-        parameters.Add("@UserId", query.UserId);
+        var cacheUser = await _hybridCache.GetOrCreateAsync(
+            key: TagsConstants.USERS + "_" + query.UserId,
+            factory: async _ =>
+            {
+                var connection = _sqlConnectionFactory.Create();
 
-        var user = (await GetUser(connection, parameters)).FirstOrDefault();
+                var parameters = new DynamicParameters();
         
-        return user;
+                parameters.Add("@UserId", query.UserId);
+                
+                return (await GetUser(connection, parameters)).FirstOrDefault();
+            },
+            options: options,
+            cancellationToken: cancellationToken);
+        
+        _logger.LogInformation("Got user by id {userId}", cacheUser?.Id);
+        
+        return cacheUser;
     }
     
 
@@ -79,43 +97,6 @@ public class GetUserByIdHandler: IQueryHandler<UserDto?, GetUserByIdQuery>
                                              left join accounts.volunteer_accounts va on u.volunteer_account_id = va.id
                                     where u.id = @UserId limit 1
                                     """);
-
-        /*var user = await connection
-            .QueryAsync<UserDto, RoleDto,VolunteerAccountDto?,ParticipantAccountDto?,string,string, string, UserDto>(
-                sql.ToString(),
-                (user, role,volunteer,participant, jsonSocialNetworks, jsonRequisites, jsonCertificates) =>
-                {
-                    var socialNetworks = JsonSerializer
-                        .Deserialize<SocialNetworkDto[]>(jsonSocialNetworks) ?? [];
-                    user.SocialNetworks = socialNetworks;
-
-                    if (volunteer is not null)
-                    {
-                        volunteer.Requisites = jsonRequisites != null
-                            ? JsonSerializer.Deserialize<RequisiteDto[]>(jsonRequisites)
-                            : [];
-                        
-                        volunteer.Certificates = jsonCertificates != null 
-                            ? JsonSerializer.Deserialize<CertificateDto[]>(jsonCertificates)
-                            : [];
-                        
-                        user.VolunteerAccount = volunteer;
-                        user.VolunteerAccountId = volunteer.VolunteerId;
-                    }
-
-                    if (participant is not null)
-                    {
-                        user.ParticipantAccount = participant;
-                        user.ParticipantAccountId = participant.ParticipantId;
-                    }
-
-                    user.Roles = [role];
-                    
-                    return user;
-                },
-                param: parameters,
-                splitOn: "role_id, volunteer_id, participant_id, social_networks, requisites, certificates"
-            );*/
         
         var user = await connection
             .QueryAsync<UserDto, RoleDto, VolunteerAccountDto?, ParticipantAccountDto?, SocialNetworkDto[], RequisiteDto[], CertificateDto[], UserDto>(

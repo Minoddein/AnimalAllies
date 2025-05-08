@@ -1,5 +1,7 @@
+using System.Transactions;
 using AnimalAllies.Accounts.Contracts.Responses;
 using AnimalAllies.Accounts.Domain;
+using AnimalAllies.Accounts.Domain.DomainEvents;
 using AnimalAllies.Core.Abstractions;
 using AnimalAllies.Core.Database;
 using AnimalAllies.Core.Extension;
@@ -10,6 +12,7 @@ using AnimalAllies.SharedKernel.Shared.ValueObjects;
 using FileService.Communication;
 using FileService.Contract.Requests;
 using FluentValidation;
+using MediatR;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -24,19 +27,22 @@ public class AddAvatarHandler: ICommandHandler<AddAvatarCommand, AddAvatarRespon
     private readonly IUnitOfWork _unitOfWork;
     private readonly UserManager<User> _userManager;
     private readonly FileHttpClient _fileHttpClient;
+    private readonly IPublisher _publisher;
 
     public AddAvatarHandler(
         ILogger<AddAvatarHandler> logger, 
         IValidator<AddAvatarCommand> validator,
         [FromKeyedServices(Constraints.Context.Accounts)]IUnitOfWork unitOfWork,
         UserManager<User> userManager, 
-        FileHttpClient fileHttpClient)
+        FileHttpClient fileHttpClient,
+        IPublisher publisher)
     {
         _logger = logger;
         _validator = validator;
         _unitOfWork = unitOfWork;
         _userManager = userManager;
         _fileHttpClient = fileHttpClient;
+        _publisher = publisher;
     }
 
     public async Task<Result<AddAvatarResponse>> Handle(
@@ -46,27 +52,48 @@ public class AddAvatarHandler: ICommandHandler<AddAvatarCommand, AddAvatarRespon
         if (!validatorResult.IsValid)
             return validatorResult.ToErrorList();
 
-        var user = await _userManager.Users.FirstOrDefaultAsync(u => u.Id == command.UserId, cancellationToken);
-        if (user is null)
-            return Errors.General.NotFound();
+        using var scope = new TransactionScope(
+            TransactionScopeOption.Required,
+            new TransactionOptions { IsolationLevel = IsolationLevel.ReadCommitted },
+            TransactionScopeAsyncFlowOption.Enabled
+        );
 
-        var request = new UploadPresignedUrlRequest(
-            command.UploadFileDto.BucketName,
-            command.UploadFileDto.FileName,
-            command.UploadFileDto.ContentType);
+        try
+        {
+            var user = await _userManager.Users.FirstOrDefaultAsync(u => u.Id == command.UserId, cancellationToken);
+            if (user is null)
+                return Errors.General.NotFound();
 
-        var response = await _fileHttpClient.GetUploadPresignedUrlAsync(request, cancellationToken);
-        if (response is null)
-            return Errors.General.Null("response from file service is null");
+            var request = new UploadPresignedUrlRequest(
+                command.UploadFileDto.BucketName,
+                command.UploadFileDto.FileName,
+                command.UploadFileDto.ContentType);
 
-        user.Photo = response.FileId + response.Extension;
+            var response = await _fileHttpClient.GetUploadPresignedUrlAsync(request, cancellationToken);
+            if (response is null)
+                return Errors.General.Null("response from file service is null");
 
-        var addAvatarResponse = new AddAvatarResponse(response.UploadUrl);
+            user.Photo = response.FileId + response.Extension;
 
-        await _unitOfWork.SaveChanges(cancellationToken);
+            var addAvatarResponse = new AddAvatarResponse(response.UploadUrl);
 
-        _logger.LogInformation("Added avatar to user with id {id}", command.UserId);
-        
-        return addAvatarResponse;
+            var @event = new UserAddedAvatarDomainEvent(user.Id);
+
+            await _publisher.Publish(@event, cancellationToken);
+
+            await _unitOfWork.SaveChanges(cancellationToken);
+            
+            scope.Complete();
+
+            _logger.LogInformation("Added avatar to user with id {id}", command.UserId);
+
+            return addAvatarResponse;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error adding avatar to user with id {id}", command.UserId);
+
+            return Error.Failure("fail.to.add.avatar", "Fail to add avatar to user");
+        }
     }
 }

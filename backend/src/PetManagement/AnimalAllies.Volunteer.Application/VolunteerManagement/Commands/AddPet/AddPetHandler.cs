@@ -84,19 +84,19 @@ public class AddPetHandler : ICommandHandler<AddPetCommand, Guid>
             command.Address.ZipCode).Value;
 
         var species = await _speciesContracts.GetSpecies(cancellationToken);
-        if (species.IsFailure)
-            return species.Errors;
-
-        var isSpeciesExist = species.Value.FirstOrDefault(s => s.Id == command.AnimalType.SpeciesId);
-        if (isSpeciesExist is null)
+        if (!species.Any())
             return Errors.General.NotFound();
 
-        var breeds = await _speciesContracts.GetBreedsBySpeciesId(isSpeciesExist.Id,cancellationToken);
-        if (breeds.IsFailure)
-            return breeds.Errors;
+        var isSpeciesExist = species.FirstOrDefault(s => s == command.AnimalType.SpeciesId);
+        if (isSpeciesExist == Guid.Empty)
+            return Errors.General.NotFound();
 
-        var isBreedExist = breeds.Value.FirstOrDefault(b => b.Id == command.AnimalType.BreedId);
-        if (isBreedExist is null)
+        var breeds = await _speciesContracts.GetBreedsBySpeciesId(isSpeciesExist,cancellationToken);
+        if (!breeds.Any())
+            return Errors.General.NotFound();
+
+        var isBreedExist = breeds.FirstOrDefault(b => b == command.AnimalType.BreedId);
+        if (isBreedExist == Guid.Empty)
             return Errors.General.NotFound();
         
         var animalType = new AnimalType(SpeciesId.Create(command.AnimalType.SpeciesId), command.AnimalType.BreedId);

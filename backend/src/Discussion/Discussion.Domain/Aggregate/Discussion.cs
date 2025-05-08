@@ -2,12 +2,13 @@
 using AnimalAllies.SharedKernel.Shared.Errors;
 using AnimalAllies.SharedKernel.Shared.Ids;
 using AnimalAllies.SharedKernel.Shared.Objects;
+using Discussion.Domain.DomainEvents;
 using Discussion.Domain.Entities;
 using Discussion.Domain.ValueObjects;
 
 namespace Discussion.Domain.Aggregate;
 
-public class Discussion: Entity<DiscussionId>
+public class Discussion: DomainEntity<DiscussionId>
 {
     private List<Message> _messages = [];
     private Discussion(DiscussionId id) : base(id){}
@@ -17,6 +18,10 @@ public class Discussion: Entity<DiscussionId>
         Users = users;
         RelationId = relationId;
         DiscussionStatus = DiscussionStatus.Open;
+        
+        var @event = new CreatedDiscussionDomainEvent(relationId);
+        
+        AddDomainEvent(@event);
     }
     
     public DiscussionStatus DiscussionStatus { get; private set; }
@@ -28,7 +33,7 @@ public class Discussion: Entity<DiscussionId>
     {
         if (relationId == Guid.Empty)
             return Errors.General.Null("relation id");
-
+        
         return new Discussion(id, users, relationId);
     }
 
@@ -39,6 +44,10 @@ public class Discussion: Entity<DiscussionId>
                 "Send comment can user that take part in discussion");
         
         _messages.Add(message);
+        
+        var @event = new PostedMessageDomainEvent(RelationId);
+        
+        AddDomainEvent(@event);
 
         return Result.Success();
     }
@@ -54,6 +63,10 @@ public class Discussion: Entity<DiscussionId>
                 "Delete comment can user that sent this message");
 
         _messages.Remove(message.Value);
+        
+        var @event = new DeletedMessageDomainEvent(RelationId);
+        
+        AddDomainEvent(@event);
 
         return Result.Success();
     }
@@ -69,6 +82,10 @@ public class Discussion: Entity<DiscussionId>
                 "Edit comment can user that sent this message");
 
         message.Value.Edit(text);
+        
+        var @event = new UpdatedMessageDomainEvent(RelationId);
+        
+        AddDomainEvent(@event);
 
         return Result.Success();
     }
@@ -83,6 +100,10 @@ public class Discussion: Entity<DiscussionId>
                 "close discussion can user that take part in discussion");
         
         DiscussionStatus = DiscussionStatus.Closed;
+        
+        var @event = new ClosedDiscussionDomainEvent(RelationId);
+        
+        AddDomainEvent(@event);
         
         return Result.Success();
     }

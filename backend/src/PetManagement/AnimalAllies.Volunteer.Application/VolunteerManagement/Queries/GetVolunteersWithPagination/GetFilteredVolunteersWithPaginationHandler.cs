@@ -1,6 +1,5 @@
 ﻿using System.Linq.Expressions;
 using System.Text;
-using System.Text.Json;
 using AnimalAllies.Core.Abstractions;
 using AnimalAllies.Core.Database;
 using AnimalAllies.Core.DTOs;
@@ -25,7 +24,7 @@ public class GetFilteredVolunteersWithPaginationHandler :
     private readonly ILogger<GetFilteredVolunteersWithPaginationHandler> _logger;
 
     public GetFilteredVolunteersWithPaginationHandler(
-        IReadDbContext readDbContext, 
+        IReadDbContext readDbContext,
         IValidator<GetFilteredVolunteersWithPaginationQuery> validator,
         ILogger<GetFilteredVolunteersWithPaginationHandler> logger)
     {
@@ -43,20 +42,20 @@ public class GetFilteredVolunteersWithPaginationHandler :
             validationResult.ToErrorList();
 
         var volunteerQuery = _readDbContext.Volunteers;
-        
+
         volunteerQuery = VolunteerQueryFilter(query, volunteerQuery);
-        
+
         var keySelector = SortByProperty(query);
 
         volunteerQuery = query.SortDirection?.ToLower() == "desc"
-            ? volunteerQuery.OrderByDescending(keySelector) 
+            ? volunteerQuery.OrderByDescending(keySelector)
             : volunteerQuery.OrderBy(keySelector);
-        
+
         var pagedList = await volunteerQuery.ToPagedList(
             query.Page,
             query.PageSize,
             cancellationToken);
-        
+
         _logger.LogInformation(
             "Get volunteers with pagination Page: {Page}, PageSize: {PageSize}, TotalCount: {TotalCount}",
             pagedList.Page, pagedList.PageSize, pagedList.TotalCount);
@@ -83,19 +82,19 @@ public class GetFilteredVolunteersWithPaginationHandler :
         volunteerQuery = volunteerQuery.WhereIf(
             !string.IsNullOrWhiteSpace(query.FirstName),
             v => v.FirstName.Contains(query.FirstName!));
-        
+
         volunteerQuery = volunteerQuery.WhereIf(
             !string.IsNullOrWhiteSpace(query.SecondName),
             v => v.SecondName.Contains(query.SecondName!));
-        
+
         volunteerQuery = volunteerQuery.WhereIf(
             !string.IsNullOrWhiteSpace(query.Patronymic),
             v => v.Patronymic.Contains(query.Patronymic!));
-        
+
         volunteerQuery = volunteerQuery.WhereIf(
             query.WorkExperienceFrom != null,
             v => v.WorkExperience >= query.WorkExperienceFrom);
-        
+
         volunteerQuery = volunteerQuery.WhereIf(
             query.WorkExperienceTo != null,
             v => v.WorkExperience <= query.WorkExperienceTo);
@@ -110,13 +109,14 @@ public class GetFilteredVolunteersWithPaginationHandlerDapper :
     private readonly ILogger<GetFilteredVolunteersWithPaginationHandlerDapper> _logger;
 
     public GetFilteredVolunteersWithPaginationHandlerDapper(
-        [FromKeyedServices(Constraints.Context.PetManagement)]ISqlConnectionFactory sqlConnectionFactory,
+        [FromKeyedServices(Constraints.Context.PetManagement)]
+        ISqlConnectionFactory sqlConnectionFactory,
         ILogger<GetFilteredVolunteersWithPaginationHandlerDapper> logger)
     {
         _sqlConnectionFactory = sqlConnectionFactory;
         _logger = logger;
     }
-    
+
     public async Task<Result<PagedList<VolunteerDto>>> Handle(
         GetFilteredVolunteersWithPaginationQuery query,
         CancellationToken cancellationToken = default)
@@ -124,7 +124,7 @@ public class GetFilteredVolunteersWithPaginationHandlerDapper :
         var connection = _sqlConnectionFactory.Create();
 
         var parameters = new DynamicParameters();
-        
+
         var sql = new StringBuilder("""
                                     select 
                                         id,
@@ -135,14 +135,13 @@ public class GetFilteredVolunteersWithPaginationHandlerDapper :
                                         email,
                                         phone_number,
                                         work_experience,
-                                        requisites,
-                                        social_networks
+                                        requisites
                                         from volunteers.volunteers
                                             where is_deleted = false
                                     """);
 
         bool hasWhereClause = true;
-        
+
         var stringProperties = new Dictionary<string, string>
         {
             { "first_name", query.FirstName },
@@ -150,44 +149,43 @@ public class GetFilteredVolunteersWithPaginationHandlerDapper :
             { "patronymic", query.Patronymic },
         };
 
-        sql.ApplyFilterByString(ref hasWhereClause,stringProperties);
-        
+        sql.ApplyFilterByString(ref hasWhereClause, stringProperties);
+
         switch (query)
         {
             case { WorkExperienceFrom: not null, WorkExperienceTo: not null }:
-                sql.ApplyBetweenFilter(ref hasWhereClause,"work_experience", (int)query.WorkExperienceFrom, (int)query.WorkExperienceTo);
+                sql.ApplyBetweenFilter(ref hasWhereClause, "work_experience", (int)query.WorkExperienceFrom,
+                    (int)query.WorkExperienceTo);
                 break;
-            case {WorkExperienceFrom: not null, WorkExperienceTo: null}:
-                sql.ApplyFilterByValueFrom(ref hasWhereClause,"work_experience", (int)query.WorkExperienceFrom);
+            case { WorkExperienceFrom: not null, WorkExperienceTo: null }:
+                sql.ApplyFilterByValueFrom(ref hasWhereClause, "work_experience", (int)query.WorkExperienceFrom);
                 break;
-            case {WorkExperienceFrom: null, WorkExperienceTo: not null}:
-                sql.ApplyFilterByValueTo<int>(ref hasWhereClause,"work_experience", (int)query.WorkExperienceTo);
+            case { WorkExperienceFrom: null, WorkExperienceTo: not null }:
+                sql.ApplyFilterByValueTo<int>(ref hasWhereClause, "work_experience", (int)query.WorkExperienceTo);
                 break;
         }
-        
-        sql.ApplySorting(query.SortBy,query.SortDirection);
-        
-        sql.ApplyPagination(query.Page,query.PageSize);
-        
-        var volunteers = 
-            await connection.QueryAsync<VolunteerDto, RequisiteDto[], SocialNetworkDto[], VolunteerDto>(
+
+        sql.ApplySorting(query.SortBy, query.SortDirection);
+
+        sql.ApplyPagination(query.Page, query.PageSize);
+
+        var volunteers =
+            await connection.QueryAsync<VolunteerDto, RequisiteDto[], VolunteerDto>(
                 sql.ToString(),
-                (volunteer, requisites, socialNetworks) =>
+                (volunteer, requisites) =>
                 {
                     volunteer.Requisites = requisites;
-                    
-                    volunteer.SocialNetworks = socialNetworks;
-                    
+
                     return volunteer;
                 },
-                splitOn:"requisites, social_networks",
+                splitOn: "requisites",
                 param: parameters);
-        
+
         _logger.LogInformation("Get volunteers with pagination Page: {Page}, PageSize: {PageSize}",
             query.Page, query.PageSize);
 
         var volunteerDtos = volunteers.ToList();
-        
+
         return new PagedList<VolunteerDto>
         {
             Items = volunteerDtos.ToList(),
@@ -196,5 +194,4 @@ public class GetFilteredVolunteersWithPaginationHandlerDapper :
             TotalCount = volunteerDtos.Count()
         };
     }
-    
 }

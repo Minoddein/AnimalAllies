@@ -9,19 +9,21 @@ using AnimalAllies.SharedKernel.Constraints;
 using AnimalAllies.SharedKernel.Shared;
 using Dapper;
 using FluentValidation;
+using Microsoft.Extensions.Caching.Hybrid;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
 namespace AnimalAllies.Volunteer.Application.VolunteerManagement.Queries.GetPetsByBreedId;
 
-public class GetPetsByBreedIdHandler: IQueryHandler<List<PetDto>, GetPetsByBreedIdQuery>
+public class GetPetsByBreedIdHandler : IQueryHandler<List<PetDto>, GetPetsByBreedIdQuery>
 {
     private readonly ISqlConnectionFactory _sqlConnectionFactory;
     private readonly ILogger<GetPetsByBreedIdHandler> _logger;
     private readonly IValidator<GetPetsByBreedIdQuery> _validator;
 
     public GetPetsByBreedIdHandler(
-        [FromKeyedServices(Constraints.Context.PetManagement)]ISqlConnectionFactory sqlConnectionFactory,
+        [FromKeyedServices(Constraints.Context.PetManagement)]
+        ISqlConnectionFactory sqlConnectionFactory,
         ILogger<GetPetsByBreedIdHandler> logger,
         IValidator<GetPetsByBreedIdQuery> validator)
     {
@@ -37,13 +39,13 @@ public class GetPetsByBreedIdHandler: IQueryHandler<List<PetDto>, GetPetsByBreed
         var validatorResult = await _validator.ValidateAsync(query, cancellationToken);
         if (!validatorResult.IsValid)
             return validatorResult.ToErrorList();
-        
+
         var connection = _sqlConnectionFactory.Create();
 
         var parameters = new DynamicParameters();
-        
+
         parameters.Add("@BreedId", query.BreedId);
-        //TODO: добавить пагинацию
+
         var sql = new StringBuilder("""
                                     select 
                                         id,
@@ -72,24 +74,24 @@ public class GetPetsByBreedIdHandler: IQueryHandler<List<PetDto>, GetPetsByBreed
                                         where breed_id = @BreedId and
                                               is_deleted = false
                                     """);
-        
-        var pets = 
-            await connection.QueryAsync<PetDto, RequisiteDto[], PetPhotoDto[], PetDto>(
-                sql.ToString(),
-                (pet, requisites, petPhotoDtos) =>
-                {
-                    pet.Requisites = requisites;
-                    
-                    pet.PetPhotos = petPhotoDtos;
-                    
-                    return pet;
-                },
-                splitOn:"requisites, pet_photos",
-                param: parameters);
-        
-        
+
+        sql.ApplyPagination(query.Page, query.PageSize);
+
+        var petsQuery = await connection.QueryAsync<PetDto, RequisiteDto[], PetPhotoDto[], PetDto>(
+            sql.ToString(),
+            (pet, requisites, petPhotoDtos) =>
+            {
+                pet.Requisites = requisites;
+
+                pet.PetPhotos = petPhotoDtos;
+
+                return pet;
+            },
+            splitOn: "requisites, pet_photos",
+            param: parameters);
+
         _logger.LogInformation("Get pets with breed id {breedId}", query.BreedId);
 
-        return pets.ToList();
+        return petsQuery.ToList();
     }
 }

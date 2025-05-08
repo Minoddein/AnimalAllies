@@ -4,10 +4,12 @@ using AnimalAllies.Core.Database;
 using AnimalAllies.Core.DTOs;
 using AnimalAllies.Core.Extension;
 using AnimalAllies.Core.Models;
+using AnimalAllies.SharedKernel.CachingConstants;
 using AnimalAllies.SharedKernel.Constraints;
 using AnimalAllies.SharedKernel.Shared;
 using Dapper;
 using FluentValidation;
+using Microsoft.Extensions.Caching.Hybrid;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
@@ -18,14 +20,18 @@ public class GetSpeciesWithPaginationHandlerDapper : IQueryHandler<PagedList<Spe
     private readonly ISqlConnectionFactory _sqlConnectionFactory;
     private readonly IValidator<GetSpeciesWithPaginationQuery> _validator;
     private readonly ILogger<GetSpeciesWithPaginationHandlerDapper> _logger;
+    private readonly HybridCache _hybridCache;
 
     public GetSpeciesWithPaginationHandlerDapper(
         [FromKeyedServices(Constraints.Context.BreedManagement)]ISqlConnectionFactory sqlConnectionFactory,
-        ILogger<GetSpeciesWithPaginationHandlerDapper> logger, IValidator<GetSpeciesWithPaginationQuery> validator)
+        ILogger<GetSpeciesWithPaginationHandlerDapper> logger,
+        IValidator<GetSpeciesWithPaginationQuery> validator,
+        HybridCache hybridCache)
     {
         _sqlConnectionFactory = sqlConnectionFactory;
         _logger = logger;
         _validator = validator;
+        _hybridCache = hybridCache;
     }
     
     public async Task<Result<PagedList<SpeciesDto>>> Handle(GetSpeciesWithPaginationQuery query, CancellationToken cancellationToken = default)
@@ -33,34 +39,51 @@ public class GetSpeciesWithPaginationHandlerDapper : IQueryHandler<PagedList<Spe
         var validatorResult = await _validator.ValidateAsync(query, cancellationToken);
         if (!validatorResult.IsValid)
             return validatorResult.ToErrorList();
-
-        var connection = _sqlConnectionFactory.Create();
-
-        var parameters = new DynamicParameters();
-
-        var sql = new StringBuilder("""
-                                    select 
-                                        id,
-                                        name
-                                        from species.species
-                                    """);
         
-        sql.ApplySorting(query.SortBy, query.SortDirection);
-        sql.ApplyPagination(query.Page,query.PageSize);
+        var options = new HybridCacheEntryOptions
+        {
+            Expiration = TimeSpan.FromHours(3),
+            LocalCacheExpiration = TimeSpan.FromMinutes(60)
+        };
+        
+        //TODO:Сделать рефакторинг: добавить запрос на получение общего числа записей и добавлять его в TotalCount,
+        //сделать это для всех запросов
+        
+        var cachedSpecies = await _hybridCache.GetOrCreateAsync(
+            key: $"{TagsConstants.SPECIES}_{query.Page}_{query.PageSize}_{query.SortBy}_{query.SortDirection}",
+            factory: async _ =>
+            {
+                var connection = _sqlConnectionFactory.Create();
 
-        var species = await connection.QueryAsync<SpeciesDto>(sql.ToString(), parameters);
+                var parameters = new DynamicParameters();
+
+                var sql = new StringBuilder("""
+                                            select 
+                                                id,
+                                                name
+                                                from species.species
+                                            """);
+        
+                sql.ApplySorting(query.SortBy, query.SortDirection);
+                sql.ApplyPagination(query.Page,query.PageSize);
+                
+                return await connection.QueryAsync<SpeciesDto>(sql.ToString(), parameters);
+            },
+            options: options,
+            tags: [TagsConstants.SPECIES],
+            cancellationToken: cancellationToken);
         
         _logger.LogInformation("Get species with pagination Page: {Page}, PageSize: {PageSize}",
             query.Page, query.PageSize);
 
-        var speciesDtos = species.ToList();
+        var speciesDtos = cachedSpecies.ToList();
         
         return new PagedList<SpeciesDto>
         {
             Items = speciesDtos.ToList(),
             PageSize = query.PageSize,
             Page = query.Page,
-            TotalCount = speciesDtos.Count()
+            TotalCount = speciesDtos.Count
         };
 
     }

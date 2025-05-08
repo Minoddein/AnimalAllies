@@ -21,9 +21,11 @@ using AnimalAllies.Volunteer.Application.VolunteerManagement.Commands.UpdatePetS
 using AnimalAllies.Volunteer.Application.VolunteerManagement.Commands.UpdateVolunteer;
 using AnimalAllies.Volunteer.Application.VolunteerManagement.Queries.GetFilteredPetsWithPagination;
 using AnimalAllies.Volunteer.Application.VolunteerManagement.Queries.GetPetById;
+using AnimalAllies.Volunteer.Application.VolunteerManagement.Queries.GetPetsByBreedId;
 using AnimalAllies.Volunteer.Application.VolunteerManagement.Queries.GetPetsBySpeciesId;
 using AnimalAllies.Volunteer.Application.VolunteerManagement.Queries.GetVolunteerById;
 using AnimalAllies.Volunteer.Application.VolunteerManagement.Queries.GetVolunteersWithPagination;
+using AnimalAllies.Volunteer.Contracts.Requests;
 using AnimalAllies.Volunteer.Presentation.Requests.Volunteer;
 using Microsoft.AspNetCore.Mvc;
 
@@ -103,11 +105,28 @@ public class VolunteerController: ApplicationController
     [Permission("volunteer.read")]
     [HttpGet("{speciesId:guid}/pet-by-species-id")]
     public async Task<ActionResult> GetPetsBySpeciesIdDapper(
-        [FromRoute] Guid speciesId,
+        [FromBody] GetPetsBySpeciesIdRequest request,
         [FromServices] GetPetsBySpeciesIdHandler handler,
         CancellationToken cancellationToken = default)
     {
-        var query = new GetPetsBySpeciesIdQuery(speciesId);
+        var query = new GetPetsBySpeciesIdQuery(request.SpeciesId, request.Page, request.PageSize);
+
+        var result = await handler.Handle(query, cancellationToken);
+
+        if (result.IsFailure)
+            result.Errors.ToResponse();
+
+        return Ok(result);
+    }
+    
+    [Permission("volunteer.read")]
+    [HttpGet("pet-by-breed-id")]
+    public async Task<ActionResult> GetPetsByBreedIdDapper(
+        [FromBody] GetPetsByBreedIdRequest request,
+        [FromServices] GetPetsByBreedIdHandler handler,
+        CancellationToken cancellationToken = default)
+    {
+        var query = new GetPetsByBreedIdQuery(request.BreedId, request.Page, request.PageSize);
 
         var result = await handler.Handle(query, cancellationToken);
 

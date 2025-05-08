@@ -35,13 +35,6 @@ public static class DependencyInjection
         
         return services;
     }
-    
-    private static IServiceCollection AddOutbox(this IServiceCollection services, IConfiguration configuration)
-    {
-        services.AddOutboxCore(configuration);
-        
-        return services;
-    }
 
     private static IServiceCollection AddIdentityServices(
         this IServiceCollection services,

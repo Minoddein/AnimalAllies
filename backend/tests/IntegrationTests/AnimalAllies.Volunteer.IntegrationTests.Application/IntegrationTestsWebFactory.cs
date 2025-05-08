@@ -116,10 +116,10 @@ public class IntegrationTestsWebFactory: WebApplicationFactory<Program>,IAsyncLi
         };
         
         _speciesContractMock.GetSpecies(Arg.Any<CancellationToken>())
-            .Returns(Result<List<SpeciesDto>>.Success([speciesDto]));
+            .Returns([speciesDto.Id]);
         
         _speciesContractMock.GetBreedsBySpeciesId(Arg.Any<Guid>(),Arg.Any<CancellationToken>())
-            .Returns(Result<List<BreedDto>>.Success([breedDto]));
+            .Returns([breedDto.Id]);
     }
     
     public new async Task DisposeAsync()

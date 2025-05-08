@@ -23,22 +23,19 @@ public class ApproveVolunteerRequestHandler: ICommandHandler<ApproveVolunteerReq
     private readonly IUnitOfWork _unitOfWork;
     private readonly IVolunteerRequestsRepository _repository;
     private readonly IPublisher _publisher;
-    private readonly IPublishEndpoint _publishEndpoint;
     
     public ApproveVolunteerRequestHandler(
         ILogger<ApproveVolunteerRequestHandler> logger,
         IValidator<ApproveVolunteerRequestCommand> validator, 
         [FromKeyedServices(Constraints.Context.VolunteerRequests)]IUnitOfWork unitOfWork, 
         IVolunteerRequestsRepository repository, 
-        IPublisher publisher,
-        IPublishEndpoint publishEndpoint)
+        IPublisher publisher)
     {
         _logger = logger;
         _validator = validator;
         _unitOfWork = unitOfWork;
         _repository = repository;
         _publisher = publisher;
-        _publishEndpoint = publishEndpoint;
     }
 
     public async Task<Result> Handle(

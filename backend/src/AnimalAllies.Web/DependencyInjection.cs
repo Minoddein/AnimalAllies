@@ -41,6 +41,7 @@ public static class DependencyInjection
             .AddFramework()
             .AddMessageBus(configuration)
             .AddFileService(configuration)
+            .AddCore(configuration)
             .AddSqlMappers();
         
         return services;
@@ -61,7 +62,7 @@ public static class DependencyInjection
         SqlMapper.AddTypeHandler(typeof(CertificateDto[]), new JsonTypeHandler<CertificateDto[]>());
         SqlMapper.AddTypeHandler(typeof(PetPhotoDto[]), new JsonTypeHandler<PetPhotoDto[]>());
     }
-
+    
     private static IServiceCollection AddMessageBus(this IServiceCollection services, IConfiguration configuration)
     {
         services.AddMassTransit(configure =>

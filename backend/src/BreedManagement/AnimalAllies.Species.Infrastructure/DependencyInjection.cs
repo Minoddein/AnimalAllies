@@ -6,6 +6,7 @@ using AnimalAllies.Species.Infrastructure.DbContexts;
 using AnimalAllies.Species.Infrastructure.Repository;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Outbox;
 
 namespace AnimalAllies.Species.Infrastructure;
 
@@ -17,7 +18,8 @@ public static class DependencyInjection
         services
             .AddDatabase()
             .AddDbContexts()
-            .AddRepositories();
+            .AddRepositories()
+            .AddOutboxCore(configuration);
         
         return services;
     }

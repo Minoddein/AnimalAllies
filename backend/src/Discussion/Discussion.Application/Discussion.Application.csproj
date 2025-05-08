@@ -18,4 +18,8 @@
       <Folder Include="Features\Commands\" />
     </ItemGroup>
 
+    <ItemGroup>
+      <PackageReference Include="Outbox.Abstractions" Version="1.0.0" />
+    </ItemGroup>
+
 </Project>

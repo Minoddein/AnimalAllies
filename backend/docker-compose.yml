@@ -9,6 +9,8 @@
     networks:
       - backend-network
     depends_on:
+      redis:
+        condition: service_started
       fileservice:
         condition: service_started
       notification-service:
@@ -30,6 +32,12 @@
       - nuget_password
     ports:
       - "8080:8080"
+  
+  cache-invalidator-service:
+    image: cache-invalidator-service
+    build:
+      context: ../CacheInvalidatorService
+      dockerfile: src/CacheInvalidatorService/Dockerfile
   
   telegram-bot-service:
     image: telegram-bot-service
@@ -196,6 +204,7 @@
       - redis-data:/data
     networks:
       - backend-network
+    restart: always
     healthcheck:
       test: [ "CMD", "redis-cli", "-a", "12345", "ping" ]
       interval: 5s

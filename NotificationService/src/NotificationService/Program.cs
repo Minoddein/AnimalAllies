@@ -2,7 +2,7 @@ using Hangfire;
 using NotificationService;
 using NotificationService.Api.Extensions;
 using NotificationService.Api.Middlewares;
-using NotificationService.Jobs;
+
 
 var builder = WebApplication.CreateBuilder(args);
 

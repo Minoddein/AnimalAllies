@@ -1,5 +1,4 @@
 ﻿using System.Text;
-using System.Text.Json;
 using AnimalAllies.Core.Abstractions;
 using AnimalAllies.Core.Database;
 using AnimalAllies.Core.DTOs;
@@ -23,14 +22,16 @@ public class GetVolunteerByIdHandler : IQueryHandler<VolunteerDto, GetVolunteerB
 
     public GetVolunteerByIdHandler(
         ILogger<GetVolunteerByIdHandler> logger,
-        [FromKeyedServices(Constraints.Context.PetManagement)]ISqlConnectionFactory sqlConnectionFactory, IValidator<GetVolunteerByIdQuery> validator)
+        [FromKeyedServices(Constraints.Context.PetManagement)]
+        ISqlConnectionFactory sqlConnectionFactory,
+        IValidator<GetVolunteerByIdQuery> validator)
     {
         _logger = logger;
         _sqlConnectionFactory = sqlConnectionFactory;
         _validator = validator;
     }
-    
-    
+
+
     public async Task<Result<VolunteerDto>> Handle(
         GetVolunteerByIdQuery query,
         CancellationToken cancellationToken = default)
@@ -38,11 +39,11 @@ public class GetVolunteerByIdHandler : IQueryHandler<VolunteerDto, GetVolunteerB
         var validatorResult = await _validator.ValidateAsync(query, cancellationToken);
         if (!validatorResult.IsValid)
             return validatorResult.ToErrorList();
-        
+
         var connection = _sqlConnectionFactory.Create();
 
         var parameters = new DynamicParameters();
-        
+
         parameters.Add("@VolunteerId", query.VolunteerId);
 
         var sql = new StringBuilder("""
@@ -55,35 +56,30 @@ public class GetVolunteerByIdHandler : IQueryHandler<VolunteerDto, GetVolunteerB
                                     email,
                                     phone_number,
                                     work_experience,
-                                    requisites,
-                                    social_networks
+                                    requisites
                                     from volunteers.volunteers
                                     where id = @VolunteerId
                                     limit 1
                                     """);
-        
-        var volunteer = 
-            await connection.QueryAsync<VolunteerDto, RequisiteDto[], SocialNetworkDto[], VolunteerDto>(
-                sql.ToString(),
-                (volunteer, requisites, socialNetworks) =>
-                {
-                    volunteer.Requisites = requisites;
-                    
-                    volunteer.SocialNetworks = socialNetworks;
-                    
-                    return volunteer;
-                },
-                splitOn:"requisites, social_networks",
-                param: parameters);
 
-        
-        var result = volunteer.FirstOrDefault();
+        var volunteerQuery = await connection.QueryAsync<VolunteerDto, RequisiteDto[], VolunteerDto>(
+            sql.ToString(),
+            (volunteer, requisites) =>
+            {
+                volunteer.Requisites = requisites;
 
-        if (result is null) 
+                return volunteer;
+            },
+            splitOn: "requisites",
+            param: parameters);
+
+        var result = volunteerQuery.FirstOrDefault();
+
+        if (result is null)
             return Errors.General.NotFound();
-        
+
         _logger.LogInformation("Get volunteer with id {VolunteerId}", query.VolunteerId);
-        
+
         return result;
     }
 }

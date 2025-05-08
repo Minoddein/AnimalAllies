@@ -19,24 +19,24 @@ public class SpeciesContracts: ISpeciesContracts
         _getBreedsBySpeciesIdWithPaginationHandlerDapper = getBreedsBySpeciesIdWithPaginationHandlerDapper;
     }
 
-    public async Task<Result<List<SpeciesDto>>> GetSpecies(CancellationToken cancellationToken = default)
+    public async Task<List<Guid>> GetSpecies(CancellationToken cancellationToken = default)
     {
         var species = await _getSpeciesWithPaginationHandlerDapper.Handle(cancellationToken);
         if (species.IsFailure)
-            return species.Errors;
+            throw new ArgumentNullException("Species not found");
 
-        return species.Value;
+        return species.Value.Select(s => s.Id).ToList();
     }
 
-    public async Task<Result<List<BreedDto>>> GetBreedsBySpeciesId(
+    public async Task<List<Guid>> GetBreedsBySpeciesId(
         Guid speciesId,
         CancellationToken cancellationToken = default)
     {
         var breeds =
             await _getBreedsBySpeciesIdWithPaginationHandlerDapper.Handle(speciesId, cancellationToken);
         if (breeds.IsFailure)
-            return breeds.Errors;
+            throw new ArgumentNullException("Species not found");
         
-        return breeds.Value;
+        return breeds.Value.Select(b => b.Id).ToList();
     }
 }

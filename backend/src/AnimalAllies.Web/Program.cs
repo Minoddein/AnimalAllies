@@ -56,4 +56,7 @@ app.MapControllers();
 
 app.Run();
 
-public partial class Program;
+namespace AnimalAllies.Web
+{
+    public partial class Program;
+}

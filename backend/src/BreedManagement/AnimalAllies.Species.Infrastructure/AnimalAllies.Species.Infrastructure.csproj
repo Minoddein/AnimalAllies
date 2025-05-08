@@ -11,4 +11,8 @@
       <ProjectReference Include="..\AnimalAllies.Species.Application\AnimalAllies.Species.Application.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+      <PackageReference Include="Outbox" Version="1.0.4" />
+    </ItemGroup>
+
 </Project>
