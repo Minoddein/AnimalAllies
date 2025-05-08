@@ -1,54 +1,54 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
 
-    <PropertyGroup>
-        <TargetFramework>net9.0</TargetFramework>
-        <Nullable>enable</Nullable>
-        <ImplicitUsings>enable</ImplicitUsings>
-        <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
-        <UserSecretsId>3e46ba07-9325-4b0c-b920-0539cb84b0cf</UserSecretsId>
-    </PropertyGroup>
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
+    <UserSecretsId>3e46ba07-9325-4b0c-b920-0539cb84b0cf</UserSecretsId>
+  </PropertyGroup>
 
-    <ItemGroup>
-        <PackageReference Include="DotNetEnv" Version="3.1.1" />
-        <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="9.0.3" />
-        <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.3">
-          <PrivateAssets>all</PrivateAssets>
-          <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-        </PackageReference>
-        <PackageReference Include="Microsoft.Extensions.Configuration" Version="9.0.3" />
-        <PackageReference Include="Serilog.AspNetCore" Version="9.0.0" />
-        <PackageReference Include="Serilog.Enrichers.Environment" Version="3.0.1" />
-        <PackageReference Include="Serilog.Enrichers.Thread" Version="4.0.0" />
-        <PackageReference Include="Serilog.Exceptions" Version="8.4.0" />
-        <PackageReference Include="Serilog.Sinks.Seq" Version="9.0.0" />
-        <PackageReference Include="Swashbuckle.AspNetCore" Version="8.0.0" />
-    </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="DotNetEnv" Version="3.1.1"/>
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="9.0.3"/>
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.3">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="Microsoft.Extensions.Configuration" Version="9.0.3"/>
+    <PackageReference Include="Serilog.AspNetCore" Version="9.0.0"/>
+    <PackageReference Include="Serilog.Enrichers.Environment" Version="3.0.1"/>
+    <PackageReference Include="Serilog.Enrichers.Thread" Version="4.0.0"/>
+    <PackageReference Include="Serilog.Exceptions" Version="8.4.0"/>
+    <PackageReference Include="Serilog.Sinks.Seq" Version="9.0.0"/>
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="8.0.0"/>
+  </ItemGroup>
 
-    <ItemGroup>
-      <ProjectReference Include="..\Accounts\AnimalAllies.Accounts.Infrastructure\AnimalAllies.Accounts.Infrastructure.csproj" />
-      <ProjectReference Include="..\Accounts\AnimalAllies.Accounts.Presentation\AnimalAllies.Accounts.Presentation.csproj" />
-      <ProjectReference Include="..\BreedManagement\AnimalAllies.Species.Controllers\AnimalAllies.Species.Presentation.csproj" />
-      <ProjectReference Include="..\BreedManagement\AnimalAllies.Species.Infrastructure\AnimalAllies.Species.Infrastructure.csproj" />
-      <ProjectReference Include="..\Discussion\Discussion.Application\Discussion.Application.csproj" />
-      <ProjectReference Include="..\Discussion\Discussion.Infrastructure\Discussion.Infrastructure.csproj" />
-      <ProjectReference Include="..\Discussion\Discussion.Presentation\Discussion.Presentation.csproj" />
-      <ProjectReference Include="..\PetManagement\AnimalAllies.Volunteer.Controllers\AnimalAllies.Volunteer.Presentation.csproj" />
-      <ProjectReference Include="..\PetManagement\AnimalAllies.Volunteer.Infrastructure\AnimalAllies.Volunteer.Infrastructure.csproj" />
-      <ProjectReference Include="..\VolunteerRequests\VolunteerRequests.Application\VolunteerRequests.Application.csproj" />
-      <ProjectReference Include="..\VolunteerRequests\VolunteerRequests.Infrastructure\VolunteerRequests.Infrastructure.csproj" />
-      <ProjectReference Include="..\VolunteerRequests\VolunteerRequests.Presentation\VolunteerRequests.Presentation.csproj" />
-    </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Accounts\AnimalAllies.Accounts.Infrastructure\AnimalAllies.Accounts.Infrastructure.csproj"/>
+    <ProjectReference Include="..\Accounts\AnimalAllies.Accounts.Presentation\AnimalAllies.Accounts.Presentation.csproj"/>
+    <ProjectReference Include="..\BreedManagement\AnimalAllies.Species.Controllers\AnimalAllies.Species.Presentation.csproj"/>
+    <ProjectReference Include="..\BreedManagement\AnimalAllies.Species.Infrastructure\AnimalAllies.Species.Infrastructure.csproj"/>
+    <ProjectReference Include="..\Discussion\Discussion.Application\Discussion.Application.csproj"/>
+    <ProjectReference Include="..\Discussion\Discussion.Infrastructure\Discussion.Infrastructure.csproj"/>
+    <ProjectReference Include="..\Discussion\Discussion.Presentation\Discussion.Presentation.csproj"/>
+    <ProjectReference Include="..\PetManagement\AnimalAllies.Volunteer.Controllers\AnimalAllies.Volunteer.Presentation.csproj"/>
+    <ProjectReference Include="..\PetManagement\AnimalAllies.Volunteer.Infrastructure\AnimalAllies.Volunteer.Infrastructure.csproj"/>
+    <ProjectReference Include="..\VolunteerRequests\VolunteerRequests.Application\VolunteerRequests.Application.csproj"/>
+    <ProjectReference Include="..\VolunteerRequests\VolunteerRequests.Infrastructure\VolunteerRequests.Infrastructure.csproj"/>
+    <ProjectReference Include="..\VolunteerRequests\VolunteerRequests.Presentation\VolunteerRequests.Presentation.csproj"/>
+  </ItemGroup>
 
-    <ItemGroup>
-      <Content Include="..\..\.dockerignore">
-        <Link>.dockerignore</Link>
-      </Content>
-    </ItemGroup>
+  <ItemGroup>
+    <Content Include="..\..\.dockerignore">
+      <Link>.dockerignore</Link>
+    </Content>
+  </ItemGroup>
 
-    <ItemGroup>
-      <None Update=".env">
-        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      </None>
-    </ItemGroup>
+  <ItemGroup>
+    <None Update=".env">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
 
 </Project>

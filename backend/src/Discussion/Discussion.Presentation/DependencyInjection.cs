@@ -15,7 +15,7 @@ public static class DependencyInjection
     private static IServiceCollection AddContracts(this IServiceCollection services)
     {
         services.AddScoped<IDiscussionContract, DiscussionContract>();
-        
+
         return services;
     }
 }

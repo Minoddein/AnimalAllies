@@ -1,4 +1,4 @@
-using AnimalAllies.SharedKernel.Shared;
+﻿using AnimalAllies.SharedKernel.Shared;
 
 namespace VolunteerRequests.Domain.Events;
 

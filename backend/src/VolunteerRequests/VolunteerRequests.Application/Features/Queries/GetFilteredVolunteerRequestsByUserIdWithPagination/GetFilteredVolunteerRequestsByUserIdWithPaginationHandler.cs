@@ -1,4 +1,5 @@
-﻿using System.Text;
+﻿using System.Data;
+using System.Text;
 using AnimalAllies.Core.Abstractions;
 using AnimalAllies.Core.Database;
 using AnimalAllies.Core.DTOs;
@@ -10,112 +11,111 @@ using AnimalAllies.SharedKernel.Constraints;
 using AnimalAllies.SharedKernel.Shared;
 using Dapper;
 using FluentValidation;
+using FluentValidation.Results;
 using Microsoft.Extensions.Caching.Hybrid;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
 namespace VolunteerRequests.Application.Features.Queries.GetFilteredVolunteerRequestsByUserIdWithPagination;
 
-public class GetFilteredVolunteerRequestsByUserIdWithPaginationHandler:
+public class GetFilteredVolunteerRequestsByUserIdWithPaginationHandler(
+    [FromKeyedServices(Constraints.Context.VolunteerRequests)]
+    ISqlConnectionFactory sqlConnectionFactory,
+    IValidator<GetFilteredVolunteerRequestsByUserIdWithPaginationQuery> validator,
+    ILogger<GetFilteredVolunteerRequestsByUserIdWithPaginationHandler> logger,
+    HybridCache hybridCache) :
     IQueryHandler<PagedList<VolunteerRequestDto>, GetFilteredVolunteerRequestsByUserIdWithPaginationQuery>
 {
-    private readonly ISqlConnectionFactory _sqlConnectionFactory;
-    private readonly IValidator<GetFilteredVolunteerRequestsByUserIdWithPaginationQuery> _validator;
-    private readonly ILogger<GetFilteredVolunteerRequestsByUserIdWithPaginationHandler> _logger;
-    private readonly HybridCache _hybridCache;
-    
-    public GetFilteredVolunteerRequestsByUserIdWithPaginationHandler(
-        [FromKeyedServices(Constraints.Context.VolunteerRequests)]ISqlConnectionFactory sqlConnectionFactory,
-        IValidator<GetFilteredVolunteerRequestsByUserIdWithPaginationQuery> validator, 
-        ILogger<GetFilteredVolunteerRequestsByUserIdWithPaginationHandler> logger,
-        HybridCache hybridCache)
-    {
-        _sqlConnectionFactory = sqlConnectionFactory;
-        _validator = validator;
-        _logger = logger;
-        _hybridCache = hybridCache;
-    }
+    private readonly HybridCache _hybridCache = hybridCache;
+    private readonly ILogger<GetFilteredVolunteerRequestsByUserIdWithPaginationHandler> _logger = logger;
+    private readonly ISqlConnectionFactory _sqlConnectionFactory = sqlConnectionFactory;
+    private readonly IValidator<GetFilteredVolunteerRequestsByUserIdWithPaginationQuery> _validator = validator;
 
     public async Task<Result<PagedList<VolunteerRequestDto>>> Handle(
         GetFilteredVolunteerRequestsByUserIdWithPaginationQuery query,
         CancellationToken cancellationToken = default)
     {
-        var validationResult = await _validator.ValidateAsync(query, cancellationToken);
+        ValidationResult? validationResult =
+            await _validator.ValidateAsync(query, cancellationToken).ConfigureAwait(false);
         if (!validationResult.IsValid)
-            return validationResult.ToErrorList();
-        
-        var cacheKey = $"{TagsConstants.VOLUNTEER_REQUESTS}_{query.UserId}_status-{query.RequestStatus}_sort" +
-                       $"-{query.SortBy}_" +
-                       $"dir-{query.SortDirection}_page-{query.Page}_size-{query.PageSize}";
-
-        var options = new HybridCacheEntryOptions
         {
-            Expiration = TimeSpan.FromMinutes(3),
-            LocalCacheExpiration = TimeSpan.FromMinutes(1)
+            return validationResult.ToErrorList();
+        }
+
+        string cacheKey = $"{TagsConstants.VOLUNTEER_REQUESTS}_{query.UserId}_status-{query.RequestStatus}_sort" +
+                          $"-{query.SortBy}_" +
+                          $"dir-{query.SortDirection}_page-{query.Page}_size-{query.PageSize}";
+
+        HybridCacheEntryOptions options = new()
+        {
+            Expiration = TimeSpan.FromMinutes(3), LocalCacheExpiration = TimeSpan.FromMinutes(1)
         };
 
-        
-        var cachedVolunteerRequests = await _hybridCache.GetOrCreateAsync(
-            key: cacheKey,
-            factory: async _ =>
+        List<VolunteerRequestDto> cachedVolunteerRequests = await _hybridCache.GetOrCreateAsync(
+            cacheKey,
+            async _ =>
             {
-                var connection = _sqlConnectionFactory.Create();
-                var parameters = new DynamicParameters();
+                IDbConnection connection = _sqlConnectionFactory.Create();
+                DynamicParameters parameters = new();
                 parameters.Add("@UserId", query.UserId);
 
-                var sql = new StringBuilder("""
-                    select 
-                        id,
-                        first_name,
-                        second_name,
-                        patronymic,
-                        description,
-                        email,
-                        phone_number,
-                        work_experience,
-                        admin_id,
-                        user_id,
-                        discussion_id,
-                        request_status,
-                        rejection_comment,
-                        social_networks
-                    from volunteer_requests.volunteer_requests 
-                    where user_id = @UserId
-                    """);
+                StringBuilder sql = new("""
+                                        select 
+                                            id,
+                                            first_name,
+                                            second_name,
+                                            patronymic,
+                                            description,
+                                            email,
+                                            phone_number,
+                                            work_experience,
+                                            admin_id,
+                                            user_id,
+                                            discussion_id,
+                                            request_status,
+                                            rejection_comment,
+                                            social_networks
+                                        from volunteer_requests.volunteer_requests 
+                                        where user_id = @UserId
+                                        """);
 
-                var hasWhereClause = true;
+                bool hasWhereClause = true;
 
                 if (query.RequestStatus != null)
                 {
-                    var stringProperties = new Dictionary<string, string> { { "request_status", query.RequestStatus } };
+                    Dictionary<string, string> stringProperties = new() { { "request_status", query.RequestStatus } };
                     sql.ApplyFilterByString(ref hasWhereClause, stringProperties);
                 }
 
                 sql.ApplySorting(query.SortBy, query.SortDirection);
                 sql.ApplyPagination(query.Page, query.PageSize);
 
-                var result = await connection.QueryAsync<VolunteerRequestDto, SocialNetworkDto[], VolunteerRequestDto>(
-                    sql.ToString(),
-                    (volunteerRequest, socialNetworks) =>
-                    {
-                        volunteerRequest.SocialNetworks = socialNetworks;
-                        return volunteerRequest;
-                    },
-                    splitOn: "social_networks",
-                    param: parameters);
+                IEnumerable<VolunteerRequestDto> result =
+                    await connection.QueryAsync<VolunteerRequestDto, SocialNetworkDto[], VolunteerRequestDto>(
+                        sql.ToString(),
+                        (volunteerRequest, socialNetworks) =>
+                        {
+                            volunteerRequest.SocialNetworks = socialNetworks;
+                            return volunteerRequest;
+                        },
+                        splitOn: "social_networks",
+                        param: parameters).ConfigureAwait(false);
 
                 return result.ToList();
             },
-            options: options,
-            tags: [new string(TagsConstants.VOLUNTEER_REQUESTS + "_" +
-                              TagsConstants.VolunteerRequests.BY_USER + "_" + query.UserId)],
-            cancellationToken: cancellationToken);
-        
-        _logger.LogInformation("Get volunteer requests with pagination Page: {Page}, PageSize: {PageSize}",
+            options,
+            [
+                new string(TagsConstants.VOLUNTEER_REQUESTS + "_" +
+                           TagsConstants.VolunteerRequests.BY_USER + "_" + query.UserId)
+            ],
+            cancellationToken).ConfigureAwait(false);
+
+        _logger.LogInformation(
+            "Get volunteer requests with pagination Page: {Page}, PageSize: {PageSize}",
             query.Page, query.PageSize);
 
-        var volunteerRequestDtos = cachedVolunteerRequests.ToList();
-        
+        List<VolunteerRequestDto> volunteerRequestDtos = [.. cachedVolunteerRequests];
+
         return new PagedList<VolunteerRequestDto>
         {
             Items = volunteerRequestDtos,

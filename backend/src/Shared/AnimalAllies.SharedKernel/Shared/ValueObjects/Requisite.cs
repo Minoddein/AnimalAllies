@@ -5,27 +5,27 @@ namespace AnimalAllies.SharedKernel.Shared.ValueObjects;
 
 public class Requisite : ValueObject
 {
-    public string Title { get; } 
-    public string Description { get; }
-    
-    private Requisite(){}
-    
+    private Requisite() { }
+
     [JsonConstructor]
     private Requisite(string title, string description)
     {
         Title = title;
         Description = description;
     }
-    
+
+    public string Title { get; }
+
+    public string Description { get; }
 
     public static Result<Requisite> Create(string title, string description)
     {
-        if(string.IsNullOrWhiteSpace(title) || title.Length > Constraints.Constraints.MAX_VALUE_LENGTH)
+        if (string.IsNullOrWhiteSpace(title) || title.Length > Constraints.Constraints.MAX_VALUE_LENGTH)
         {
             return Errors.Errors.General.ValueIsRequired(title);
         }
-        
-        if(string.IsNullOrWhiteSpace(description) || title.Length > Constraints.Constraints.MAX_VALUE_LENGTH)
+
+        if (string.IsNullOrWhiteSpace(description) || title.Length > Constraints.Constraints.MAX_VALUE_LENGTH)
         {
             return Errors.Errors.General.ValueIsRequired(description);
         }

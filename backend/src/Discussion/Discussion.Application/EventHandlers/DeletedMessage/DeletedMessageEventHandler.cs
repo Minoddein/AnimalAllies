@@ -1,4 +1,4 @@
-using AnimalAllies.Accounts.Contracts.Events;
+﻿using AnimalAllies.Accounts.Contracts.Events;
 using AnimalAllies.SharedKernel.CachingConstants;
 using Discussion.Domain.DomainEvents;
 using MediatR;
@@ -7,35 +7,29 @@ using Outbox.Abstractions;
 
 namespace Discussion.Application.EventHandlers.DeletedMessage;
 
-public class DeletedMessageEventHandler: INotificationHandler<DeletedMessageDomainEvent>
+public class DeletedMessageEventHandler(
+    ILogger<DeletedMessageEventHandler> logger,
+    IOutboxRepository outboxRepository,
+    IUnitOfWorkOutbox unitOfWork) : INotificationHandler<DeletedMessageDomainEvent>
 {
-    private readonly ILogger<DeletedMessageEventHandler> _logger;
-    private readonly IOutboxRepository _outboxRepository;
-    private readonly IUnitOfWorkOutbox _unitOfWork;
-
-    public DeletedMessageEventHandler(
-        ILogger<DeletedMessageEventHandler> logger,
-        IOutboxRepository outboxRepository,
-        IUnitOfWorkOutbox unitOfWork)
-    {
-        _logger = logger;
-        _outboxRepository = outboxRepository;
-        _unitOfWork = unitOfWork;
-    }
+    private readonly ILogger<DeletedMessageEventHandler> _logger = logger;
+    private readonly IOutboxRepository _outboxRepository = outboxRepository;
+    private readonly IUnitOfWorkOutbox _unitOfWork = unitOfWork;
 
     public async Task Handle(DeletedMessageDomainEvent notification, CancellationToken cancellationToken)
     {
-        var invalidationIntegrationEvent = new CacheInvalidateIntegrationEvent(
+        CacheInvalidateIntegrationEvent invalidationIntegrationEvent = new(
             null,
             [
                 new string(TagsConstants.DISCUSSIONS + "_" + notification.RelationId)
             ]);
-        
-        await _outboxRepository.AddAsync(invalidationIntegrationEvent, cancellationToken);
 
-        await _unitOfWork.SaveChanges(cancellationToken);
+        await _outboxRepository.AddAsync(invalidationIntegrationEvent, cancellationToken).ConfigureAwait(false);
 
-        _logger.LogInformation("Deleted message from discussion with relation id {relationId}",
+        await _unitOfWork.SaveChanges(cancellationToken).ConfigureAwait(false);
+
+        _logger.LogInformation(
+            "Deleted message from discussion with relation id {relationId}",
             notification.RelationId);
     }
 }

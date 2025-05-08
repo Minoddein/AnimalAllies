@@ -44,7 +44,7 @@
     build:
       context: ../TelegramBotService
       dockerfile: src/TelegramBotService/Dockerfile
-    env_file: 
+    env_file:
       - ../TelegramBotService/src/TelegramBotService/.env
     networks:
       - backend-network
@@ -210,7 +210,7 @@
       interval: 5s
       timeout: 3s
       retries: 3
-      
+
 volumes:
   rabbitmq_data:
   postgres-data:
@@ -227,6 +227,6 @@ networks:
   backend-network:
     driver: bridge
   fileservice-network:
-    driver: bridge 
+    driver: bridge
   bot-network:
     driver: bridge

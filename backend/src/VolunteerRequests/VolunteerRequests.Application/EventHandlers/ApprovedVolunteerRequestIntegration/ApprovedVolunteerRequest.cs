@@ -9,39 +9,31 @@ using VolunteerRequests.Domain.Events;
 
 namespace VolunteerRequests.Application.EventHandlers.ApprovedVolunteerRequestIntegration;
 
-public class ApprovedVolunteerRequest : INotificationHandler<ApprovedVolunteerRequestDomainEvent>
+public class ApprovedVolunteerRequest(
+    ILogger<ApprovedVolunteerRequest> logger,
+    IOutboxRepository outboxRepository,
+    IUnitOfWorkOutbox unitOfWork) : INotificationHandler<ApprovedVolunteerRequestDomainEvent>
 {
-    private readonly ILogger<ApprovedVolunteerRequest> _logger;
-    private readonly IOutboxRepository _outboxRepository;
-    private readonly IUnitOfWorkOutbox _unitOfWork;
-
-    public ApprovedVolunteerRequest(
-        ILogger<ApprovedVolunteerRequest> logger,
-        IOutboxRepository outboxRepository,
-        IUnitOfWorkOutbox unitOfWork)
-    {
-        _logger = logger;
-        _outboxRepository = outboxRepository;
-        _unitOfWork = unitOfWork;
-    }
-
+    private readonly ILogger<ApprovedVolunteerRequest> _logger = logger;
+    private readonly IOutboxRepository _outboxRepository = outboxRepository;
+    private readonly IUnitOfWorkOutbox _unitOfWork = unitOfWork;
 
     public async Task Handle(ApprovedVolunteerRequestDomainEvent notification, CancellationToken cancellationToken)
     {
-        var approvedIntegrationEvent = new ApprovedVolunteerRequestEvent(
+        ApprovedVolunteerRequestEvent approvedIntegrationEvent = new(
             notification.UserId,
             notification.FirstName,
             notification.SecondName,
             notification.Patronymic,
             notification.WorkExperience);
 
-        await _outboxRepository.AddAsync(approvedIntegrationEvent, cancellationToken);
+        await _outboxRepository.AddAsync(approvedIntegrationEvent, cancellationToken).ConfigureAwait(false);
 
-        var notificationIntegrationEvent = new SendNotificationApproveVolunteerRequestEvent(
+        SendNotificationApproveVolunteerRequestEvent notificationIntegrationEvent = new(
             notification.UserId,
             notification.Email);
 
-        var invalidationIntegrationEvent = new CacheInvalidateIntegrationEvent(
+        CacheInvalidateIntegrationEvent invalidationIntegrationEvent = new(
             null,
             [
                 new string(TagsConstants.VOLUNTEER_REQUESTS + "_" +
@@ -50,15 +42,16 @@ public class ApprovedVolunteerRequest : INotificationHandler<ApprovedVolunteerRe
                            TagsConstants.VolunteerRequests.BY_ADMIN + "_" + notification.AdminId)
             ]);
 
-        await _outboxRepository.AddAsync(approvedIntegrationEvent, cancellationToken);
+        await _outboxRepository.AddAsync(approvedIntegrationEvent, cancellationToken).ConfigureAwait(false);
 
-        await _outboxRepository.AddAsync(notificationIntegrationEvent, cancellationToken);
-        
-        await _outboxRepository.AddAsync(invalidationIntegrationEvent, cancellationToken);
+        await _outboxRepository.AddAsync(notificationIntegrationEvent, cancellationToken).ConfigureAwait(false);
 
-        await _unitOfWork.SaveChanges(cancellationToken);
+        await _outboxRepository.AddAsync(invalidationIntegrationEvent, cancellationToken).ConfigureAwait(false);
 
-        _logger.LogInformation("Sent integration event for creation volunteer account for user with id {userId}",
+        await _unitOfWork.SaveChanges(cancellationToken).ConfigureAwait(false);
+
+        _logger.LogInformation(
+            "Sent integration event for creation volunteer account for user with id {userId}",
             notification.UserId);
     }
 }

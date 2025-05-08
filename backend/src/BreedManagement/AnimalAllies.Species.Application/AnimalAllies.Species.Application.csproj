@@ -1,21 +1,21 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-    <PropertyGroup>
-        <TargetFramework>net9.0</TargetFramework>
-        <ImplicitUsings>enable</ImplicitUsings>
-        <Nullable>enable</Nullable>
-    </PropertyGroup>
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
 
-    <ItemGroup>
-      <ProjectReference Include="..\..\Accounts\AnimalAllies.Accounts.Contracts\AnimalAllies.Accounts.Contracts.csproj" />
-      <ProjectReference Include="..\..\PetManagement\AnimalAllies.Volunteer.Contracts\AnimalAllies.Volunteer.Contracts.csproj" />
-      <ProjectReference Include="..\..\Shared\AnimalAllies.Core\AnimalAllies.Core.csproj" />
-      <ProjectReference Include="..\AnimalAllies.Species.Contracts\AnimalAllies.Species.Contracts.csproj" />
-      <ProjectReference Include="..\AnimalAllies.Species.Domain\AnimalAllies.Species.Domain.csproj" />
-    </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\Accounts\AnimalAllies.Accounts.Contracts\AnimalAllies.Accounts.Contracts.csproj"/>
+    <ProjectReference Include="..\..\PetManagement\AnimalAllies.Volunteer.Contracts\AnimalAllies.Volunteer.Contracts.csproj"/>
+    <ProjectReference Include="..\..\Shared\AnimalAllies.Core\AnimalAllies.Core.csproj"/>
+    <ProjectReference Include="..\AnimalAllies.Species.Contracts\AnimalAllies.Species.Contracts.csproj"/>
+    <ProjectReference Include="..\AnimalAllies.Species.Domain\AnimalAllies.Species.Domain.csproj"/>
+  </ItemGroup>
 
-    <ItemGroup>
-      <PackageReference Include="Outbox.Abstractions" Version="1.0.0" />
-    </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Outbox.Abstractions" Version="1.0.0"/>
+  </ItemGroup>
 
 </Project>

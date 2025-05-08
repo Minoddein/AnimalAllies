@@ -11,45 +11,40 @@ using Discussion.Application.Repository;
 using Discussion.Domain.Entities;
 using Discussion.Domain.ValueObjects;
 using FluentValidation;
+using FluentValidation.Results;
 using MediatR;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
 namespace Discussion.Application.Features.Commands.PostMessage;
 
-public class PostMessageHandler: ICommandHandler<PostMessageCommand, MessageId>
+public class PostMessageHandler(
+    ILogger<PostMessageHandler> logger,
+    [FromKeyedServices(Constraints.Context.Discussion)]
+    IUnitOfWork unitOfWork,
+    IValidator<PostMessageCommand> validator,
+    IDiscussionRepository repository,
+    IDateTimeProvider dateTimeProvider,
+    IPublisher publisher) : ICommandHandler<PostMessageCommand, MessageId>
 {
-    private readonly ILogger<PostMessageHandler> _logger;
-    private readonly IUnitOfWork _unitOfWork;
-    private readonly IValidator<PostMessageCommand> _validator;
-    private readonly IDiscussionRepository _repository;
-    private readonly IDateTimeProvider _dateTimeProvider;
-    private readonly IPublisher _publisher;
-    
-    public PostMessageHandler(
-        ILogger<PostMessageHandler> logger, 
-        [FromKeyedServices(Constraints.Context.Discussion)]IUnitOfWork unitOfWork, 
-        IValidator<PostMessageCommand> validator,
-        IDiscussionRepository repository,
-        IDateTimeProvider dateTimeProvider, 
-        IPublisher publisher)
-    {
-        _logger = logger;
-        _unitOfWork = unitOfWork;
-        _validator = validator;
-        _repository = repository;
-        _dateTimeProvider = dateTimeProvider;
-        _publisher = publisher;
-    }
+    private readonly IDateTimeProvider _dateTimeProvider = dateTimeProvider;
+    private readonly ILogger<PostMessageHandler> _logger = logger;
+    private readonly IPublisher _publisher = publisher;
+    private readonly IDiscussionRepository _repository = repository;
+    private readonly IUnitOfWork _unitOfWork = unitOfWork;
+    private readonly IValidator<PostMessageCommand> _validator = validator;
 
     public async Task<Result<MessageId>> Handle(
         PostMessageCommand command, CancellationToken cancellationToken = default)
     {
-        var validationResult = await _validator.ValidateAsync(command, cancellationToken);
+        ValidationResult? validationResult =
+            await _validator.ValidateAsync(command, cancellationToken).ConfigureAwait(false);
         if (!validationResult.IsValid)
+        {
             return validationResult.ToErrorList();
+        }
 
-        using var scope = new TransactionScope(
+        using TransactionScope scope = new(
             TransactionScopeOption.Required,
             new TransactionOptions { IsolationLevel = IsolationLevel.ReadCommitted },
             TransactionScopeAsyncFlowOption.Enabled
@@ -57,31 +52,39 @@ public class PostMessageHandler: ICommandHandler<PostMessageCommand, MessageId>
 
         try
         {
-            var discussionId = DiscussionId.Create(command.DiscussionId);
-            var discussion = await _repository.GetById(discussionId, cancellationToken);
+            DiscussionId discussionId = DiscussionId.Create(command.DiscussionId);
+            Result<Domain.Aggregate.Discussion> discussion =
+                await _repository.GetById(discussionId, cancellationToken).ConfigureAwait(false);
             if (discussion.IsFailure)
+            {
                 return discussion.Errors;
+            }
 
-            var messageId = MessageId.NewGuid();
-            var text = Text.Create(command.Text).Value;
-            var createdAt = CreatedAt.Create(_dateTimeProvider.UtcNow).Value;
-            var isEdited = new IsEdited(false);
+            MessageId messageId = MessageId.NewGuid();
+            Text text = Text.Create(command.Text).Value;
+            CreatedAt createdAt = CreatedAt.Create(_dateTimeProvider.UtcNow).Value;
+            IsEdited isEdited = new(false);
 
-            var message = Message.Create(messageId, text, createdAt, isEdited, command.UserId);
+            Result<Message> message = Message.Create(messageId, text, createdAt, isEdited, command.UserId);
             if (message.IsFailure)
+            {
                 return message.Errors;
+            }
 
-            var result = discussion.Value.SendComment(message.Value);
+            Result result = discussion.Value.SendComment(message.Value);
             if (result.IsFailure)
+            {
                 return result.Errors;
+            }
 
-            await _publisher.PublishDomainEvents(discussion.Value, cancellationToken);
-            
-            await _unitOfWork.SaveChanges(cancellationToken);
+            await _publisher.PublishDomainEvents(discussion.Value, cancellationToken).ConfigureAwait(false);
+
+            await _unitOfWork.SaveChanges(cancellationToken).ConfigureAwait(false);
 
             scope.Complete();
-            
-            _logger.LogInformation("user with id {userId} post comment to discussion with id {discussionId}",
+
+            _logger.LogInformation(
+                "user with id {userId} post comment to discussion with id {discussionId}",
                 command.UserId, discussionId.Id);
 
             return messageId;
@@ -89,7 +92,7 @@ public class PostMessageHandler: ICommandHandler<PostMessageCommand, MessageId>
         catch (Exception)
         {
             _logger.LogError("Cannot post message in discussion");
-            
+
             return Error.Failure("fail.to.post.message", "Cannot post message in discussion");
         }
     }

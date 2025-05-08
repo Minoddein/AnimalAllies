@@ -8,10 +8,11 @@ using AnimalAllies.Core.Extension;
 using AnimalAllies.SharedKernel.Constraints;
 using AnimalAllies.SharedKernel.Shared;
 using AnimalAllies.SharedKernel.Shared.Errors;
-using AnimalAllies.SharedKernel.Shared.ValueObjects;
 using FileService.Communication;
 using FileService.Contract.Requests;
+using FileService.Contract.Responses;
 using FluentValidation;
+using FluentValidation.Results;
 using MediatR;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -20,20 +21,21 @@ using Microsoft.Extensions.Logging;
 
 namespace AnimalAllies.Accounts.Application.AccountManagement.Commands.AddAvatar;
 
-public class AddAvatarHandler: ICommandHandler<AddAvatarCommand, AddAvatarResponse>
+public class AddAvatarHandler : ICommandHandler<AddAvatarCommand, AddAvatarResponse>
 {
+    private readonly FileHttpClient _fileHttpClient;
     private readonly ILogger<AddAvatarHandler> _logger;
-    private readonly IValidator<AddAvatarCommand> _validator;
+    private readonly IPublisher _publisher;
     private readonly IUnitOfWork _unitOfWork;
     private readonly UserManager<User> _userManager;
-    private readonly FileHttpClient _fileHttpClient;
-    private readonly IPublisher _publisher;
+    private readonly IValidator<AddAvatarCommand> _validator;
 
     public AddAvatarHandler(
-        ILogger<AddAvatarHandler> logger, 
+        ILogger<AddAvatarHandler> logger,
         IValidator<AddAvatarCommand> validator,
-        [FromKeyedServices(Constraints.Context.Accounts)]IUnitOfWork unitOfWork,
-        UserManager<User> userManager, 
+        [FromKeyedServices(Constraints.Context.Accounts)]
+        IUnitOfWork unitOfWork,
+        UserManager<User> userManager,
         FileHttpClient fileHttpClient,
         IPublisher publisher)
     {
@@ -48,11 +50,14 @@ public class AddAvatarHandler: ICommandHandler<AddAvatarCommand, AddAvatarRespon
     public async Task<Result<AddAvatarResponse>> Handle(
         AddAvatarCommand command, CancellationToken cancellationToken = default)
     {
-        var validatorResult = await _validator.ValidateAsync(command, cancellationToken);
+        ValidationResult? validatorResult = await _validator.ValidateAsync(command, cancellationToken)
+            .ConfigureAwait(false);
         if (!validatorResult.IsValid)
+        {
             return validatorResult.ToErrorList();
+        }
 
-        using var scope = new TransactionScope(
+        using TransactionScope scope = new(
             TransactionScopeOption.Required,
             new TransactionOptions { IsolationLevel = IsolationLevel.ReadCommitted },
             TransactionScopeAsyncFlowOption.Enabled
@@ -60,29 +65,36 @@ public class AddAvatarHandler: ICommandHandler<AddAvatarCommand, AddAvatarRespon
 
         try
         {
-            var user = await _userManager.Users.FirstOrDefaultAsync(u => u.Id == command.UserId, cancellationToken);
+            User? user = await _userManager.Users
+                .FirstOrDefaultAsync(u => u.Id == command.UserId, cancellationToken)
+                .ConfigureAwait(false);
             if (user is null)
+            {
                 return Errors.General.NotFound();
+            }
 
-            var request = new UploadPresignedUrlRequest(
+            UploadPresignedUrlRequest request = new(
                 command.UploadFileDto.BucketName,
                 command.UploadFileDto.FileName,
                 command.UploadFileDto.ContentType);
 
-            var response = await _fileHttpClient.GetUploadPresignedUrlAsync(request, cancellationToken);
+            GetUploadPresignedUrlResponse? response =
+                await _fileHttpClient.GetUploadPresignedUrlAsync(request, cancellationToken);
             if (response is null)
+            {
                 return Errors.General.Null("response from file service is null");
+            }
 
             user.Photo = response.FileId + response.Extension;
 
-            var addAvatarResponse = new AddAvatarResponse(response.UploadUrl);
+            AddAvatarResponse addAvatarResponse = new(response.UploadUrl);
 
-            var @event = new UserAddedAvatarDomainEvent(user.Id);
+            UserAddedAvatarDomainEvent @event = new(user.Id);
 
             await _publisher.Publish(@event, cancellationToken);
 
             await _unitOfWork.SaveChanges(cancellationToken);
-            
+
             scope.Complete();
 
             _logger.LogInformation("Added avatar to user with id {id}", command.UserId);

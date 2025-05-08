@@ -1,19 +1,15 @@
-﻿using AnimalAllies.SharedKernel.Shared;
-using AnimalAllies.SharedKernel.Shared.Objects;
+﻿using AnimalAllies.SharedKernel.Shared.Objects;
 
 namespace Discussion.Domain.ValueObjects;
 
-public class IsEdited: ValueObject
+public class IsEdited : ValueObject
 {
-    public bool Value { get; }
-    
-    private IsEdited(){}
+    private IsEdited() { }
 
-    public IsEdited(bool value)
-    {
-        Value = value;
-    }
-    
+    public IsEdited(bool value) => Value = value;
+
+    public bool Value { get; }
+
     protected override IEnumerable<object> GetEqualityComponents()
     {
         yield return Value;

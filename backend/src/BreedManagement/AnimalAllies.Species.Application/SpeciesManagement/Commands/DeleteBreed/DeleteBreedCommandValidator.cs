@@ -1,5 +1,4 @@
 ﻿using AnimalAllies.Core.Validators;
-using AnimalAllies.SharedKernel.Shared;
 using AnimalAllies.SharedKernel.Shared.Errors;
 using FluentValidation;
 
@@ -12,7 +11,7 @@ public class DeleteBreedCommandValidator : AbstractValidator<DeleteBreedCommand>
         RuleFor(b => b.SpeciesId)
             .NotEmpty()
             .WithError(Errors.General.ValueIsRequired("species id"));
-        
+
         RuleFor(b => b.BreedId)
             .NotEmpty()
             .WithError(Errors.General.ValueIsRequired("breed id"));

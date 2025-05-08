@@ -9,56 +9,48 @@ using AnimalAllies.SharedKernel.Shared;
 using AnimalAllies.SharedKernel.Shared.Errors;
 using AnimalAllies.SharedKernel.Shared.ValueObjects;
 using FluentValidation;
-using MassTransit;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using NotificationService.Contracts.Requests;
 using Outbox.Abstractions;
+using ValidationResult = FluentValidation.Results.ValidationResult;
 
 namespace AnimalAllies.Accounts.Application.AccountManagement.Commands.Register;
 
-public class RegisterUserHandler : ICommandHandler<RegisterUserCommand>
+public class RegisterUserHandler(
+    UserManager<User> userManager,
+    ILogger<RegisterUserHandler> logger,
+    IValidator<RegisterUserCommand> validator,
+    RoleManager<Role> roleManager,
+    IAccountManager accountManager,
+    [FromKeyedServices(Constraints.Context.Accounts)]
+    IUnitOfWork unitOfWork,
+    IOutboxRepository outboxRepository,
+    IUnitOfWorkOutbox unitOfWorkOutbox) : ICommandHandler<RegisterUserCommand>
 {
-    private readonly UserManager<User> _userManager;
-    private readonly RoleManager<Role> _roleManager;
-    private readonly IAccountManager _accountManager;
-    private readonly ILogger<RegisterUserHandler> _logger;
-    private readonly IUnitOfWork _unitOfWork;
-    private readonly IValidator<RegisterUserCommand> _validator;
-    private readonly IOutboxRepository _outboxRepository;
-    private readonly IUnitOfWorkOutbox _unitOfWorkOutbox;
-    
-    public RegisterUserHandler(
-        UserManager<User> userManager,
-        ILogger<RegisterUserHandler> logger,
-        IValidator<RegisterUserCommand> validator,
-        RoleManager<Role> roleManager, 
-        IAccountManager accountManager,
-        [FromKeyedServices(Constraints.Context.Accounts)]IUnitOfWork unitOfWork,
-        IOutboxRepository outboxRepository,
-        IUnitOfWorkOutbox unitOfWorkOutbox)
-    {
-        _userManager = userManager;
-        _logger = logger;
-        _validator = validator;
-        _roleManager = roleManager;
-        _accountManager = accountManager;
-        _unitOfWork = unitOfWork;
-        _outboxRepository = outboxRepository;
-        _unitOfWorkOutbox = unitOfWorkOutbox;
-    }
-    
+    private readonly IAccountManager _accountManager = accountManager;
+    private readonly ILogger<RegisterUserHandler> _logger = logger;
+    private readonly IOutboxRepository _outboxRepository = outboxRepository;
+    private readonly RoleManager<Role> _roleManager = roleManager;
+    private readonly IUnitOfWork _unitOfWork = unitOfWork;
+    private readonly IUnitOfWorkOutbox _unitOfWorkOutbox = unitOfWorkOutbox;
+    private readonly UserManager<User> _userManager = userManager;
+    private readonly IValidator<RegisterUserCommand> _validator = validator;
+
     public async Task<Result> Handle(
         RegisterUserCommand command,
         CancellationToken cancellationToken = default)
     {
-        var validatorResult = await _validator.ValidateAsync(command, cancellationToken);
+        ValidationResult? validatorResult =
+            await _validator.ValidateAsync(command, cancellationToken).ConfigureAwait(false);
         if (!validatorResult.IsValid)
+        {
             return validatorResult.ToErrorList();
+        }
 
-        using var scope = new TransactionScope(
+        using TransactionScope scope = new(
             TransactionScopeOption.Required,
             new TransactionOptions { IsolationLevel = IsolationLevel.ReadCommitted },
             TransactionScopeAsyncFlowOption.Enabled
@@ -66,56 +58,64 @@ public class RegisterUserHandler : ICommandHandler<RegisterUserCommand>
 
         try
         {
-            var role = await _roleManager.Roles
-                .FirstOrDefaultAsync(r => r.Name == ParticipantAccount.Participant, cancellationToken);
+            Role? role = await _roleManager.Roles
+                .FirstOrDefaultAsync(r => r.Name == ParticipantAccount.Participant, cancellationToken)
+                .ConfigureAwait(false);
             if (role is null)
+            {
                 return Errors.General.NotFound();
+            }
 
-            var isExistWithSameName =
-                await _userManager.Users.FirstOrDefaultAsync(u => u.UserName!.Equals(command.UserName),
-                    cancellationToken);
+            User? isExistWithSameName =
+                await _userManager.Users.FirstOrDefaultAsync(
+                    u => u.UserName!.Equals(command.UserName),
+                    cancellationToken).ConfigureAwait(false);
 
             if (isExistWithSameName is not null)
+            {
                 return Errors.General.AlreadyExist();
+            }
 
-            var user = User.CreateParticipant(command.UserName, command.Email, role);
+            User user = User.CreateParticipant(command.UserName, command.Email, role);
 
-            var result = await _userManager.CreateAsync(user, command.Password);
+            IdentityResult result = await _userManager.CreateAsync(user, command.Password).ConfigureAwait(false);
             if (!result.Succeeded)
-                Error.Failure("cannot.create.user","Can not create user");
-            
-            var fullName = FullName.Create(
+            {
+                Error.Failure("cannot.create.user", "Can not create user");
+            }
+
+            FullName fullName = FullName.Create(
                 command.FullNameDto.FirstName,
                 command.FullNameDto.SecondName,
                 command.FullNameDto.Patronymic).Value;
 
-            var participantAccount = new ParticipantAccount(fullName, user);
-            
-            await _accountManager.CreateParticipantAccount(participantAccount, cancellationToken);
+            ParticipantAccount participantAccount = new(fullName, user);
+
+            await _accountManager.CreateParticipantAccount(participantAccount, cancellationToken).ConfigureAwait(false);
 
             user.ParticipantAccount = participantAccount;
             user.ParticipantAccountId = participantAccount.Id;
 
-            var code = await _userManager.GenerateEmailConfirmationTokenAsync(user);
+            string code = await _userManager.GenerateEmailConfirmationTokenAsync(user).ConfigureAwait(false);
 
-            var message = new SendConfirmTokenByEmailEvent(user.Id, user.Email!, code);
+            SendConfirmTokenByEmailEvent message = new(user.Id, user.Email!, code);
 
-            await _outboxRepository.AddAsync(message, cancellationToken);
-            
-            await _unitOfWork.SaveChanges(cancellationToken);
-            await _unitOfWorkOutbox.SaveChanges(cancellationToken);
-            
+            await _outboxRepository.AddAsync(message, cancellationToken).ConfigureAwait(false);
+
+            await _unitOfWork.SaveChanges(cancellationToken).ConfigureAwait(false);
+            await _unitOfWorkOutbox.SaveChanges(cancellationToken).ConfigureAwait(false);
+
             scope.Complete();
-                
+
             _logger.LogInformation("User created:{name} a new account with password", command.UserName);
 
             return Result.Success();
         }
-        catch(Exception ex)
+        catch (Exception ex)
         {
             _logger.LogError("Registration of user fall with error");
-            
-            return Error.Failure("cannot.create.user","Can not create user");
+
+            return Error.Failure("cannot.create.user", "Can not create user");
         }
     }
 }

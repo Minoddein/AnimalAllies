@@ -1,5 +1,4 @@
-﻿
-namespace VolunteerRequests.Contracts.Requests;
+﻿namespace VolunteerRequests.Contracts.Requests;
 
 public record CreateVolunteerRequestRequest(
     string FirstName,
@@ -14,6 +13,6 @@ public record CreateVolunteerRequestRequest(
 public class SocialNetworkRequest
 {
     public string Title { get; set; } = string.Empty;
+
     public string Url { get; set; } = string.Empty;
 }
-

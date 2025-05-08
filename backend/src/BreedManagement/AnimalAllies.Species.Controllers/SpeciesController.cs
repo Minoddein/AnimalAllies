@@ -1,5 +1,9 @@
-﻿using AnimalAllies.Framework;
+﻿using AnimalAllies.Core.DTOs;
+using AnimalAllies.Core.Models;
+using AnimalAllies.Framework;
 using AnimalAllies.Framework.Authorization;
+using AnimalAllies.SharedKernel.Shared;
+using AnimalAllies.SharedKernel.Shared.Ids;
 using AnimalAllies.Species.Application.SpeciesManagement.Commands.CreateBreed;
 using AnimalAllies.Species.Application.SpeciesManagement.Commands.CreateSpecies;
 using AnimalAllies.Species.Application.SpeciesManagement.Commands.DeleteBreed;
@@ -7,33 +11,32 @@ using AnimalAllies.Species.Application.SpeciesManagement.Commands.DeleteSpecies;
 using AnimalAllies.Species.Application.SpeciesManagement.Queries.GetBreedsBySpeciesId;
 using AnimalAllies.Species.Application.SpeciesManagement.Queries.GetSpeciesWithPagination;
 using AnimalAllies.Species.Presentation.Requests;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace AnimalAllies.Species.Presentation;
 
 public class SpeciesController : ApplicationController
 {
-    //[Permission("species.create")]
+    // [Permission("species.create")]
     [HttpPost]
     public async Task<IActionResult> Create(
         [FromServices] CreateSpeciesHandler handler,
         [FromBody] CreateSpeciesRequest request,
         CancellationToken cancellationToken = default)
     {
-        var command = request.ToCommand();
-        
-        var result = await handler.Handle(command, cancellationToken);
-        
+        CreateSpeciesCommand command = request.ToCommand();
+
+        Result<SpeciesId> result = await handler.Handle(command, cancellationToken).ConfigureAwait(false);
+
         if (result.IsFailure)
         {
             return result.Errors.ToResponse();
         }
-        
+
         return Ok(result.Value);
     }
-    
-    //[Permission("species.create")]
+
+    // [Permission("species.create")]
     [HttpPost("{speciesId:guid}")]
     public async Task<IActionResult> CreateBreed(
         [FromServices] CreateBreedHandler handler,
@@ -41,18 +44,18 @@ public class SpeciesController : ApplicationController
         [FromBody] CreateBreedRequest request,
         CancellationToken cancellationToken = default)
     {
-        var command = request.ToCommand(speciesId);
-        
-        var result = await handler.Handle(command, cancellationToken);
-        
+        CreateBreedCommand command = request.ToCommand(speciesId);
+
+        Result<BreedId> result = await handler.Handle(command, cancellationToken).ConfigureAwait(false);
+
         if (result.IsFailure)
         {
             return result.Errors.ToResponse();
         }
-        
+
         return Ok(result.Value);
     }
-    
+
     [Permission("species.delete")]
     [HttpDelete("{speciesId:guid}")]
     public async Task<IActionResult> DeleteSpecies(
@@ -60,18 +63,18 @@ public class SpeciesController : ApplicationController
         [FromRoute] Guid speciesId,
         CancellationToken cancellationToken = default)
     {
-        var command = new DeleteSpeciesCommand(speciesId);
-        
-        var result = await handler.Handle(command, cancellationToken);
-        
+        DeleteSpeciesCommand command = new(speciesId);
+
+        Result<SpeciesId> result = await handler.Handle(command, cancellationToken).ConfigureAwait(false);
+
         if (result.IsFailure)
         {
             return result.Errors.ToResponse();
         }
-        
+
         return Ok(result.Value);
     }
-    
+
     [Permission("species.delete")]
     [HttpDelete("{speciesId:guid}/{breedId:guid}")]
     public async Task<IActionResult> DeleteBreed(
@@ -80,18 +83,18 @@ public class SpeciesController : ApplicationController
         [FromRoute] Guid breedId,
         CancellationToken cancellationToken = default)
     {
-        var command = new DeleteBreedCommand(speciesId, breedId);
-        
-        var result = await handler.Handle(command, cancellationToken);
-        
+        DeleteBreedCommand command = new(speciesId, breedId);
+
+        Result<BreedId> result = await handler.Handle(command, cancellationToken).ConfigureAwait(false);
+
         if (result.IsFailure)
         {
             return result.Errors.ToResponse();
         }
-        
+
         return Ok(result.Value);
     }
-    
+
     [Permission("species.read")]
     [HttpGet]
     public async Task<IActionResult> GetSpecies(
@@ -99,19 +102,18 @@ public class SpeciesController : ApplicationController
         [FromQuery] GetSpeciesWithPaginationRequest request,
         CancellationToken cancellationToken = default)
     {
+        GetSpeciesWithPaginationQuery query = request.ToQuery();
 
-        var query = request.ToQuery();
-        
-        var result = await handler.Handle(query, cancellationToken);
-        
+        Result<PagedList<SpeciesDto>> result = await handler.Handle(query, cancellationToken).ConfigureAwait(false);
+
         if (result.IsFailure)
         {
             return result.Errors.ToResponse();
         }
-        
+
         return Ok(result.Value);
     }
-    
+
     [Permission("species.read")]
     [HttpGet("{speciesId:guid}")]
     public async Task<IActionResult> GetBreeds(
@@ -120,15 +122,15 @@ public class SpeciesController : ApplicationController
         [FromQuery] GetBreedsBySpeciesIdWithPaginationRequest request,
         CancellationToken cancellationToken = default)
     {
-        var query = request.ToQuery(speciesId);
-        
-        var result = await handler.Handle(query, cancellationToken);
-        
+        GetBreedsBySpeciesIdWithPaginationQuery query = request.ToQuery(speciesId);
+
+        Result<PagedList<BreedDto>> result = await handler.Handle(query, cancellationToken).ConfigureAwait(false);
+
         if (result.IsFailure)
         {
             return result.Errors.ToResponse();
         }
-        
+
         return Ok(result.Value);
     }
 }

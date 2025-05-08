@@ -2,38 +2,30 @@
 using AnimalAllies.Accounts.Domain.DomainEvents;
 using AnimalAllies.SharedKernel.CachingConstants;
 using MediatR;
-using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 using Outbox.Abstractions;
 
 namespace AnimalAllies.Accounts.Application.AccountManagement.EventHandlers;
 
-public class UserAddedSocialNetworkEventHandler: INotificationHandler<UserAddedSocialNetworkDomainEvent>
+public class UserAddedSocialNetworkEventHandler(
+    ILogger<UserAddedAvatarEventHandler> logger,
+    IOutboxRepository outboxRepository,
+    IUnitOfWorkOutbox unitOfWork) : INotificationHandler<UserAddedSocialNetworkDomainEvent>
 {
-    private readonly ILogger<UserAddedAvatarEventHandler> _logger;
-    private readonly IOutboxRepository _outboxRepository;
-    private readonly IUnitOfWorkOutbox _unitOfWork;
-
-    public UserAddedSocialNetworkEventHandler(
-        ILogger<UserAddedAvatarEventHandler> logger,
-        IOutboxRepository outboxRepository, 
-        IUnitOfWorkOutbox unitOfWork)
-    {
-        _logger = logger;
-        _outboxRepository = outboxRepository;
-        _unitOfWork = unitOfWork;
-    }
+    private readonly ILogger<UserAddedAvatarEventHandler> _logger = logger;
+    private readonly IOutboxRepository _outboxRepository = outboxRepository;
+    private readonly IUnitOfWorkOutbox _unitOfWork = unitOfWork;
 
     public async Task Handle(UserAddedSocialNetworkDomainEvent notification, CancellationToken cancellationToken)
     {
-        var key = TagsConstants.USERS + "_" + notification.UserId;
-        
-        var integrationEvent = new CacheInvalidateIntegrationEvent(key, null);
+        string key = TagsConstants.USERS + "_" + notification.UserId;
 
-        await _outboxRepository.AddAsync(integrationEvent, cancellationToken);
+        CacheInvalidateIntegrationEvent integrationEvent = new(key, null);
 
-        await _unitOfWork.SaveChanges(cancellationToken);
-        
+        await _outboxRepository.AddAsync(integrationEvent, cancellationToken).ConfigureAwait(false);
+
+        await _unitOfWork.SaveChanges(cancellationToken).ConfigureAwait(false);
+
         _logger.LogInformation("User {NotificationUserId} has been added social networks", notification.UserId);
     }
 }

@@ -1,38 +1,41 @@
 ﻿using AnimalAllies.SharedKernel.Exceptions;
+using AnimalAllies.SharedKernel.Shared;
 using MediatR;
 using VolunteerRequests.Application.Repository;
+using VolunteerRequests.Domain.Aggregates;
 using VolunteerRequests.Domain.Events;
 
 namespace VolunteerRequests.Application.EventHandlers.ProhibitionOnVolunteerRequestChecked;
 
-public class ProhibitionOnVolunteerRequestChecked : INotificationHandler<ProhibitionOnVolunteerRequestCheckedEvent>
+public class ProhibitionOnVolunteerRequestChecked(
+    IProhibitionSendingRepository prohibitionSendingRepository)
+    : INotificationHandler<ProhibitionOnVolunteerRequestCheckedEvent>
 {
-    private static readonly int REQUEST_BLOCKING_PERIOD = 7;
-    
-    private readonly IProhibitionSendingRepository _prohibitionSendingRepository;
-    
-    public ProhibitionOnVolunteerRequestChecked(
-        IProhibitionSendingRepository prohibitionSendingRepository)
-    {
-        _prohibitionSendingRepository = prohibitionSendingRepository;
-    }
+    private const int REQUEST_BLOCKING_PERIOD = 7;
 
-    public async Task Handle(ProhibitionOnVolunteerRequestCheckedEvent notification, CancellationToken cancellationToken)
+    private readonly IProhibitionSendingRepository _prohibitionSendingRepository = prohibitionSendingRepository;
+
+    public async Task Handle(
+        ProhibitionOnVolunteerRequestCheckedEvent notification,
+        CancellationToken cancellationToken)
     {
-        var prohibitionSending = await _prohibitionSendingRepository
-            .GetByUserId(notification.UserId, cancellationToken);
-        
+        Result<ProhibitionSending> prohibitionSending = await _prohibitionSendingRepository
+            .GetByUserId(notification.UserId, cancellationToken).ConfigureAwait(false);
+
         if (prohibitionSending.IsSuccess)
         {
-            var checkResult = prohibitionSending.Value.CheckExpirationOfProhibtion(REQUEST_BLOCKING_PERIOD);
+            Result checkResult = prohibitionSending.Value.CheckExpirationOfProhibtion(REQUEST_BLOCKING_PERIOD);
 
             if (checkResult.IsFailure)
+            {
                 throw new AccountBannedException(checkResult.Errors.ToString());
-                
-            var result = _prohibitionSendingRepository.Delete(prohibitionSending.Value);
+            }
+
+            Result result = _prohibitionSendingRepository.Delete(prohibitionSending.Value);
             if (result.IsFailure)
+            {
                 throw new AccountBannedException(checkResult.Errors.ToString());
+            }
         }
-        
     }
 }

@@ -8,64 +8,66 @@ using AnimalAllies.SharedKernel.Shared.Errors;
 using AnimalAllies.SharedKernel.Shared.Ids;
 using AnimalAllies.SharedKernel.Shared.ValueObjects;
 using FluentValidation;
+using FluentValidation.Results;
 using MediatR;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using VolunteerRequests.Application.Repository;
+using VolunteerRequests.Domain.Aggregates;
 
 namespace VolunteerRequests.Application.Features.Commands.UpdateVolunteerRequest;
 
-public class UpdateVolunteerRequestHandler : ICommandHandler<UpdateVolunteerRequestCommand, VolunteerRequestId>
+public class UpdateVolunteerRequestHandler(
+    [FromKeyedServices(Constraints.Context.VolunteerRequests)]
+    IUnitOfWork unitOfWork,
+    ILogger<UpdateVolunteerRequestHandler> logger,
+    IVolunteerRequestsRepository repository,
+    IValidator<UpdateVolunteerRequestCommand> validator,
+    IPublisher publisher) : ICommandHandler<UpdateVolunteerRequestCommand, VolunteerRequestId>
 {
-    private readonly IUnitOfWork _unitOfWork;
-    private readonly ILogger<UpdateVolunteerRequestHandler> _logger;
-    private readonly IVolunteerRequestsRepository _repository;
-    private readonly IValidator<UpdateVolunteerRequestCommand> _validator;
-    private readonly IPublisher _publisher;
-
-    public UpdateVolunteerRequestHandler(
-        [FromKeyedServices(Constraints.Context.VolunteerRequests)]IUnitOfWork unitOfWork,
-        ILogger<UpdateVolunteerRequestHandler> logger,
-        IVolunteerRequestsRepository repository,
-        IValidator<UpdateVolunteerRequestCommand> validator,
-        IPublisher publisher)
-    {
-        _unitOfWork = unitOfWork;
-        _logger = logger;
-        _repository = repository;
-        _validator = validator;
-        _publisher = publisher;
-    }
+    private readonly ILogger<UpdateVolunteerRequestHandler> _logger = logger;
+    private readonly IPublisher _publisher = publisher;
+    private readonly IVolunteerRequestsRepository _repository = repository;
+    private readonly IUnitOfWork _unitOfWork = unitOfWork;
+    private readonly IValidator<UpdateVolunteerRequestCommand> _validator = validator;
 
     public async Task<Result<VolunteerRequestId>> Handle(
         UpdateVolunteerRequestCommand command, CancellationToken cancellationToken = default)
     {
-        var validationResult = await _validator.ValidateAsync(command, cancellationToken);
+        ValidationResult? validationResult =
+            await _validator.ValidateAsync(command, cancellationToken).ConfigureAwait(false);
         if (!validationResult.IsValid)
+        {
             return validationResult.ToErrorList();
+        }
 
-        using var scope = new TransactionScope(
+        using TransactionScope scope = new(
             TransactionScopeOption.Required,
             new TransactionOptions { IsolationLevel = IsolationLevel.ReadCommitted },
             TransactionScopeAsyncFlowOption.Enabled
         );
         try
         {
-            var volunteerRequestId = VolunteerRequestId.Create(command.VolunteerRequestId);
-            var volunteerRequest = await _repository.GetById(volunteerRequestId, cancellationToken);
+            VolunteerRequestId volunteerRequestId = VolunteerRequestId.Create(command.VolunteerRequestId);
+            Result<VolunteerRequest> volunteerRequest =
+                await _repository.GetById(volunteerRequestId, cancellationToken).ConfigureAwait(false);
             if (volunteerRequest.IsFailure || volunteerRequest.Value.UserId != command.UserId)
+            {
                 return volunteerRequest.Errors;
+            }
 
-            var volunteerInfo = InitVolunteerInfo(command).Value;
+            VolunteerInfo volunteerInfo = InitVolunteerInfo(command).Value;
 
-            var result = volunteerRequest.Value.UpdateVolunteerRequest(volunteerInfo);
+            Result result = volunteerRequest.Value.UpdateVolunteerRequest(volunteerInfo);
             if (result.IsFailure)
+            {
                 return result.Errors;
+            }
 
-            await _publisher.PublishDomainEvents(volunteerRequest.Value, cancellationToken);
-            
-            await _unitOfWork.SaveChanges(cancellationToken);
-            
+            await _publisher.PublishDomainEvents(volunteerRequest.Value, cancellationToken).ConfigureAwait(false);
+
+            await _unitOfWork.SaveChanges(cancellationToken).ConfigureAwait(false);
+
             scope.Complete();
 
             _logger.LogInformation("volunteer request with id {id} was updated", command.VolunteerRequestId);
@@ -75,30 +77,31 @@ public class UpdateVolunteerRequestHandler : ICommandHandler<UpdateVolunteerRequ
         catch (Exception)
         {
             _logger.LogError("Cannot update volunteer request");
-            
-            return Error.Failure("Fail.to.update.volunteer.request",
+
+            return Error.Failure(
+                "Fail.to.update.volunteer.request",
                 "Cannot update volunteer request");
         }
     }
 
-    private Result<VolunteerInfo> InitVolunteerInfo(
+    private static Result<VolunteerInfo> InitVolunteerInfo(
         UpdateVolunteerRequestCommand command)
     {
-        var fullName = FullName.Create(
+        FullName fullName = FullName.Create(
             command.FullNameDto.FirstName,
             command.FullNameDto.SecondName,
             command.FullNameDto.Patronymic).Value;
 
-        var email = Email.Create(command.Email).Value;
-        var phoneNumber = PhoneNumber.Create(command.PhoneNumber).Value;
-        var workExperience = WorkExperience.Create(command.WorkExperience).Value;
-        var volunteerDescription = VolunteerDescription.Create(command.VolunteerDescription).Value;
-        var socialNetworks = command.SocialNetworkDtos
+        Email email = Email.Create(command.Email).Value;
+        PhoneNumber phoneNumber = PhoneNumber.Create(command.PhoneNumber).Value;
+        WorkExperience workExperience = WorkExperience.Create(command.WorkExperience).Value;
+        VolunteerDescription volunteerDescription = VolunteerDescription.Create(command.VolunteerDescription).Value;
+        IEnumerable<SocialNetwork> socialNetworks = command.SocialNetworkDtos
             .Select(s => SocialNetwork.Create(s.Title, s.Url).Value);
 
-        var volunteerInfo = new VolunteerInfo(
+        VolunteerInfo volunteerInfo = new(
             fullName, email, phoneNumber, workExperience, volunteerDescription, socialNetworks);
-        
+
         return volunteerInfo;
     }
 }

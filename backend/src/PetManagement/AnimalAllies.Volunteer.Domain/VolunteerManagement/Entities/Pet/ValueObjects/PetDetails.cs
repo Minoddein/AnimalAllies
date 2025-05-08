@@ -1,17 +1,13 @@
-using AnimalAllies.SharedKernel.Constraints;
+﻿using AnimalAllies.SharedKernel.Constraints;
 using AnimalAllies.SharedKernel.Shared;
 using AnimalAllies.SharedKernel.Shared.Errors;
 using AnimalAllies.SharedKernel.Shared.Objects;
 
 namespace AnimalAllies.Volunteer.Domain.VolunteerManagement.Entities.Pet.ValueObjects;
 
-public class PetDetails: ValueObject
+public class PetDetails : ValueObject
 {
-    public string Description { get; }
-    public DateOnly BirthDate { get; } 
-    public DateTime CreationTime { get; }
-    
-    private PetDetails(){}
+    private PetDetails() { }
 
     private PetDetails(string description, DateOnly birthDate, DateTime creationTime)
     {
@@ -20,6 +16,12 @@ public class PetDetails: ValueObject
         CreationTime = creationTime;
     }
 
+    public string Description { get; }
+
+    public DateOnly BirthDate { get; }
+
+    public DateTime CreationTime { get; }
+
     public static Result<PetDetails> Create(string description, DateOnly birthDate, DateTime creationTime)
     {
         if (string.IsNullOrWhiteSpace(description) ||
@@ -27,7 +29,7 @@ public class PetDetails: ValueObject
         {
             return Errors.General.ValueIsRequired(description);
         }
-        
+
         if (birthDate > DateOnly.FromDateTime(DateTime.Now))
         {
             return Errors.General.ValueIsInvalid(nameof(birthDate));
@@ -35,7 +37,7 @@ public class PetDetails: ValueObject
 
         return new PetDetails(description, birthDate, creationTime);
     }
-    
+
     protected override IEnumerable<object> GetEqualityComponents()
     {
         yield return Description;

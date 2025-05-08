@@ -1,4 +1,4 @@
-using AnimalAllies.Core.Abstractions;
+﻿using AnimalAllies.Core.Abstractions;
 
 namespace AnimalAllies.Accounts.Application.AccountManagement.Commands.ConfirmEmail;
 

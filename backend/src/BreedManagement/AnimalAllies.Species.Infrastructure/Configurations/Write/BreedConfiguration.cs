@@ -1,4 +1,4 @@
-using AnimalAllies.SharedKernel.Constraints;
+﻿using AnimalAllies.SharedKernel.Constraints;
 using AnimalAllies.SharedKernel.Shared.Ids;
 using AnimalAllies.Species.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace AnimalAllies.Species.Infrastructure.Configurations.Write;
 
-public class BreedConfiguration: IEntityTypeConfiguration<Breed>
+public class BreedConfiguration : IEntityTypeConfiguration<Breed>
 {
     public void Configure(EntityTypeBuilder<Breed> builder)
     {

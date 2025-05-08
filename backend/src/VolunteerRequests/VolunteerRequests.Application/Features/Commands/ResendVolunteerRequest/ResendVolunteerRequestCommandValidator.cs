@@ -1,5 +1,4 @@
 ﻿using AnimalAllies.Core.Validators;
-using AnimalAllies.SharedKernel.Shared;
 using AnimalAllies.SharedKernel.Shared.Errors;
 using FluentValidation;
 
@@ -12,7 +11,7 @@ public class ResendVolunteerRequestCommandValidator : AbstractValidator<ResendVo
         RuleFor(v => v.UserId)
             .NotEmpty()
             .WithError(Errors.General.Null("user id"));
-        
+
         RuleFor(v => v.VolunteerRequestId)
             .NotEmpty()
             .WithError(Errors.General.Null("volunteer request id"));

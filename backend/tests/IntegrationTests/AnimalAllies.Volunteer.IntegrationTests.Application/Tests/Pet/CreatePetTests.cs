@@ -14,10 +14,11 @@ namespace AnimalAllies.Volunteer.IntegrationTests.Application.Tests.Pet;
 
 public class AddPetTests : VolunteerTestsBase
 {
-    private readonly ICommandHandler<AddPetCommand, Guid> _sut;
     private readonly IntegrationTestsWebFactory _factory;
+    private readonly ICommandHandler<AddPetCommand, Guid> _sut;
 
-    public AddPetTests(IntegrationTestsWebFactory factory) : base(factory)
+    public AddPetTests(IntegrationTestsWebFactory factory)
+        : base(factory)
     {
         _factory = factory;
         _sut = _scope.ServiceProvider.GetRequiredService<ICommandHandler<AddPetCommand, Guid>>();
@@ -28,15 +29,15 @@ public class AddPetTests : VolunteerTestsBase
     public async Task AddPet_ShouldCreatePetAndAddToVolunteer_WhenValidDataProvided()
     {
         // Arrange
-        var species = new Species.Domain.Species(SpeciesId.Create(Guid.NewGuid()), Name.Create("Dog").Value);
+        Species.Domain.Species species = new(SpeciesId.Create(Guid.NewGuid()), Name.Create("Dog").Value);
         species.AddBreed(new Breed(BreedId.Create(Guid.NewGuid()), Name.Create("Labrador").Value));
 
-        await _speciesDbContext.Species.AddAsync(species);
-        await _speciesDbContext.SaveChangesAsync();
-        
+        await _speciesDbContext.Species.AddAsync(species).ConfigureAwait(false);
+        await _speciesDbContext.SaveChangesAsync().ConfigureAwait(false);
+
         _factory.SetupSuccessSpeciesContractsMock(species.Id.Id, species.Breeds[0].Id.Id);
-        
-        var volunteer = new Domain.VolunteerManagement.Aggregate.Volunteer(
+
+        Domain.VolunteerManagement.Aggregate.Volunteer volunteer = new(
             VolunteerId.NewGuid(),
             FullName.Create("Иван", "Иванов", "Иванович").Value,
             Email.Create("ivan@mail.com").Value,
@@ -44,59 +45,52 @@ public class AddPetTests : VolunteerTestsBase
             WorkExperience.Create(3).Value,
             PhoneNumber.Create("+79991234567").Value,
             new ValueObjectList<Requisite>([]));
-        
-        await _volunteerDbContext.Volunteers.AddAsync(volunteer);
-        await _volunteerDbContext.SaveChangesAsync();
 
-        var volunteerId = volunteer.Id.Id;
-        
-        var command = new AddPetCommand(
-            VolunteerId: volunteerId,
-            Name: "Барсик",
+        await _volunteerDbContext.Volunteers.AddAsync(volunteer).ConfigureAwait(false);
+        await _volunteerDbContext.SaveChangesAsync().ConfigureAwait(false);
+
+        Guid volunteerId = volunteer.Id.Id;
+
+        AddPetCommand command = new(
+            volunteerId,
+            "Барсик",
             PhoneNumber: "+79998887766",
             HelpStatus: "NeedsHelp",
             PetPhysicCharacteristics: new PetPhysicCharacteristicsDto(
-                Color: "Рыжий",
-                HealthInformation: "Здоров",
-                Weight: 5.2f,
-                Height: 0.5f,
-                IsCastrated: true,
-                IsVaccinated: true),
+                "Рыжий",
+                "Здоров",
+                5.2f,
+                0.5f,
+                true,
+                true),
             PetDetails: new PetDetailsDto(
-                Description: "Дружелюбный кот",
-                BirthDate: new DateTime(2020, 5, 10)),
+                "Дружелюбный кот",
+                new DateTime(2020, 5, 10)),
             Address: new AddressDto(
-                Street: "ул. Ленина",
-                City: "Москва",
-                State: "Московская область",
-                ZipCode: "123456"),
+                "ул. Ленина",
+                "Москва",
+                "Московская область",
+                "123456"),
             AnimalType: new AnimalTypeDto(
-                SpeciesId: species.Id.Id,
-                BreedId: species.Breeds!.FirstOrDefault()!.Id.Id),
-            Requisites: new List<RequisiteDto>
-            {
-                new()
-                {
-                    Title = "Паспорт",
-                    Description = "Серия 1234 №567890"
-                }
-            });
-        
+                species.Id.Id,
+                species.Breeds!.FirstOrDefault()!.Id.Id),
+            Requisites: [new RequisiteDto { Title = "Паспорт", Description = "Серия 1234 №567890" }]);
+
         // Act
-        var result = await _sut.Handle(command, CancellationToken.None);
-        
+        Result<Guid> result = await _sut.Handle(command, CancellationToken.None).ConfigureAwait(false);
+
         // Assert
         result.IsSuccess.Should().BeTrue();
         result.Value.Should().NotBeEmpty();
-        
-        var savedVolunteer = await _volunteerDbContext.Volunteers
+
+        Domain.VolunteerManagement.Aggregate.Volunteer? savedVolunteer = await _volunteerDbContext.Volunteers
             .Include(v => v.Pets)
-            .FirstOrDefaultAsync(v => v.Id == volunteer.Id);
-            
+            .FirstOrDefaultAsync(v => v.Id == volunteer.Id).ConfigureAwait(false);
+
         savedVolunteer.Should().NotBeNull();
         savedVolunteer.Pets.Should().HaveCount(1);
-        
-        var pet = savedVolunteer.Pets.First();
+
+        Domain.VolunteerManagement.Entities.Pet.Pet pet = savedVolunteer.Pets.First();
         pet.Name.Value.Should().Be("Барсик");
         pet.PhoneNumber.Number.Should().Be("+79998887766");
         pet.HelpStatus.Value.Should().Be("NeedsHelp");
@@ -113,43 +107,43 @@ public class AddPetTests : VolunteerTestsBase
     public async Task AddPet_ShouldReturnNotFound_WhenVolunteerNotExists()
     {
         // Arrange
-        var species = new Species.Domain.Species(SpeciesId.Create(Guid.NewGuid()), Name.Create("Dog").Value);
+        Species.Domain.Species species = new(SpeciesId.Create(Guid.NewGuid()), Name.Create("Dog").Value);
         species.AddBreed(new Breed(BreedId.Create(Guid.NewGuid()), Name.Create("Labrador").Value));
 
-        await _speciesDbContext.Species.AddAsync(species);
-        await _speciesDbContext.SaveChangesAsync();
-        
+        await _speciesDbContext.Species.AddAsync(species).ConfigureAwait(false);
+        await _speciesDbContext.SaveChangesAsync().ConfigureAwait(false);
+
         _factory.SetupSuccessSpeciesContractsMock(species.Id.Id, species.Breeds[0].Id.Id);
-        
-        var nonExistentVolunteerId = Guid.NewGuid();
-        var command = new AddPetCommand(
-            VolunteerId: nonExistentVolunteerId,
-            Name: "Барсик",
+
+        Guid nonExistentVolunteerId = Guid.NewGuid();
+        AddPetCommand command = new(
+            nonExistentVolunteerId,
+            "Барсик",
             PhoneNumber: "+79998887766",
             HelpStatus: "NeedsHelp",
             PetPhysicCharacteristics: new PetPhysicCharacteristicsDto(
-                Color: "Рыжий",
-                HealthInformation: "Здоров",
-                Weight: 5.2f,
-                Height: 0.5f,
-                IsCastrated: true,
-                IsVaccinated: true),
+                "Рыжий",
+                "Здоров",
+                5.2f,
+                0.5f,
+                true,
+                true),
             PetDetails: new PetDetailsDto(
-                Description: "Дружелюбный кот",
-                BirthDate: DateTime.Now.AddYears(-2)),
+                "Дружелюбный кот",
+                DateTime.Now.AddYears(-2)),
             Address: new AddressDto(
-                Street: "ул. Ленина",
-                City: "Москва",
-                State: "Московская область",
-                ZipCode: "123456"),
+                "ул. Ленина",
+                "Москва",
+                "Московская область",
+                "123456"),
             AnimalType: new AnimalTypeDto(
-                SpeciesId: species.Id.Id,
-                BreedId: species.Breeds[0].Id.Id),
-            Requisites: new List<RequisiteDto>());
-        
+                species.Id.Id,
+                species.Breeds[0].Id.Id),
+            Requisites: []);
+
         // Act
-        var result = await _sut.Handle(command, CancellationToken.None);
-        
+        Result<Guid> result = await _sut.Handle(command, CancellationToken.None).ConfigureAwait(false);
+
         // Assert
         result.IsSuccess.Should().BeFalse();
         result.Errors.Should().Contain(e => e.ErrorCode == Errors.General.NotFound(null).ErrorCode);
@@ -159,7 +153,7 @@ public class AddPetTests : VolunteerTestsBase
     public async Task AddPet_ShouldReturnError_WhenSpeciesNotFound()
     {
         // Arrange
-        var volunteer = new Domain.VolunteerManagement.Aggregate.Volunteer(
+        Domain.VolunteerManagement.Aggregate.Volunteer volunteer = new(
             VolunteerId.NewGuid(),
             FullName.Create("Иван", "Иванов", "Иванович").Value,
             Email.Create("ivan@mail.com").Value,
@@ -167,40 +161,40 @@ public class AddPetTests : VolunteerTestsBase
             WorkExperience.Create(3).Value,
             PhoneNumber.Create("+79991234567").Value,
             new ValueObjectList<Requisite>([]));
-        
-        await _volunteerDbContext.Volunteers.AddAsync(volunteer);
-        await _volunteerDbContext.SaveChangesAsync();
 
-        var nonExistentSpeciesId = Guid.NewGuid();
-        
-        var command = new AddPetCommand(
-            VolunteerId: volunteer.Id.Id,
-            Name: "Барсик",
+        await _volunteerDbContext.Volunteers.AddAsync(volunteer).ConfigureAwait(false);
+        await _volunteerDbContext.SaveChangesAsync().ConfigureAwait(false);
+
+        Guid nonExistentSpeciesId = Guid.NewGuid();
+
+        AddPetCommand command = new(
+            volunteer.Id.Id,
+            "Барсик",
             PhoneNumber: "+79998887766",
             HelpStatus: "NeedsHelp",
             PetPhysicCharacteristics: new PetPhysicCharacteristicsDto(
-                Color: "Рыжий",
-                HealthInformation: "Здоров",
-                Weight: 5.2f,
-                Height: 0.5f,
-                IsCastrated: true,
-                IsVaccinated: true),
+                "Рыжий",
+                "Здоров",
+                5.2f,
+                0.5f,
+                true,
+                true),
             PetDetails: new PetDetailsDto(
-                Description: "Дружелюбный кот",
-                BirthDate: DateTime.Now.AddYears(-2)),
+                "Дружелюбный кот",
+                DateTime.Now.AddYears(-2)),
             Address: new AddressDto(
-                Street: "ул. Ленина",
-                City: "Москва",
-                State: "Московская область",
-                ZipCode: "123456"),
+                "ул. Ленина",
+                "Москва",
+                "Московская область",
+                "123456"),
             AnimalType: new AnimalTypeDto(
-                SpeciesId: nonExistentSpeciesId,
-                BreedId: Guid.NewGuid()),
-            Requisites: new List<RequisiteDto>());
-        
+                nonExistentSpeciesId,
+                Guid.NewGuid()),
+            Requisites: []);
+
         // Act
-        var result = await _sut.Handle(command, CancellationToken.None);
-        
+        Result<Guid> result = await _sut.Handle(command, CancellationToken.None).ConfigureAwait(false);
+
         // Assert
         result.IsSuccess.Should().BeFalse();
         result.Errors.Should().Contain(e => e.ErrorCode == Errors.General.NotFound(null).ErrorCode);

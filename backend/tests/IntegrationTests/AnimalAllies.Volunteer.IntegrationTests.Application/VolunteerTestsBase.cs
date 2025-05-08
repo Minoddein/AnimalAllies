@@ -5,13 +5,13 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace AnimalAllies.Volunteer.IntegrationTests.Application;
 
-public class VolunteerTestsBase: IClassFixture<IntegrationTestsWebFactory>, IAsyncLifetime
+public class VolunteerTestsBase : IClassFixture<IntegrationTestsWebFactory>, IAsyncLifetime
 {
     private readonly IntegrationTestsWebFactory _factory;
-    protected readonly IServiceScope _scope;
-    protected readonly VolunteerWriteDbContext _volunteerDbContext;
-    protected readonly SpeciesWriteDbContext _speciesDbContext;
     protected readonly Fixture _fixture;
+    protected readonly IServiceScope _scope;
+    protected readonly SpeciesWriteDbContext _speciesDbContext;
+    protected readonly VolunteerWriteDbContext _volunteerDbContext;
 
     protected VolunteerTestsBase(IntegrationTestsWebFactory factory)
     {
@@ -22,15 +22,12 @@ public class VolunteerTestsBase: IClassFixture<IntegrationTestsWebFactory>, IAsy
         _fixture = new Fixture();
     }
 
-    public Task InitializeAsync()
-    {
-        return Task.CompletedTask;
-    }
+    public Task InitializeAsync() => Task.CompletedTask;
 
     public async Task DisposeAsync()
     {
-        await _factory.ResetDatabaseAsync();
-        
+        await _factory.ResetDatabaseAsync().ConfigureAwait(false);
+
         _scope.Dispose();
     }
 }

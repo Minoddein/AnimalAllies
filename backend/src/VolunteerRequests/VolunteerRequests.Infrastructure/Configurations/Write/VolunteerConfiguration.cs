@@ -9,32 +9,32 @@ using VolunteerRequests.Domain.Aggregates;
 
 namespace VolunteerRequests.Infrastructure.Configurations.Write;
 
-public class VolunteerConfiguration: IEntityTypeConfiguration<VolunteerRequest>
+public class VolunteerConfiguration : IEntityTypeConfiguration<VolunteerRequest>
 {
     public void Configure(EntityTypeBuilder<VolunteerRequest> builder)
     {
         builder.ToTable("volunteer_requests");
         builder.HasKey(x => x.Id);
-        
+
         builder.Property(x => x.Id)
             .HasConversion(
                 id => id.Id,
                 id => VolunteerRequestId.Create(id));
-        
+
         builder.ComplexProperty(v => v.CreatedAt, c =>
         {
             c.IsRequired();
             c.Property(x => x.Value)
                 .HasColumnName("created_at");
         });
-        
+
         builder.ComplexProperty(v => v.RequestStatus, r =>
         {
             r.IsRequired();
             r.Property(x => x.Value)
                 .HasColumnName("request_status");
         });
-        
+
         builder.ComplexProperty(v => v.RejectionComment, r =>
         {
             r.Property(x => x.Value)
@@ -87,24 +87,21 @@ public class VolunteerConfiguration: IEntityTypeConfiguration<VolunteerRequest>
                     .HasMaxLength(Constraints.MAX_DESCRIPTION_LENGTH)
                     .HasColumnName("description");
             });
-            
+
             vb.Property(v => v.SocialNetworks)
                 .ValueObjectJsonConverter(
-                    s => new SocialNetworkDto {Title = s.Title, Url = s.Url},
+                    s => new SocialNetworkDto { Title = s.Title, Url = s.Url },
                     dto => SocialNetwork.Create(dto.Title, dto.Url).Value)
                 .HasColumnName("social_networks");
-
         });
-
 
         builder.Property(v => v.AdminId)
             .HasColumnName("admin_id");
 
         builder.Property(v => v.DiscussionId)
             .HasColumnName("discussion_id");
-        
+
         builder.Property(v => v.UserId)
             .HasColumnName("user_id");
-
     }
 }

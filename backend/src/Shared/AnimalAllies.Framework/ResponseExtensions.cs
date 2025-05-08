@@ -1,5 +1,4 @@
-using AnimalAllies.Core.Models;
-using AnimalAllies.SharedKernel.Shared;
+﻿using AnimalAllies.Core.Models;
 using AnimalAllies.SharedKernel.Shared.Errors;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -10,43 +9,36 @@ public static class ResponseExtensions
 {
     public static ActionResult ToResponse(this Error error)
     {
+        int statusCode = GetStatusCodeForErrorType(error.Type);
 
-        var statusCode = GetStatusCodeForErrorType(error.Type);
-        
-        var envelope = Envelope.Error(error);
-        
-        return new ObjectResult(envelope)
-        {
-            StatusCode = statusCode
-        };
+        Envelope envelope = Envelope.Error(error);
+
+        return new ObjectResult(envelope) { StatusCode = statusCode };
     }
-    
+
     public static ActionResult ToResponse(this ErrorList errors)
     {
-
         if (!errors.Any())
-            return new ObjectResult(Envelope.Error(errors))
-            {
-                StatusCode = StatusCodes.Status500InternalServerError
-            };
+        {
+            return new ObjectResult(Envelope.Error(errors)) { StatusCode = StatusCodes.Status500InternalServerError };
+        }
 
-        var distinctErrorTypes = errors
-            .Select(x => x.Type)
-            .Distinct()
-            .ToList();
+        List<ErrorType> distinctErrorTypes =
+        [
+            .. errors
+                .Select(x => x.Type)
+                .Distinct()
+        ];
 
-        var statusCode = distinctErrorTypes.Count > 1
+        int statusCode = distinctErrorTypes.Count > 1
             ? StatusCodes.Status500InternalServerError
             : GetStatusCodeForErrorType(distinctErrorTypes.First());
 
-        var envelope = Envelope.Error(errors);
-        
-        return new ObjectResult(envelope)
-        {
-            StatusCode = StatusCodes.Status400BadRequest
-        };
+        Envelope envelope = Envelope.Error(errors);
+
+        return new ObjectResult(envelope) { StatusCode = StatusCodes.Status400BadRequest };
     }
-    
+
     private static int GetStatusCodeForErrorType(ErrorType errorType) =>
         errorType switch
         {
@@ -56,5 +48,4 @@ public static class ResponseExtensions
             ErrorType.Failure => StatusCodes.Status500InternalServerError,
             _ => StatusCodes.Status500InternalServerError
         };
-    
 }

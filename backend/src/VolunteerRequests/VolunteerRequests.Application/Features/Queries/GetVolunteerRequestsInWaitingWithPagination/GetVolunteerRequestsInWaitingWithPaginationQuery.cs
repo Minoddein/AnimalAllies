@@ -5,5 +5,5 @@ namespace VolunteerRequests.Application.Features.Queries.GetVolunteerRequestsInW
 public record GetVolunteerRequestsInWaitingWithPaginationQuery(
     string? SortBy,
     string? SortDirection,
-    int Page, 
+    int Page,
     int PageSize) : IQuery;

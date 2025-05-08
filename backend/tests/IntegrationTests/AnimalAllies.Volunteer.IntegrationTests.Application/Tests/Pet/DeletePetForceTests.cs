@@ -1,6 +1,5 @@
-namespace AnimalAllies.Volunteer.IntegrationTests.Application.Tests.Pet;
+﻿namespace AnimalAllies.Volunteer.IntegrationTests.Application.Tests.Pet;
 
-public class DeletePetForceTests
+internal class DeletePetForceTests
 {
-    
 }

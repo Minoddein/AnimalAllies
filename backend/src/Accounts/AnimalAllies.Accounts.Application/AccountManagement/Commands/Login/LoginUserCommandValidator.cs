@@ -1,12 +1,11 @@
 ﻿using AnimalAllies.Core.Validators;
 using AnimalAllies.SharedKernel.Constraints;
-using AnimalAllies.SharedKernel.Shared;
 using AnimalAllies.SharedKernel.Shared.Errors;
 using FluentValidation;
 
 namespace AnimalAllies.Accounts.Application.AccountManagement.Commands.Login;
 
-public class LoginUserCommandValidator: AbstractValidator<LoginUserCommand>
+public class LoginUserCommandValidator : AbstractValidator<LoginUserCommand>
 {
     public LoginUserCommandValidator()
     {

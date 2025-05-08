@@ -1,35 +1,36 @@
-﻿using System.Text.Json;
-using AnimalAllies.Accounts.Domain;
-using AnimalAllies.SharedKernel.Constraints;
-using AnimalAllies.SharedKernel.Shared.Ids;
-using AnimalAllies.SharedKernel.Shared.ValueObjects;
+﻿using AnimalAllies.Accounts.Domain;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 
 namespace AnimalAllies.Accounts.Infrastructure;
 
 public class AccountsDbContext(IConfiguration configuration)
-    : IdentityDbContext<User,Role,Guid>
+    : IdentityDbContext<User, Role, Guid>
 {
+    private static readonly ILoggerFactory CreateLoggerFactory
+        = LoggerFactory.Create(builder => { builder.AddConsole(); });
+
     public DbSet<RolePermission> RolePermissions => Set<RolePermission>();
+
     public DbSet<Permission> Permissions => Set<Permission>();
+
     public DbSet<AdminProfile> AdminProfiles => Set<AdminProfile>();
+
     public DbSet<VolunteerAccount> VolunteerAccounts => Set<VolunteerAccount>();
+
     public DbSet<ParticipantAccount> ParticipantAccounts => Set<ParticipantAccount>();
+
     public DbSet<RefreshSession> RefreshSessions => Set<RefreshSession>();
-    
-    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-    {
+
+    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder) =>
         optionsBuilder
             .UseNpgsql(configuration.GetConnectionString("DefaultConnection"))
             .UseLoggerFactory(CreateLoggerFactory)
             .EnableSensitiveDataLogging()
             .UseSnakeCaseNamingConvention();
-    }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -38,7 +39,7 @@ public class AccountsDbContext(IConfiguration configuration)
         modelBuilder.ApplyConfigurationsFromAssembly(
             typeof(AccountsDbContext).Assembly,
             type => type.FullName?.Contains("Configurations") ?? false);
-        
+
         modelBuilder.Entity<IdentityUserClaim<Guid>>()
             .ToTable("claims");
 
@@ -50,14 +51,10 @@ public class AccountsDbContext(IConfiguration configuration)
 
         modelBuilder.Entity<IdentityRoleClaim<Guid>>()
             .ToTable("role_claims");
-        
+
         modelBuilder.Entity<IdentityUserRole<Guid>>()
             .ToTable("user_roles");
-        
+
         modelBuilder.HasDefaultSchema("accounts");
     }
-
-    private static readonly ILoggerFactory CreateLoggerFactory
-        = LoggerFactory.Create(builder => { builder.AddConsole(); });
-    
 }

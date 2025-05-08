@@ -8,59 +8,56 @@ using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace AnimalAllies.Volunteer.IntegrationTests.Application.Tests.Volunteer
+namespace AnimalAllies.Volunteer.IntegrationTests.Application.Tests.Volunteer;
+
+public class UpdateVolunteerTests : VolunteerTestsBase
 {
-    public class UpdateVolunteerTests : VolunteerTestsBase
+    private readonly ICommandHandler<UpdateVolunteerCommand, VolunteerId> _sut;
+
+    public UpdateVolunteerTests(IntegrationTestsWebFactory factory)
+        : base(factory) => _sut =
+        _scope.ServiceProvider.GetRequiredService<ICommandHandler<UpdateVolunteerCommand, VolunteerId>>();
+
+    [Fact]
+    public async Task UpdateVolunteer_ShouldUpdateAllFields_WhenValidDataProvided()
     {
-        private readonly ICommandHandler<UpdateVolunteerCommand, VolunteerId> _sut;
+        // Arrange
+        Domain.VolunteerManagement.Aggregate.Volunteer originalVolunteer = new(
+            VolunteerId.NewGuid(),
+            FullName.Create("Иван", "Иванов", "Иванович").Value,
+            Email.Create("ivan@mail.com").Value,
+            VolunteerDescription.Create("Опытный волонтер").Value,
+            WorkExperience.Create(3).Value,
+            PhoneNumber.Create("+79991234567").Value, new ValueObjectList<Requisite>([]));
 
-        public UpdateVolunteerTests(IntegrationTestsWebFactory factory) : base(factory)
-        {
-            _sut = _scope.ServiceProvider.GetRequiredService<ICommandHandler<UpdateVolunteerCommand, VolunteerId>>();
-        }
+        await _volunteerDbContext.Volunteers.AddAsync(originalVolunteer).ConfigureAwait(false);
+        await _volunteerDbContext.SaveChangesAsync().ConfigureAwait(false);
 
-        [Fact]
-        public async Task UpdateVolunteer_ShouldUpdateAllFields_WhenValidDataProvided()
-        {
-            // Arrange
-            var originalVolunteer = new Domain.VolunteerManagement.Aggregate.Volunteer(
-                VolunteerId.NewGuid(),
-                FullName.Create("Иван", "Иванов", "Иванович").Value,
-                Email.Create("ivan@mail.com").Value,
-                VolunteerDescription.Create("Опытный волонтер").Value,
-                WorkExperience.Create(3).Value,
-                PhoneNumber.Create("+79991234567").Value, new ValueObjectList<Requisite>([]));
-            
-            await _volunteerDbContext.Volunteers.AddAsync(originalVolunteer);
-            await _volunteerDbContext.SaveChangesAsync();
+        UpdateVolunteerMainInfoDto updateDto = new(
+            new FullNameDto("Петр", "Петров", "Петрович"),
+            "petr@mail.com",
+            "Новый опытный волонтер",
+            5,
+            "+79998765432");
 
-            var updateDto = new UpdateVolunteerMainInfoDto(
-                new FullNameDto("Петр", "Петров", "Петрович"),
-                "petr@mail.com",
-                "Новый опытный волонтер",
-                5,
-                "+79998765432");
+        UpdateVolunteerCommand command = new(originalVolunteer.Id.Id, updateDto);
 
+        // Act
+        Result<VolunteerId> result = await _sut.Handle(command, CancellationToken.None).ConfigureAwait(false);
 
-            var command = new UpdateVolunteerCommand(originalVolunteer.Id.Id, updateDto);
-            
-            // Act
-            var result = await _sut.Handle(command, CancellationToken.None);
-            
-            // Assert
-            result.IsSuccess.Should().BeTrue();
-            
-            var updatedVolunteer = await _volunteerDbContext.Volunteers
-                .FirstOrDefaultAsync(v => v.Id == originalVolunteer.Id);
-                
-            updatedVolunteer.Should().NotBeNull();
-            updatedVolunteer.FullName.FirstName.Should().Be("Петр");
-            updatedVolunteer.FullName.SecondName.Should().Be("Петров");
-            updatedVolunteer.FullName.Patronymic.Should().Be("Петрович");
-            updatedVolunteer.Email.Value.Should().Be("petr@mail.com");
-            updatedVolunteer.Phone.Number.Should().Be("+79998765432");
-            updatedVolunteer.Description.Value.Should().Be("Новый опытный волонтер");
-            updatedVolunteer.WorkExperience.Value.Should().Be(5);
-        }
+        // Assert
+        result.IsSuccess.Should().BeTrue();
+
+        Domain.VolunteerManagement.Aggregate.Volunteer? updatedVolunteer = await _volunteerDbContext.Volunteers
+            .FirstOrDefaultAsync(v => v.Id == originalVolunteer.Id).ConfigureAwait(false);
+
+        updatedVolunteer.Should().NotBeNull();
+        updatedVolunteer.FullName.FirstName.Should().Be("Петр");
+        updatedVolunteer.FullName.SecondName.Should().Be("Петров");
+        updatedVolunteer.FullName.Patronymic.Should().Be("Петрович");
+        updatedVolunteer.Email.Value.Should().Be("petr@mail.com");
+        updatedVolunteer.Phone.Number.Should().Be("+79998765432");
+        updatedVolunteer.Description.Value.Should().Be("Новый опытный волонтер");
+        updatedVolunteer.WorkExperience.Value.Should().Be(5);
     }
 }

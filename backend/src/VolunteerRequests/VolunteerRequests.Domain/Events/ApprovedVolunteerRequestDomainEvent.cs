@@ -9,4 +9,4 @@ public record ApprovedVolunteerRequestDomainEvent(
     string SecondName,
     string? Patronymic,
     string Email,
-    int WorkExperience): IDomainEvent;
+    int WorkExperience) : IDomainEvent;

@@ -1,5 +1,4 @@
-﻿using System.Text;
-using AnimalAllies.Accounts.Application;
+﻿using AnimalAllies.Accounts.Application;
 using AnimalAllies.Accounts.Application.Managers;
 using AnimalAllies.Accounts.Domain;
 using AnimalAllies.Accounts.Infrastructure.IdentityManagers;
@@ -10,12 +9,12 @@ using AnimalAllies.Core.Options;
 using AnimalAllies.Framework;
 using AnimalAllies.Framework.Authorization;
 using AnimalAllies.SharedKernel.Constraints;
+using Dapper;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.IdentityModel.Tokens;
 using Outbox;
 
 namespace AnimalAllies.Accounts.Infrastructure;
@@ -32,7 +31,7 @@ public static class DependencyInjection
             .AddAuthorizationServices()
             .AddDatabase()
             .AddOutboxCore(configuration);
-        
+
         return services;
     }
 
@@ -41,7 +40,7 @@ public static class DependencyInjection
         IConfiguration configuration)
     {
         services
-            .AddIdentity<User,Role>(options =>
+            .AddIdentity<User, Role>(options =>
             {
                 options.SignIn.RequireConfirmedEmail = true;
                 options.User.RequireUniqueEmail = true;
@@ -58,12 +57,12 @@ public static class DependencyInjection
         services.AddScoped<PermissionManager>();
         services.AddScoped<RolePermissionManager>();
         services.AddScoped<AccountManager>();
-        services.AddScoped<IAccountManager,AccountManager>();
+        services.AddScoped<IAccountManager, AccountManager>();
         services.AddScoped<IRefreshSessionManager, RefreshSessionManager>();
 
         services.Configure<AdminOptions>(configuration.GetSection(AdminOptions.ADMIN));
         services.AddScoped<AccountSeedService>();
-        
+
         return services;
     }
 
@@ -71,26 +70,26 @@ public static class DependencyInjection
     {
         services.AddKeyedScoped<IUnitOfWork, UnitOfWork>(Constraints.Context.Accounts);
         services.AddScoped<AccountsDbContext>();
-        
+
         return services;
     }
 
     private static IServiceCollection AddDatabase(this IServiceCollection services)
     {
-        services.AddKeyedScoped<ISqlConnectionFactory,SqlConnectionFactory>(Constraints.Context.Accounts);
+        services.AddKeyedScoped<ISqlConnectionFactory, SqlConnectionFactory>(Constraints.Context.Accounts);
 
-        Dapper.DefaultTypeMap.MatchNamesWithUnderscores = true;
-        
+        DefaultTypeMap.MatchNamesWithUnderscores = true;
+
         return services;
     }
-    
+
     private static IServiceCollection AddAuthorizationServices(this IServiceCollection services)
     {
         services.AddSingleton<IAuthorizationHandler, PermissionRequirementHandler>();
         services.AddSingleton<IAuthorizationPolicyProvider, PermissionPolicyProvider>();
         services.AddAuthorization();
         services.AddSingleton<AccountsSeeder>();
-        
+
         return services;
     }
 
@@ -98,15 +97,14 @@ public static class DependencyInjection
         this IServiceCollection services,
         IConfiguration configuration)
     {
-        
-        services.AddTransient<ITokenProvider,JwtTokenProvider>();
-        
+        services.AddTransient<ITokenProvider, JwtTokenProvider>();
+
         services.Configure<JwtOptions>(
             configuration.GetSection(JwtOptions.JWT));
-        
+
         services.Configure<RefreshSessionOptions>(
             configuration.GetSection(RefreshSessionOptions.REFRESH_SESSION));
-        
+
         services
             .AddAuthentication(options =>
             {
@@ -117,8 +115,8 @@ public static class DependencyInjection
             })
             .AddJwtBearer(options =>
             {
-                var jwtOptions = configuration.GetSection(JwtOptions.JWT).Get<JwtOptions>()
-                                 ?? throw new ApplicationException("missing jwt options");
+                JwtOptions jwtOptions = configuration.GetSection(JwtOptions.JWT).Get<JwtOptions>()
+                                        ?? throw new ApplicationException("missing jwt options");
 
                 options.TokenValidationParameters =
                     TokenValidationParametersFactory.CreateWithLifeTime(jwtOptions);
@@ -126,5 +124,4 @@ public static class DependencyInjection
 
         return services;
     }
-    
 }

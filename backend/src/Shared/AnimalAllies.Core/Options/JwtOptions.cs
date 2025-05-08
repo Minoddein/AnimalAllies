@@ -3,9 +3,12 @@
 public class JwtOptions
 {
     public static string JWT = nameof(JWT);
-    
-    public string Audience { get; init; }
-    public string Issuer { get; init; }
-    public string Key { get; init; }
-    public string ExpiredMinutesTime { get; init; }
+
+    public required string Audience { get; init; }
+
+    public required string Issuer { get; init; }
+
+    public required string Key { get; init; }
+
+    public required string ExpiredMinutesTime { get; init; }
 }

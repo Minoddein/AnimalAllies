@@ -1,5 +1,5 @@
-using AnimalAllies.SharedKernel.Shared;
+﻿using AnimalAllies.SharedKernel.Shared;
 
 namespace Discussion.Domain.DomainEvents;
 
-public record DeletedMessageDomainEvent(Guid RelationId): IDomainEvent;
+public record DeletedMessageDomainEvent(Guid RelationId) : IDomainEvent;

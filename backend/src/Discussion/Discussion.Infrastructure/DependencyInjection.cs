@@ -1,5 +1,6 @@
 ﻿using AnimalAllies.Core.Database;
 using AnimalAllies.SharedKernel.Constraints;
+using Dapper;
 using Discussion.Application.Repository;
 using Discussion.Infrastructure.DbContexts;
 using Discussion.Infrastructure.Repository;
@@ -17,28 +18,27 @@ public static class DependencyInjection
             .AddDatabase()
             .AddDbContexts()
             .AddRepositories();
-        
+
         return services;
     }
 
     private static IServiceCollection AddRepositories(this IServiceCollection services)
     {
         services.AddScoped<IDiscussionRepository, DiscussionRepository>();
-        
+
         return services;
     }
-    
-    
+
     private static IServiceCollection AddDatabase(this IServiceCollection services)
     {
         services.AddKeyedScoped<IUnitOfWork, UnitOfWork>(Constraints.Context.Discussion);
-        services.AddKeyedSingleton<ISqlConnectionFactory,SqlConnectionFactory>(Constraints.Context.Discussion);
+        services.AddKeyedSingleton<ISqlConnectionFactory, SqlConnectionFactory>(Constraints.Context.Discussion);
 
-        Dapper.DefaultTypeMap.MatchNamesWithUnderscores = true;
-        
+        DefaultTypeMap.MatchNamesWithUnderscores = true;
+
         return services;
     }
-    
+
     private static IServiceCollection AddDbContexts(this IServiceCollection services)
     {
         services.AddScoped<WriteDbContext>();

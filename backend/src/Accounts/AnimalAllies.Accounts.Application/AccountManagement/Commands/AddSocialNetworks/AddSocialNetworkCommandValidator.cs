@@ -1,12 +1,11 @@
 ﻿using AnimalAllies.Core.Validators;
-using AnimalAllies.SharedKernel.Shared;
 using AnimalAllies.SharedKernel.Shared.Errors;
 using AnimalAllies.SharedKernel.Shared.ValueObjects;
 using FluentValidation;
 
 namespace AnimalAllies.Accounts.Application.AccountManagement.Commands.AddSocialNetworks;
 
-public class AddSocialNetworkCommandValidator: AbstractValidator<AddSocialNetworkCommand>
+public class AddSocialNetworkCommandValidator : AbstractValidator<AddSocialNetworkCommand>
 {
     public AddSocialNetworkCommandValidator()
     {

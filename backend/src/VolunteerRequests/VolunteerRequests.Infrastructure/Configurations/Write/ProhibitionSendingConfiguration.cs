@@ -5,7 +5,7 @@ using VolunteerRequests.Domain.Aggregates;
 
 namespace VolunteerRequests.Infrastructure.Configurations.Write;
 
-public class ProhibitionSendingConfiguration: IEntityTypeConfiguration<ProhibitionSending>
+public class ProhibitionSendingConfiguration : IEntityTypeConfiguration<ProhibitionSending>
 {
     public void Configure(EntityTypeBuilder<ProhibitionSending> builder)
     {

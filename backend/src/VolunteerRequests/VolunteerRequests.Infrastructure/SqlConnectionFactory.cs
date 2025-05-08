@@ -5,14 +5,9 @@ using Npgsql;
 
 namespace VolunteerRequests.Infrastructure;
 
-public class SqlConnectionFactory : ISqlConnectionFactory
+public class SqlConnectionFactory(IConfiguration configuration) : ISqlConnectionFactory
 {
-    private readonly IConfiguration _configuration;
-    
-    public SqlConnectionFactory(IConfiguration configuration)
-    {
-        _configuration = configuration;
-    }
+    private readonly IConfiguration _configuration = configuration;
 
     public IDbConnection Create()
         => new NpgsqlConnection(_configuration.GetConnectionString("DefaultConnection"));

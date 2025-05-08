@@ -14,8 +14,8 @@ public static class DependencyInjection
 
         return services;
     }
-    
-    private static IServiceCollection AddRedisCache(this IServiceCollection services, IConfiguration configuration)
+
+    private static void AddRedisCache(this IServiceCollection services, IConfiguration configuration)
     {
         services.AddStackExchangeRedisCache(options =>
         {
@@ -28,20 +28,17 @@ public static class DependencyInjection
             options.MaximumPayloadBytes = 1024 * 1024 * 10;
             options.DefaultEntryOptions = new HybridCacheEntryOptions
             {
-                Expiration = TimeSpan.FromMinutes(5),
-                LocalCacheExpiration = TimeSpan.FromMinutes(1),
+                Expiration = TimeSpan.FromMinutes(5), LocalCacheExpiration = TimeSpan.FromMinutes(1)
             };
             options.ReportTagMetrics = true;
         });
-        
-        services.AddSingleton<IConnectionMultiplexer>(_ => 
+
+        services.AddSingleton<IConnectionMultiplexer>(_ =>
             ConnectionMultiplexer.Connect(configuration.GetConnectionString("Redis")!));
 
         services.AddSingleton<ISubscriber>(provider =>
             provider.GetRequiredService<IConnectionMultiplexer>().GetSubscriber());
-        
+
         services.AddHostedService<CacheInvalidatorBackgroundService>();
-        
-        return services;
     }
 }

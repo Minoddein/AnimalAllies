@@ -1,29 +1,20 @@
-using System.Collections;
+﻿using System.Collections;
 
 namespace AnimalAllies.SharedKernel.Shared.Errors;
 
-public class ErrorList : IEnumerable<Error>
+public class ErrorList(IEnumerable<Error> errors) : IEnumerable<Error>
 {
-    private readonly List<Error> _errors;
+    private readonly List<Error> _errors = [.. errors];
 
-    public ErrorList(IEnumerable<Error> errors)
-    {
-        _errors = [..errors];
-    }
-    
-    public IEnumerator<Error> GetEnumerator()
-    {
-        return _errors.GetEnumerator();
-    }
+    public IEnumerator<Error> GetEnumerator() => _errors.GetEnumerator();
 
-    IEnumerator IEnumerable.GetEnumerator()
-    {
-        return GetEnumerator();
-    }
+    IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
     public static implicit operator ErrorList(List<Error> errors)
         => new(errors);
-    
+
     public static implicit operator ErrorList(Error error)
         => new([error]);
+
+    public ErrorList ToErrorList() => throw new NotImplementedException();
 }

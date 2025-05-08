@@ -1,18 +1,20 @@
-using AnimalAllies.SharedKernel.Shared.Objects;
+﻿using AnimalAllies.SharedKernel.Shared.Objects;
 
 namespace AnimalAllies.Volunteer.Domain.VolunteerManagement.Entities.Pet.ValueObjects;
 
-public class PetPhoto: ValueObject
+public class PetPhoto : ValueObject
 {
-    public FilePath Path { get; }
-    public bool IsMain { get; }
-    
-    private PetPhoto(){}
+    private PetPhoto() { }
+
     public PetPhoto(FilePath path, bool isMain)
     {
         Path = path;
         IsMain = isMain;
     }
+
+    public FilePath Path { get; }
+
+    public bool IsMain { get; }
 
     protected override IEnumerable<object> GetEqualityComponents()
     {

@@ -1,32 +1,32 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-    <PropertyGroup>
-        <TargetFramework>net9.0</TargetFramework>
-        <ImplicitUsings>enable</ImplicitUsings>
-        <Nullable>enable</Nullable>
-        <Version>1.0.4</Version>
-        <Authors>McConderEz</Authors>
-        <Company>McConderEzBy418</Company>
-        <PackageDescription>OutboxAnimalAllies</PackageDescription>
-        <RepositoryUrl>https://gitlab.com/McConderEz/AnimalAllies.git</RepositoryUrl>
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <Version>1.0.4</Version>
+    <Authors>McConderEz</Authors>
+    <Company>McConderEzBy418</Company>
+    <PackageDescription>OutboxAnimalAllies</PackageDescription>
+    <RepositoryUrl>https://gitlab.com/McConderEz/AnimalAllies.git</RepositoryUrl>
 
-    </PropertyGroup>
-    
-    <ItemGroup>
-        <PackageReference Include="EFCore.NamingConventions" Version="9.0.0" />
-        <PackageReference Include="MassTransit.RabbitMQ" Version="8.4.0" />
-        <PackageReference Include="Npgsql" Version="9.0.3" />
-        <PackageReference Include="Microsoft.Extensions.Logging" Version="9.0.3" />
-        <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="9.0.3" />
-        <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="9.0.4" />
-        <PackageReference Include="Polly" Version="8.5.2" />
-        <PackageReference Include="Quartz" Version="3.14.0" />
-        <PackageReference Include="Quartz.Extensions.DependencyInjection" Version="3.14.0" />
-        <PackageReference Include="Quartz.Extensions.Hosting" Version="3.14.0" />
-    </ItemGroup>
-    
-    <ItemGroup>
-      <ProjectReference Include="..\Outbox.Abstractions\Outbox.Abstractions.csproj" />
-    </ItemGroup>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="EFCore.NamingConventions" Version="9.0.0"/>
+    <PackageReference Include="MassTransit.RabbitMQ" Version="8.4.0"/>
+    <PackageReference Include="Npgsql" Version="9.0.3"/>
+    <PackageReference Include="Microsoft.Extensions.Logging" Version="9.0.3"/>
+    <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="9.0.3"/>
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="9.0.4"/>
+    <PackageReference Include="Polly" Version="8.5.2"/>
+    <PackageReference Include="Quartz" Version="3.14.0"/>
+    <PackageReference Include="Quartz.Extensions.DependencyInjection" Version="3.14.0"/>
+    <PackageReference Include="Quartz.Extensions.Hosting" Version="3.14.0"/>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Outbox.Abstractions\Outbox.Abstractions.csproj"/>
+  </ItemGroup>
 
 </Project>

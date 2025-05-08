@@ -1,38 +1,33 @@
-﻿using AnimalAllies.SharedKernel.Shared;
-using AnimalAllies.Volunteer.Application.VolunteerManagement.Commands.CheckIfPetByBreedIdExist;
+﻿using AnimalAllies.Volunteer.Application.VolunteerManagement.Commands.CheckIfPetByBreedIdExist;
 using AnimalAllies.Volunteer.Application.VolunteerManagement.Commands.CheckIfPetBySpeciesIdExist;
 using AnimalAllies.Volunteer.Contracts;
 
 namespace AnimalAllies.Volunteer.Presentation;
 
-public class VolunteerContract: IVolunteerContract
+public class VolunteerContract(
+    CheckIfPetBySpeciesIdExistHandler checkIfPetBySpeciesIdExistHandler,
+    CheckIfPetByBreedIdExistHandler checkIfPetByBreedIdExistHandler) : IVolunteerContract
 {
-    private readonly CheckIfPetBySpeciesIdExistHandler _checkIfPetBySpeciesIdExistHandler;
-    private readonly CheckIfPetByBreedIdExistHandler _checkIfPetByBreedIdExistHandler;
+    private readonly CheckIfPetByBreedIdExistHandler _checkIfPetByBreedIdExistHandler = checkIfPetByBreedIdExistHandler;
 
-    public VolunteerContract(
-        CheckIfPetBySpeciesIdExistHandler checkIfPetBySpeciesIdExistHandler,
-        CheckIfPetByBreedIdExistHandler checkIfPetByBreedIdExistHandler)
-    {
-        _checkIfPetBySpeciesIdExistHandler = checkIfPetBySpeciesIdExistHandler;
-        _checkIfPetByBreedIdExistHandler = checkIfPetByBreedIdExistHandler;
-    }
-    
+    private readonly CheckIfPetBySpeciesIdExistHandler _checkIfPetBySpeciesIdExistHandler =
+        checkIfPetBySpeciesIdExistHandler;
+
     public async Task<bool> CheckIfPetBySpeciesIdExist(
         Guid speciesId,
         CancellationToken cancellationToken = default)
     {
-        var query = new CheckIfPetBySpeciesIdExistQuery(speciesId);
+        CheckIfPetBySpeciesIdExistQuery query = new(speciesId);
 
-        return (await _checkIfPetBySpeciesIdExistHandler.Handle(query, cancellationToken)).Value;
+        return (await _checkIfPetBySpeciesIdExistHandler.Handle(query, cancellationToken).ConfigureAwait(false)).Value;
     }
 
     public async Task<bool> CheckIfPetByBreedIdExist(
         Guid breedId,
         CancellationToken cancellationToken = default)
     {
-        var query = new CheckIfPetByBreedIdExistQuery(breedId);
+        CheckIfPetByBreedIdExistQuery query = new(breedId);
 
-        return (await _checkIfPetByBreedIdExistHandler.Handle(query, cancellationToken)).Value;
+        return (await _checkIfPetByBreedIdExistHandler.Handle(query, cancellationToken).ConfigureAwait(false)).Value;
     }
 }

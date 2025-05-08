@@ -2,7 +2,7 @@
 
 public interface IDiscussionContract
 {
-    public Task<Guid> CreateDiscussionHandler(
+    Task<Guid> CreateDiscussionHandler(
         Guid firstMember,
         Guid secondMember,
         Guid relationId,

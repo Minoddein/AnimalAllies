@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace AnimalAllies.Accounts.Infrastructure.Configurations;
 
-public class PermissionConfiguration: IEntityTypeConfiguration<Permission>
+public class PermissionConfiguration : IEntityTypeConfiguration<Permission>
 {
     public void Configure(EntityTypeBuilder<Permission> builder)
     {

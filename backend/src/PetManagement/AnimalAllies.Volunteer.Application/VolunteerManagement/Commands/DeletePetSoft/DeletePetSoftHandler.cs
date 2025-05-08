@@ -6,56 +6,57 @@ using AnimalAllies.SharedKernel.Shared;
 using AnimalAllies.SharedKernel.Shared.Ids;
 using AnimalAllies.Volunteer.Application.Repository;
 using FluentValidation;
+using FluentValidation.Results;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
 namespace AnimalAllies.Volunteer.Application.VolunteerManagement.Commands.DeletePetSoft;
 
-public class DeletePetSoftHandler: ICommandHandler<DeletePetSoftCommand, PetId>
+public class DeletePetSoftHandler(
+    IVolunteerRepository volunteerRepository,
+    ILogger<DeletePetSoftHandler> logger,
+    IValidator<DeletePetSoftCommand> validator,
+    [FromKeyedServices(Constraints.Context.PetManagement)]
+    IUnitOfWork unitOfWork,
+    IDateTimeProvider dateTimeProvider) : ICommandHandler<DeletePetSoftCommand, PetId>
 {
-    private readonly IVolunteerRepository _volunteerRepository;
-    private readonly IUnitOfWork _unitOfWork;
-    private readonly ILogger<DeletePetSoftHandler> _logger;
-    private readonly IValidator<DeletePetSoftCommand> _validator;
-    private readonly IDateTimeProvider _dateTimeProvider;
+    private readonly IDateTimeProvider _dateTimeProvider = dateTimeProvider;
+    private readonly ILogger<DeletePetSoftHandler> _logger = logger;
+    private readonly IUnitOfWork _unitOfWork = unitOfWork;
+    private readonly IValidator<DeletePetSoftCommand> _validator = validator;
+    private readonly IVolunteerRepository _volunteerRepository = volunteerRepository;
 
-    public DeletePetSoftHandler(
-        IVolunteerRepository volunteerRepository,
-        ILogger<DeletePetSoftHandler> logger,
-        IValidator<DeletePetSoftCommand> validator,
-        [FromKeyedServices(Constraints.Context.PetManagement)]IUnitOfWork unitOfWork,
-        IDateTimeProvider dateTimeProvider)
-    {
-        _volunteerRepository = volunteerRepository;
-        _logger = logger;
-        _validator = validator;
-        _unitOfWork = unitOfWork;
-        _dateTimeProvider = dateTimeProvider;
-    }
-    
-    
     public async Task<Result<PetId>> Handle(DeletePetSoftCommand command, CancellationToken cancellationToken = default)
     {
-        var validatorResult = await _validator.ValidateAsync(command, cancellationToken);
+        ValidationResult? validatorResult =
+            await _validator.ValidateAsync(command, cancellationToken).ConfigureAwait(false);
         if (!validatorResult.IsValid)
+        {
             return validatorResult.ToErrorList();
+        }
 
-        var volunteerId = VolunteerId.Create(command.VolunteerId);
-        
-        var volunteer = await _volunteerRepository.GetById(volunteerId, cancellationToken);
+        VolunteerId volunteerId = VolunteerId.Create(command.VolunteerId);
+
+        Result<Domain.VolunteerManagement.Aggregate.Volunteer> volunteer =
+            await _volunteerRepository.GetById(volunteerId, cancellationToken).ConfigureAwait(false);
         if (volunteer.IsFailure)
+        {
             return volunteer.Errors;
+        }
 
-        var petId = PetId.Create(command.PetId);
+        PetId petId = PetId.Create(command.PetId);
 
-        var result = volunteer.Value.DeletePetSoft(petId, _dateTimeProvider.UtcNow);
+        Result result = volunteer.Value.DeletePetSoft(petId, _dateTimeProvider.UtcNow);
         if (result.IsFailure)
+        {
             return result.Errors;
-        
-        _logger.LogInformation("Soft deleted pet with id {petId} from volunteer with id {volunteerId}",
+        }
+
+        _logger.LogInformation(
+            "Soft deleted pet with id {petId} from volunteer with id {volunteerId}",
             petId.Id, volunteerId.Id);
 
-        await _unitOfWork.SaveChanges(cancellationToken);
+        await _unitOfWork.SaveChanges(cancellationToken).ConfigureAwait(false);
 
         return petId;
     }

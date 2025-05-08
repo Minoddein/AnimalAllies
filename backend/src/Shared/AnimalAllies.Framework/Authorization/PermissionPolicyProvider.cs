@@ -7,9 +7,11 @@ public class PermissionPolicyProvider : IAuthorizationPolicyProvider
     public Task<AuthorizationPolicy?> GetPolicyAsync(string policyName)
     {
         if (string.IsNullOrWhiteSpace(policyName))
+        {
             return Task.FromResult<AuthorizationPolicy?>(null);
+        }
 
-        var policy = new AuthorizationPolicyBuilder()
+        AuthorizationPolicy policy = new AuthorizationPolicyBuilder()
             .RequireAuthenticatedUser()
             .AddRequirements(new PermissionAttribute(policyName))
             .Build();
@@ -22,6 +24,6 @@ public class PermissionPolicyProvider : IAuthorizationPolicyProvider
             .RequireAuthenticatedUser()
             .Build());
 
-    public Task<AuthorizationPolicy?> GetFallbackPolicyAsync() => 
+    public Task<AuthorizationPolicy?> GetFallbackPolicyAsync() =>
         Task.FromResult<AuthorizationPolicy?>(null);
 }

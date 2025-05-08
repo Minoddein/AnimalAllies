@@ -1,23 +1,23 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-    <PropertyGroup>
-        <TargetFramework>net9.0</TargetFramework>
-        <ImplicitUsings>enable</ImplicitUsings>
-        <Nullable>enable</Nullable>
-    </PropertyGroup>
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
 
-    <ItemGroup>
-        <FrameworkReference Include="Microsoft.AspNetCore.App" />
-    </ItemGroup>
-    
-    <ItemGroup>
-      <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="9.0.3" />
-      <PackageReference Include="Microsoft.AspNetCore.Mvc.Core" Version="2.3.0" />
-    </ItemGroup>
-    
-    <ItemGroup>
-      <ProjectReference Include="..\..\Accounts\AnimalAllies.Accounts.Contracts\AnimalAllies.Accounts.Contracts.csproj" />
-      <ProjectReference Include="..\AnimalAllies.Core\AnimalAllies.Core.csproj" />
-    </ItemGroup>
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App"/>
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="9.0.3"/>
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Core" Version="2.3.0"/>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Accounts\AnimalAllies.Accounts.Contracts\AnimalAllies.Accounts.Contracts.csproj"/>
+    <ProjectReference Include="..\AnimalAllies.Core\AnimalAllies.Core.csproj"/>
+  </ItemGroup>
 
 </Project>

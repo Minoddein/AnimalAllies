@@ -8,8 +8,11 @@ using AnimalAllies.Accounts.Application.AccountManagement.Commands.Register;
 using AnimalAllies.Accounts.Application.AccountManagement.Commands.SetNotificationSettings;
 using AnimalAllies.Accounts.Application.AccountManagement.Queries.GetUserById;
 using AnimalAllies.Accounts.Contracts.Requests;
+using AnimalAllies.Accounts.Contracts.Responses;
+using AnimalAllies.Core.DTOs.Accounts;
 using AnimalAllies.Framework;
 using AnimalAllies.Framework.Models;
+using AnimalAllies.SharedKernel.Shared;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using FullNameDto = AnimalAllies.Core.DTOs.ValueObjects.FullNameDto;
@@ -18,24 +21,26 @@ using UploadFileDto = AnimalAllies.Core.DTOs.FileService.UploadFileDto;
 
 namespace AnimalAllies.Accounts.Presentation;
 
-public class AccountController: ApplicationController
+public class AccountController : ApplicationController
 {
     [HttpPost("registration")]
     public async Task<IActionResult> Register(
-        [FromBody] RegisterUserRequest request, 
+        [FromBody] RegisterUserRequest request,
         [FromServices] RegisterUserHandler handler,
         CancellationToken cancellationToken = default)
     {
-        var command = new RegisterUserCommand(
+        RegisterUserCommand command = new(
             request.Email,
             request.UserName,
             new FullNameDto(request.FirstName, request.SecondName, request.Patronymic),
             request.Password);
 
-        var result = await handler.Handle(command, cancellationToken);
+        Result result = await handler.Handle(command, cancellationToken).ConfigureAwait(false);
         if (result.IsFailure)
+        {
             return result.Errors.ToResponse();
-        
+        }
+
         return Ok(result.IsSuccess);
     }
 
@@ -47,51 +52,59 @@ public class AccountController: ApplicationController
         CancellationToken cancellationToken = default)
     {
         if (userId == Guid.Empty || string.IsNullOrEmpty(code))
+        {
             return BadRequest("Invalid parameters");
+        }
 
-        var request = new ConfirmEmailCommand(userId, code);
+        ConfirmEmailCommand request = new(userId, code);
 
-        var result = await handler.Handle(request, cancellationToken);
+        Result result = await handler.Handle(request, cancellationToken).ConfigureAwait(false);
         if (result.IsFailure)
+        {
             return result.Errors.ToResponse();
+        }
 
         return Ok(result);
     }
-    
+
     [HttpPost("authentication")]
     public async Task<IActionResult> Login(
-        [FromBody] LoginUserRequest request, 
+        [FromBody] LoginUserRequest request,
         [FromServices] LoginUserHandler handler,
         CancellationToken cancellationToken = default)
     {
-        var command = new LoginUserCommand(request.Email, request.Password);
+        LoginUserCommand command = new(request.Email, request.Password);
 
-        var result = await handler.Handle(command, cancellationToken);
+        Result<LoginResponse> result = await handler.Handle(command, cancellationToken).ConfigureAwait(false);
         if (result.IsFailure)
+        {
             return result.Errors.ToResponse();
-        
+        }
+
         HttpContext.Response.Cookies.Append("refreshToken", result.Value.RefreshToken.ToString());
-        
+
         return Ok(result.Value);
     }
-    
+
     [HttpPost("logout")]
     public async Task<IActionResult> Delete(
         [FromServices] DeleteRefreshTokenHandler handler,
         CancellationToken cancellationToken = default)
     {
-        if (!HttpContext.Request.Cookies.TryGetValue("refreshToken", out var refreshToken))
+        if (!HttpContext.Request.Cookies.TryGetValue("refreshToken", out string? refreshToken))
         {
             return Unauthorized();
         }
-        
-        var command = new DeleteRefreshTokenCommand(Guid.Parse(refreshToken));
+
+        DeleteRefreshTokenCommand command = new(Guid.Parse(refreshToken));
 
         HttpContext.Response.Cookies.Delete("refreshToken");
-        
-        var result = await handler.Handle(command, cancellationToken);
+
+        Result result = await handler.Handle(command, cancellationToken).ConfigureAwait(false);
         if (result.IsFailure)
+        {
             return result.Errors.ToResponse();
+        }
 
         return Ok(result);
     }
@@ -101,20 +114,22 @@ public class AccountController: ApplicationController
         [FromServices] RefreshTokensHandler handler,
         CancellationToken cancellationToken = default)
     {
-        if(!HttpContext.Request.Cookies.TryGetValue("refreshToken", out var refreshToken))
+        if (!HttpContext.Request.Cookies.TryGetValue("refreshToken", out string? refreshToken))
         {
             return Unauthorized();
         }
 
-        var result = await handler.Handle(
+        Result<LoginResponse> result = await handler.Handle(
             new RefreshTokensCommand(Guid.Parse(refreshToken)),
-            cancellationToken);
-        
+            cancellationToken).ConfigureAwait(false);
+
         if (result.IsFailure)
+        {
             return result.Errors.ToResponse();
+        }
 
         HttpContext.Response.Cookies.Append("refreshToken", result.Value.RefreshToken.ToString());
-        
+
         return Ok(result.Value);
     }
 
@@ -126,19 +141,21 @@ public class AccountController: ApplicationController
         [FromServices] UserScopedData userScopedData,
         CancellationToken cancellationToken = default)
     {
-        var command = new SetNotificationSettingsCommand(
+        SetNotificationSettingsCommand command = new(
             userScopedData.UserId,
             request.EmailNotifications,
             request.TelegramNotifications,
             request.WebNotifications);
-        
-        var result = await handler.Handle(command, cancellationToken);
+
+        Result result = await handler.Handle(command, cancellationToken).ConfigureAwait(false);
         if (result.IsFailure)
+        {
             return result.Errors.ToResponse();
+        }
 
         return Ok(result.IsSuccess);
     }
-    
+
     [Authorize]
     [HttpPost("social-networks-to-user")]
     public async Task<IActionResult> AddSocialNetworksToUser(
@@ -147,20 +164,18 @@ public class AccountController: ApplicationController
         [FromServices] AddSocialNetworkHandler handler,
         CancellationToken cancellationToken = default)
     {
-        var command = new AddSocialNetworkCommand(userScopedData.UserId, request.SocialNetworkRequests
-            .Select(s => new SocialNetworkDto
-        {
-            Title = s.Title,
-            Url = s.Url,
-        }));
+        AddSocialNetworkCommand command = new(userScopedData.UserId, request.SocialNetworkRequests
+            .Select(s => new SocialNetworkDto { Title = s.Title, Url = s.Url }));
 
-        var result = await handler.Handle(command, cancellationToken);
+        Result result = await handler.Handle(command, cancellationToken).ConfigureAwait(false);
         if (result.IsFailure)
+        {
             return result.Errors.ToResponse();
+        }
 
         return Ok(result.IsSuccess);
     }
-    
+
     [Authorize]
     [HttpPost("avatar")]
     public async Task<IActionResult> AddAvatarToUser(
@@ -169,19 +184,21 @@ public class AccountController: ApplicationController
         [FromServices] AddAvatarHandler handler,
         CancellationToken cancellationToken = default)
     {
-        var command = new AddAvatarCommand(userScopedData.UserId,
+        AddAvatarCommand command = new(userScopedData.UserId,
             new UploadFileDto(
                 request.UploadFileDto.BucketName,
                 request.UploadFileDto.FileName,
                 request.UploadFileDto.ContentType));
 
-        var result = await handler.Handle(command, cancellationToken);
+        Result<AddAvatarResponse> result = await handler.Handle(command, cancellationToken).ConfigureAwait(false);
         if (result.IsFailure)
+        {
             return result.Errors.ToResponse();
+        }
 
         return Ok(result);
     }
-    
+
     [Authorize]
     [HttpGet("{userId:guid}")]
     public async Task<ActionResult> Get(
@@ -189,14 +206,15 @@ public class AccountController: ApplicationController
         [FromServices] GetUserByIdHandler handler,
         CancellationToken cancellationToken = default)
     {
-        var query = new GetUserByIdQuery(userId);
+        GetUserByIdQuery query = new(userId);
 
-        var result = await handler.Handle(query, cancellationToken);
+        Result<UserDto?> result = await handler.Handle(query, cancellationToken).ConfigureAwait(false);
 
         if (result.IsFailure)
+        {
             result.Errors.ToResponse();
+        }
 
         return Ok(result);
     }
-    
 }

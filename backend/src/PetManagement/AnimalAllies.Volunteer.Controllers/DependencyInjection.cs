@@ -1,5 +1,4 @@
-﻿using AnimalAllies.Core.Abstractions;
-using AnimalAllies.Volunteer.Contracts;
+﻿using AnimalAllies.Volunteer.Contracts;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace AnimalAllies.Volunteer.Presentation;
@@ -16,7 +15,7 @@ public static class DependencyInjection
     private static IServiceCollection AddContracts(this IServiceCollection services)
     {
         services.AddScoped<IVolunteerContract, VolunteerContract>();
-        
+
         return services;
     }
 }

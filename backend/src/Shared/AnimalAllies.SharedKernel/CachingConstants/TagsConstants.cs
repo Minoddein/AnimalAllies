@@ -1,4 +1,4 @@
-namespace AnimalAllies.SharedKernel.CachingConstants;
+﻿namespace AnimalAllies.SharedKernel.CachingConstants;
 
 public static class TagsConstants
 {

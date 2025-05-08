@@ -1,5 +1,4 @@
-﻿
-using AnimalAllies.Species.Application.SpeciesManagement.Commands.CreateBreed;
+﻿using AnimalAllies.Species.Application.SpeciesManagement.Commands.CreateBreed;
 
 namespace AnimalAllies.Species.Presentation.Requests;
 

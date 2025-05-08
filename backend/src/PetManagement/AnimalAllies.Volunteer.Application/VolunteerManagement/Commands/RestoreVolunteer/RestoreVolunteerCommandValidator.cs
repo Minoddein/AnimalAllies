@@ -1,5 +1,4 @@
 ﻿using AnimalAllies.Core.Validators;
-using AnimalAllies.SharedKernel.Shared;
 using AnimalAllies.SharedKernel.Shared.Errors;
 using FluentValidation;
 
@@ -7,10 +6,8 @@ namespace AnimalAllies.Volunteer.Application.VolunteerManagement.Commands.Restor
 
 public class RestoreVolunteerCommandValidator : AbstractValidator<RestoreVolunteerCommand>
 {
-    public RestoreVolunteerCommandValidator()
-    {
+    public RestoreVolunteerCommandValidator() =>
         RuleFor(v => v.VolunteerId)
             .NotEmpty()
             .WithError(Errors.General.Null("volunteer id"));
-    }
 }

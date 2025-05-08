@@ -1,16 +1,16 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-    <PropertyGroup>
-        <TargetFramework>net9.0</TargetFramework>
-        <ImplicitUsings>enable</ImplicitUsings>
-        <Nullable>enable</Nullable>
-        <PackageId>AnimalAllies.Accounts.Contracts</PackageId>
-        <Version>1.0.4</Version>
-        <Authors>McConderEz</Authors>
-        <Company>McConderEzBy418</Company>
-        <PackageDescription>AnimalAllies.Accounts.Contracts</PackageDescription>
-        <RepositoryUrl>https://gitlab.com/McConderEz/AnimalAllies.git</RepositoryUrl>
-    </PropertyGroup>
-    
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <PackageId>AnimalAllies.Accounts.Contracts</PackageId>
+    <Version>1.0.4</Version>
+    <Authors>McConderEz</Authors>
+    <Company>McConderEzBy418</Company>
+    <PackageDescription>AnimalAllies.Accounts.Contracts</PackageDescription>
+    <RepositoryUrl>https://gitlab.com/McConderEz/AnimalAllies.git</RepositoryUrl>
+  </PropertyGroup>
+
 
 </Project>

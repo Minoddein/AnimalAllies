@@ -1,11 +1,6 @@
 ﻿namespace AnimalAllies.SharedKernel.Exceptions;
 
-public class AccountBannedException: Exception
+public class AccountBannedException(string? message) : Exception(message)
 {
-    public string? Message { get; }
-
-    public AccountBannedException(string? message) : base(message)
-    {
-        Message = message;
-    }
+    public string? Message { get; } = message;
 }

@@ -1,5 +1,4 @@
-﻿
-namespace VolunteerRequests.Contracts.Requests;
+﻿namespace VolunteerRequests.Contracts.Requests;
 
 public record UpdateRequest(
     Guid VolunteerRequestId,

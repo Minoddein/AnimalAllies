@@ -6,37 +6,40 @@ using AnimalAllies.Species.Contracts;
 
 namespace AnimalAllies.Species.Presentation;
 
-public class SpeciesContracts: ISpeciesContracts
+public class SpeciesContracts(
+    GetSpeciesWithPaginationHandlerDapper getSpeciesWithPaginationHandlerDapper,
+    GetBreedsBySpeciesIdWithPaginationHandlerDapper getBreedsBySpeciesIdWithPaginationHandlerDapper) : ISpeciesContracts
 {
-    private readonly GetSpeciesWithPaginationHandlerDapper _getSpeciesWithPaginationHandlerDapper;
-    private readonly GetBreedsBySpeciesIdWithPaginationHandlerDapper _getBreedsBySpeciesIdWithPaginationHandlerDapper;
+    private readonly GetBreedsBySpeciesIdWithPaginationHandlerDapper _getBreedsBySpeciesIdWithPaginationHandlerDapper =
+        getBreedsBySpeciesIdWithPaginationHandlerDapper;
 
-    public SpeciesContracts(
-        GetSpeciesWithPaginationHandlerDapper getSpeciesWithPaginationHandlerDapper,
-        GetBreedsBySpeciesIdWithPaginationHandlerDapper getBreedsBySpeciesIdWithPaginationHandlerDapper)
-    {
-        _getSpeciesWithPaginationHandlerDapper = getSpeciesWithPaginationHandlerDapper;
-        _getBreedsBySpeciesIdWithPaginationHandlerDapper = getBreedsBySpeciesIdWithPaginationHandlerDapper;
-    }
+    private readonly GetSpeciesWithPaginationHandlerDapper _getSpeciesWithPaginationHandlerDapper =
+        getSpeciesWithPaginationHandlerDapper;
 
     public async Task<List<Guid>> GetSpecies(CancellationToken cancellationToken = default)
     {
-        var species = await _getSpeciesWithPaginationHandlerDapper.Handle(cancellationToken);
+        Result<List<SpeciesDto>> species =
+            await _getSpeciesWithPaginationHandlerDapper.Handle(cancellationToken).ConfigureAwait(false);
         if (species.IsFailure)
+        {
             throw new ArgumentNullException("Species not found");
+        }
 
-        return species.Value.Select(s => s.Id).ToList();
+        return [.. species.Value.Select(s => s.Id)];
     }
 
     public async Task<List<Guid>> GetBreedsBySpeciesId(
         Guid speciesId,
         CancellationToken cancellationToken = default)
     {
-        var breeds =
-            await _getBreedsBySpeciesIdWithPaginationHandlerDapper.Handle(speciesId, cancellationToken);
+        Result<List<BreedDto>> breeds =
+            await _getBreedsBySpeciesIdWithPaginationHandlerDapper.Handle(speciesId, cancellationToken)
+                .ConfigureAwait(false);
         if (breeds.IsFailure)
+        {
             throw new ArgumentNullException("Species not found");
-        
-        return breeds.Value.Select(b => b.Id).ToList();
+        }
+
+        return [.. breeds.Value.Select(b => b.Id)];
     }
 }

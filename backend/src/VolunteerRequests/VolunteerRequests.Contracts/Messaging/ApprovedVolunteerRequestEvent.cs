@@ -1,5 +1,4 @@
-﻿
-namespace VolunteerRequests.Contracts.Messaging;
+﻿namespace VolunteerRequests.Contracts.Messaging;
 
 public record ApprovedVolunteerRequestEvent(
     Guid UserId,

@@ -1,4 +1,3 @@
-
 using AnimalAllies.SharedKernel.Shared;
 using AnimalAllies.SharedKernel.Shared.Errors;
 using AnimalAllies.SharedKernel.Shared.Ids;
@@ -10,7 +9,8 @@ namespace AnimalAllies.Volunteer.Domain.VolunteerManagement.Entities.Pet;
 
 public class Pet : Entity<PetId>, ISoftDeletable
 {
-    private Pet(PetId id) : base(id)
+    private Pet(PetId id)
+        : base(id)
     {
     }
 
@@ -30,31 +30,42 @@ public class Pet : Entity<PetId>, ISoftDeletable
         PetPhysicCharacteristics = petPhysicCharacteristics;
         PetDetails = petDetails;
         Address = address;
-        PhoneNumber= phoneNumber;
+        PhoneNumber = phoneNumber;
         HelpStatus = helpStatus;
         AnimalType = animalType;
         Requisites = requisites;
     }
 
     public Name Name { get; private set; }
+
     public PetPhysicCharacteristics PetPhysicCharacteristics { get; private set; }
+
     public PetDetails PetDetails { get; private set; }
+
     public Address Address { get; private set; }
+
     public PhoneNumber PhoneNumber { get; private set; }
+
     public HelpStatus HelpStatus { get; private set; }
+
     public AnimalType AnimalType { get; private set; }
+
     public Position Position { get; private set; }
+
     public IReadOnlyList<Requisite> Requisites { get; private set; }
+
     public IReadOnlyList<PetPhoto> PetPhotoDetails { get; private set; } = [];
+
     public bool IsDeleted { get; private set; }
-    public DateTime? DeletionDate { get; private set; }    
-    
+
+    public DateTime? DeletionDate { get; private set; }
+
     public void Delete()
     {
         IsDeleted = true;
         DeletionDate = DateTime.UtcNow;
     }
-    
+
     public void Restore()
     {
         IsDeleted = false;
@@ -64,34 +75,35 @@ public class Pet : Entity<PetId>, ISoftDeletable
     public Result AddPhotos(ValueObjectList<PetPhoto>? photos)
     {
         if (photos is null)
+        {
             return Errors.General.Null("photos");
-        
-        var newPhotoList = PetPhotoDetails.Union(photos);
-        
-        PetPhotoDetails = new ValueObjectList<PetPhoto>(newPhotoList);
+        }
+
+        IEnumerable<PetPhoto> newPhotoList = PetPhotoDetails.Union(photos);
+
+        PetPhotoDetails = [.. newPhotoList];
 
         return Result.Success();
     }
 
     public Result DeletePhotos(IEnumerable<FilePath> filePaths)
     {
-        var photos = PetPhotoDetails.Where(f => !filePaths.Contains(f.Path));
-        
-        PetPhotoDetails = new ValueObjectList<PetPhoto>(photos);
-        
+        IEnumerable<PetPhoto> photos = PetPhotoDetails.Where(f => !filePaths.Contains(f.Path));
+
+        PetPhotoDetails = [.. photos];
+
         return Result.Success();
     }
 
-    public void SetPosition(Position position)
-    {
-        Position = position;
-    }
+    public void SetPosition(Position position) => Position = position;
 
     public Result MoveForward()
     {
-        var newPosition = Position.Forward();
+        Result<Position> newPosition = Position.Forward();
         if (newPosition.IsFailure)
+        {
             return newPosition.Errors;
+        }
 
         Position = newPosition.Value;
 
@@ -100,23 +112,29 @@ public class Pet : Entity<PetId>, ISoftDeletable
 
     public Result SetMainPhoto(PetPhoto petPhoto)
     {
-        var isPhotoExist = PetPhotoDetails.FirstOrDefault(p => p.Path == petPhoto.Path);
+        PetPhoto? isPhotoExist = PetPhotoDetails.FirstOrDefault(p => p.Path == petPhoto.Path);
         if (isPhotoExist is null)
+        {
             return Errors.General.NotFound();
+        }
 
-        PetPhotoDetails = PetPhotoDetails
-            .Select(photo => new PetPhoto(photo.Path, photo.Path == petPhoto.Path))
-            .OrderByDescending(p => p.IsMain)
-            .ToList();
+        PetPhotoDetails =
+        [
+            .. PetPhotoDetails
+                .Select(photo => new PetPhoto(photo.Path, photo.Path == petPhoto.Path))
+                .OrderByDescending(p => p.IsMain)
+        ];
 
         return Result.Success();
     }
-    
+
     public Result MoveBack()
     {
-        var newPosition = Position.Back();
+        Result<Position> newPosition = Position.Back();
         if (newPosition.IsFailure)
+        {
             return newPosition.Errors;
+        }
 
         Position = newPosition.Value;
 
@@ -126,14 +144,11 @@ public class Pet : Entity<PetId>, ISoftDeletable
     public Result UpdateHelpStatus(HelpStatus helpStatus)
     {
         HelpStatus = helpStatus;
-        
+
         return Result.Success();
     }
 
-    public void Move(Position newPosition)
-    {
-        Position = newPosition;
-    }
+    public void Move(Position newPosition) => Position = newPosition;
 
     public void UpdatePet(
         Name? name,

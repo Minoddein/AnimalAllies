@@ -7,35 +7,28 @@ using Outbox.Abstractions;
 
 namespace AnimalAllies.Species.Application.SpeciesManagement.EventHandlers;
 
-public class SpeciesDeletedEventHandler: INotificationHandler<SpeciesDeletedDomainEvent>
+public class SpeciesDeletedEventHandler(
+    ILogger<SpeciesCreatedEventHandler> logger,
+    IOutboxRepository outboxRepository,
+    IUnitOfWorkOutbox unitOfWork) : INotificationHandler<SpeciesDeletedDomainEvent>
 {
-    private readonly ILogger<SpeciesCreatedEventHandler> _logger;
-    private readonly IOutboxRepository _outboxRepository;
-    private readonly IUnitOfWorkOutbox _unitOfWork;
-
-    public SpeciesDeletedEventHandler(
-        ILogger<SpeciesCreatedEventHandler> logger,
-        IOutboxRepository outboxRepository,
-        IUnitOfWorkOutbox unitOfWork)
-    {
-        _logger = logger;
-        _outboxRepository = outboxRepository;
-        _unitOfWork = unitOfWork;
-    }
+    private readonly ILogger<SpeciesCreatedEventHandler> _logger = logger;
+    private readonly IOutboxRepository _outboxRepository = outboxRepository;
+    private readonly IUnitOfWorkOutbox _unitOfWork = unitOfWork;
 
     public async Task Handle(SpeciesDeletedDomainEvent notification, CancellationToken cancellationToken)
     {
-        var integrationEvent = new CacheInvalidateIntegrationEvent(
-            null, 
+        CacheInvalidateIntegrationEvent integrationEvent = new(
+            null,
             [
                 new string(TagsConstants.BREEDS + "_" + notification.SpeciesId),
                 TagsConstants.SPECIES
             ]);
 
-        await _outboxRepository.AddAsync(integrationEvent, cancellationToken);
+        await _outboxRepository.AddAsync(integrationEvent, cancellationToken).ConfigureAwait(false);
 
-        await _unitOfWork.SaveChanges(cancellationToken);
-        
+        await _unitOfWork.SaveChanges(cancellationToken).ConfigureAwait(false);
+
         _logger.LogInformation("Species with id {id} deleted", notification.SpeciesId);
     }
 }

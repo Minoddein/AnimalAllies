@@ -1,5 +1,4 @@
 ﻿using AnimalAllies.Accounts.Application;
-using AnimalAllies.Accounts.Application.AccountManagement.Consumers;
 using AnimalAllies.Accounts.Application.AccountManagement.Consumers.ApprovedVolunteerRequestEvent;
 using AnimalAllies.Accounts.Application.AccountManagement.Consumers.SendUserDataForAuthorizationEvent;
 using AnimalAllies.Accounts.Infrastructure;
@@ -26,7 +25,7 @@ using VolunteerRequests.Infrastructure;
 
 namespace AnimalAllies.Web;
 
-public static class DependencyInjection
+internal static class DependencyInjection
 {
     public static IServiceCollection AddModules(
         this IServiceCollection services,
@@ -43,7 +42,7 @@ public static class DependencyInjection
             .AddFileService(configuration)
             .AddCore(configuration)
             .AddSqlMappers();
-        
+
         return services;
     }
 
@@ -56,25 +55,23 @@ public static class DependencyInjection
 
     private static void AddSqlMappers(this IServiceCollection services)
     {
-        SqlMapper.AddTypeHandler(typeof(SocialNetworkDto[]), new JsonTypeHandler<SocialNetworkDto[]>());
-        SqlMapper.AddTypeHandler(typeof(RequisiteDto[]), 
-            new JsonTypeHandler<RequisiteDto[]>());
-        SqlMapper.AddTypeHandler(typeof(CertificateDto[]), new JsonTypeHandler<CertificateDto[]>());
-        SqlMapper.AddTypeHandler(typeof(PetPhotoDto[]), new JsonTypeHandler<PetPhotoDto[]>());
+        SqlMapper.AddTypeHandler(new JsonTypeHandler<SocialNetworkDto[]>());
+        SqlMapper.AddTypeHandler(new JsonTypeHandler<RequisiteDto[]>());
+        SqlMapper.AddTypeHandler(new JsonTypeHandler<CertificateDto[]>());
+        SqlMapper.AddTypeHandler(new JsonTypeHandler<PetPhotoDto[]>());
     }
-    
+
     private static IServiceCollection AddMessageBus(this IServiceCollection services, IConfiguration configuration)
     {
         services.AddMassTransit(configure =>
         {
             configure.SetKebabCaseEndpointNameFormatter();
 
-
             configure.AddConsumer<ApprovedVolunteerRequestEventConsumer,
                 ApprovedVolunteerRequestEventConsumerDefinition>();
             configure.AddConsumer<SendUserDataForAuthorizationEventConsumer,
                 SendUserDataForAuthorizationEventConsumerDefinition>();
-            
+
             configure.UsingRabbitMq((context, cfg) =>
             {
                 cfg.Host(new Uri(configuration["RabbitMQ:Host"]!), h =>
@@ -84,14 +81,14 @@ public static class DependencyInjection
                 });
 
                 cfg.Durable = true;
-                
+
                 cfg.ConfigureEndpoints(context);
             });
         });
-        
+
         return services;
     }
-    
+
     private static IServiceCollection AddFramework(this IServiceCollection services)
     {
         services.AddHttpContextAccessor();
@@ -107,10 +104,10 @@ public static class DependencyInjection
         services
             .AddVolunteerRequestsInfrastructure(configuration)
             .AddVolunteerRequestsApplication();
-        
+
         return services;
     }
-    
+
     private static IServiceCollection AddDiscussionManagementModule(
         this IServiceCollection services,
         IConfiguration configuration)
@@ -119,10 +116,10 @@ public static class DependencyInjection
             .AddDiscussionInfrastructure(configuration)
             .AddDiscussionApplication()
             .AddDiscussionPresentation();
-        
+
         return services;
     }
-    
+
     private static IServiceCollection AddAccountsManagementModule(
         this IServiceCollection services,
         IConfiguration configuration)
@@ -131,10 +128,10 @@ public static class DependencyInjection
             .AddAccountsPresentation()
             .AddAccountsApplication()
             .AddAccountsInfrastructure(configuration);
-        
+
         return services;
     }
-    
+
     private static IServiceCollection AddPetsManagementModule(
         this IServiceCollection services,
         IConfiguration configuration)
@@ -146,7 +143,7 @@ public static class DependencyInjection
 
         return services;
     }
-    
+
     private static IServiceCollection AddBreedsManagementModule(
         this IServiceCollection services,
         IConfiguration configuration)

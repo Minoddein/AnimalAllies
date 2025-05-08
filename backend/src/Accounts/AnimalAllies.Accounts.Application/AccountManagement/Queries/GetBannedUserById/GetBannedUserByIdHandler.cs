@@ -1,5 +1,5 @@
-﻿using System.Text;
-using AnimalAllies.Accounts.Domain;
+﻿using System.Data;
+using System.Text;
 using AnimalAllies.Core.Abstractions;
 using AnimalAllies.Core.Database;
 using AnimalAllies.Core.DTOs.Accounts;
@@ -9,64 +9,66 @@ using AnimalAllies.SharedKernel.Shared;
 using AnimalAllies.SharedKernel.Shared.Errors;
 using Dapper;
 using FluentValidation;
+using FluentValidation.Results;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
 namespace AnimalAllies.Accounts.Application.AccountManagement.Queries.GetBannedUserById;
 
-public class GetBannedUserByIdHandler: IQueryHandler<ProhibitionSendingDto,GetBannedUserByIdQuery>
+public class GetBannedUserByIdHandler(
+    [FromKeyedServices(Constraints.Context.Accounts)]
+    ISqlConnectionFactory sqlConnectionFactory,
+    ILogger<GetBannedUserByIdHandler> logger,
+    IValidator<GetBannedUserByIdQuery> validator) : IQueryHandler<ProhibitionSendingDto, GetBannedUserByIdQuery>
 {
-    private readonly ISqlConnectionFactory _sqlConnectionFactory;
-    private readonly ILogger<GetBannedUserByIdHandler> _logger;
-    private readonly IValidator<GetBannedUserByIdQuery> _validator;
-
-    public GetBannedUserByIdHandler(
-        [FromKeyedServices(Constraints.Context.Accounts)]ISqlConnectionFactory sqlConnectionFactory,
-        ILogger<GetBannedUserByIdHandler> logger, 
-        IValidator<GetBannedUserByIdQuery> validator)
-    {
-        _sqlConnectionFactory = sqlConnectionFactory;
-        _logger = logger;
-        _validator = validator;
-    }
+    private readonly ILogger<GetBannedUserByIdHandler> _logger = logger;
+    private readonly ISqlConnectionFactory _sqlConnectionFactory = sqlConnectionFactory;
+    private readonly IValidator<GetBannedUserByIdQuery> _validator = validator;
 
     public async Task<Result<ProhibitionSendingDto>> Handle(
         GetBannedUserByIdQuery query, CancellationToken cancellationToken = default)
     {
-        var validationResult = await _validator.ValidateAsync(query, cancellationToken);
+        ValidationResult? validationResult =
+            await _validator.ValidateAsync(query, cancellationToken).ConfigureAwait(false);
         if (!validationResult.IsValid)
+        {
             return validationResult.ToErrorList();
-        
-        var connection = _sqlConnectionFactory.Create();
-        
-        var parameters = new DynamicParameters();
-        
+        }
+
+        IDbConnection connection = _sqlConnectionFactory.Create();
+
+        DynamicParameters parameters = new();
+
         parameters.Add("@UserId", query.UserId);
-        
-       var sql = new StringBuilder("""
-                                   select
-                                       u.id,
-                                       u.user_id,
-                                       u.banned_at
-                                   from accounts.banned_users u
-                                   where u.user_id = @UserId
-                                   """);
 
-       var bannedUser = (await connection
-           .QueryAsync<ProhibitionSendingDto>(sql.ToString(), parameters)).ToList();
+        StringBuilder sql = new("""
+                                select
+                                    u.id,
+                                    u.user_id,
+                                    u.banned_at
+                                from accounts.banned_users u
+                                where u.user_id = @UserId
+                                """);
 
-       var result = bannedUser.SingleOrDefault();
+        List<ProhibitionSendingDto> bannedUser =
+        [
+            .. await connection
+                .QueryAsync<ProhibitionSendingDto>(sql.ToString(), parameters).ConfigureAwait(false)
+        ];
 
-       if (result is null)
-           return Errors.General.NotFound();
-       
-       _logger.LogInformation("got user with id {id}", query.UserId);
+        ProhibitionSendingDto? result = bannedUser.SingleOrDefault();
+
+        if (result is null)
+        {
+            return Errors.General.NotFound();
+        }
+
+        _logger.LogInformation("got user with id {id}", query.UserId);
 
         return result;
     }
 
-    public async Task<Result<ProhibitionSendingDto>> Handle(Guid userId, CancellationToken cancellationToken = default)
-    {
-        return await Handle(new GetBannedUserByIdQuery(userId), cancellationToken);
-    }
+    public async Task<Result<ProhibitionSendingDto>>
+        Handle(Guid userId, CancellationToken cancellationToken = default) =>
+        await Handle(new GetBannedUserByIdQuery(userId), cancellationToken).ConfigureAwait(false);
 }

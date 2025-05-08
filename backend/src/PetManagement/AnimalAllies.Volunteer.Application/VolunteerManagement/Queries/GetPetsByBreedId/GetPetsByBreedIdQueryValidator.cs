@@ -1,5 +1,4 @@
 ﻿using AnimalAllies.Core.Validators;
-using AnimalAllies.SharedKernel.Shared;
 using AnimalAllies.SharedKernel.Shared.Errors;
 using FluentValidation;
 
@@ -15,7 +14,7 @@ public class GetPetsByBreedIdQueryValidator : AbstractValidator<GetPetsByBreedId
         RuleFor(p => p.Page)
             .GreaterThanOrEqualTo(1)
             .WithError(Errors.General.ValueIsInvalid("page"));
-        
+
         RuleFor(p => p.PageSize)
             .GreaterThanOrEqualTo(1)
             .WithError(Errors.General.ValueIsInvalid("page size"));

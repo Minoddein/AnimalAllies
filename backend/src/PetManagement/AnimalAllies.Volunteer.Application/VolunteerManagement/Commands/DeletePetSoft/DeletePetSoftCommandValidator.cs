@@ -1,5 +1,4 @@
 ﻿using AnimalAllies.Core.Validators;
-using AnimalAllies.SharedKernel.Shared;
 using AnimalAllies.SharedKernel.Shared.Errors;
 using FluentValidation;
 
@@ -12,7 +11,7 @@ public class DeletePetSoftCommandValidator : AbstractValidator<DeletePetSoftComm
         RuleFor(p => p.VolunteerId)
             .NotEmpty()
             .WithError(Errors.General.ValueIsRequired("volunteer id"));
-        
+
         RuleFor(p => p.PetId)
             .NotEmpty()
             .WithError(Errors.General.ValueIsRequired("pet id"));

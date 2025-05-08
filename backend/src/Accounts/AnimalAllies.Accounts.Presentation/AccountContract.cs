@@ -4,28 +4,19 @@ using AnimalAllies.Accounts.Application.AccountManagement.Queries.IsUserExistByI
 using AnimalAllies.Accounts.Application.Managers;
 using AnimalAllies.Accounts.Contracts;
 using AnimalAllies.Accounts.Domain;
-using AnimalAllies.SharedKernel.Shared;
 using Microsoft.AspNetCore.Identity;
 
 namespace AnimalAllies.Accounts.Presentation;
 
-public class AccountContract: IAccountContract
+public class AccountContract(
+    GetPermissionsByUserIdHandler getPermissionsByUserIdHandler,
+    IsUserExistByIdHandler isUserExistByIdHandler,
+    GetBannedUserByIdHandler getBannedUserByIdHandler,
+    IAccountManager accountManager,
+    UserManager<User> userManager) : IAccountContract
 {
-    private readonly IsUserExistByIdHandler _isUserExistByIdHandler;
+    private readonly IsUserExistByIdHandler _isUserExistByIdHandler = isUserExistByIdHandler;
 
-    
-    public AccountContract(
-        GetPermissionsByUserIdHandler getPermissionsByUserIdHandler,
-        IsUserExistByIdHandler isUserExistByIdHandler,
-        GetBannedUserByIdHandler getBannedUserByIdHandler,
-        IAccountManager accountManager, UserManager<User> userManager)
-    {
-        _isUserExistByIdHandler = isUserExistByIdHandler;
-    }
-    
-    public async Task<bool> IsUserExistById(Guid userId, CancellationToken cancellationToken = default)
-    {
-        return (await _isUserExistByIdHandler.Handle(userId, cancellationToken)).Value;
-    }
-    
+    public async Task<bool> IsUserExistById(Guid userId, CancellationToken cancellationToken = default) =>
+        (await _isUserExistByIdHandler.Handle(userId, cancellationToken).ConfigureAwait(false)).Value;
 }

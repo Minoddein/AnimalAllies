@@ -1,28 +1,25 @@
-using System.Text.Json;
+﻿using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using Outbox.Abstractions;
 
 namespace Outbox.Outbox;
 
-public class OutboxRepository<TContext> : IOutboxRepository where TContext : DbContext
+public class OutboxRepository<TContext>(TContext context) : IOutboxRepository
+    where TContext : DbContext
 {
-    private readonly TContext _context;
+    private readonly TContext _context = context;
 
-    public OutboxRepository(TContext context)
+    public async Task AddAsync<T>(T message, CancellationToken cancellationToken = default)
+        where T : class
     {
-        _context = context;
-    }
-
-    public async Task AddAsync<T>(T message, CancellationToken cancellationToken = default) where T : class
-    {
-        var outboxMessage = new OutboxMessage
+        OutboxMessage outboxMessage = new()
         {
             Id = Guid.NewGuid(),
             OccurredOnUtc = DateTime.UtcNow,
             Type = typeof(T).FullName!,
             Payload = JsonSerializer.Serialize(message)
         };
-        
-        await _context.Set<OutboxMessage>().AddAsync(outboxMessage, cancellationToken);
+
+        await _context.Set<OutboxMessage>().AddAsync(outboxMessage, cancellationToken).ConfigureAwait(false);
     }
 }

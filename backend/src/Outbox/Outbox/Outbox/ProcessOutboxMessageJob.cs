@@ -1,20 +1,12 @@
-using Microsoft.EntityFrameworkCore;
-using Quartz;
+﻿using Quartz;
 
 namespace Outbox.Outbox;
 
 [DisallowConcurrentExecution]
-public class ProcessOutboxMessageJob: IJob 
+public class ProcessOutboxMessageJob(ProcessOutboxMessageService processOutboxMessageService) : IJob
 {
-    private readonly ProcessOutboxMessageService _processOutboxMessageService;
+    private readonly ProcessOutboxMessageService _processOutboxMessageService = processOutboxMessageService;
 
-    public ProcessOutboxMessageJob(ProcessOutboxMessageService processOutboxMessageService)
-    {
-        _processOutboxMessageService = processOutboxMessageService;
-    }
-    
-    public async Task Execute(IJobExecutionContext context)
-    {
-        await _processOutboxMessageService.Execute(context.CancellationToken);
-    }
+    public async Task Execute(IJobExecutionContext context) =>
+        await _processOutboxMessageService.Execute(context.CancellationToken).ConfigureAwait(false);
 }

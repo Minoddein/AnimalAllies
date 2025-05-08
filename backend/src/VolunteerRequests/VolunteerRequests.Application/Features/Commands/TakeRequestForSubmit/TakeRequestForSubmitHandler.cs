@@ -8,77 +8,77 @@ using AnimalAllies.SharedKernel.Shared.Errors;
 using AnimalAllies.SharedKernel.Shared.Ids;
 using Discussion.Contracts;
 using FluentValidation;
+using FluentValidation.Results;
 using MediatR;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using VolunteerRequests.Application.Repository;
-
+using VolunteerRequests.Domain.Aggregates;
 
 namespace VolunteerRequests.Application.Features.Commands.TakeRequestForSubmit;
 
-public class TakeRequestForSubmitHandler: ICommandHandler<TakeRequestForSubmitCommand>
+public class TakeRequestForSubmitHandler(
+    ILogger<TakeRequestForSubmitHandler> logger,
+    [FromKeyedServices(Constraints.Context.VolunteerRequests)]
+    IUnitOfWork unitOfWork,
+    IVolunteerRequestsRepository repository,
+    IDiscussionContract discussionContract,
+    IValidator<TakeRequestForSubmitCommand> validator,
+    IPublisher publisher) : ICommandHandler<TakeRequestForSubmitCommand>
 {
-    private readonly ILogger<TakeRequestForSubmitHandler> _logger;
-    private readonly IUnitOfWork _unitOfWork;
-    private readonly IVolunteerRequestsRepository _repository;
-    private readonly IDiscussionContract _discussionContract;
-    private readonly IValidator<TakeRequestForSubmitCommand> _validator;
-    private readonly IPublisher _publisher;
-
-    public TakeRequestForSubmitHandler(
-        ILogger<TakeRequestForSubmitHandler> logger, 
-        [FromKeyedServices(Constraints.Context.VolunteerRequests)]IUnitOfWork unitOfWork, 
-        IVolunteerRequestsRepository repository, 
-        IDiscussionContract discussionContract, 
-        IValidator<TakeRequestForSubmitCommand> validator,
-        IPublisher publisher)
-    {
-        _logger = logger;
-        _unitOfWork = unitOfWork;
-        _repository = repository;
-        _discussionContract = discussionContract;
-        _validator = validator;
-        _publisher = publisher;
-    }
+    private readonly IDiscussionContract _discussionContract = discussionContract;
+    private readonly ILogger<TakeRequestForSubmitHandler> _logger = logger;
+    private readonly IPublisher _publisher = publisher;
+    private readonly IVolunteerRequestsRepository _repository = repository;
+    private readonly IUnitOfWork _unitOfWork = unitOfWork;
+    private readonly IValidator<TakeRequestForSubmitCommand> _validator = validator;
 
     public async Task<Result> Handle(
         TakeRequestForSubmitCommand command, CancellationToken cancellationToken = default)
     {
-        var validatorResult = await _validator.ValidateAsync(command, cancellationToken);
+        ValidationResult? validatorResult =
+            await _validator.ValidateAsync(command, cancellationToken).ConfigureAwait(false);
         if (!validatorResult.IsValid)
+        {
             return validatorResult.ToErrorList();
-        
-        
-        using var scope = new TransactionScope(
+        }
+
+        using TransactionScope scope = new(
             TransactionScopeOption.Required,
             new TransactionOptions { IsolationLevel = IsolationLevel.ReadCommitted },
             TransactionScopeAsyncFlowOption.Enabled
         );
         try
         {
-            var volunteerRequestId = VolunteerRequestId.Create(command.VolunteerRequestId);
-            
-            var volunteerRequest = await _repository.GetById(volunteerRequestId, cancellationToken);
-            if (volunteerRequest.IsFailure)
-                return volunteerRequest.Errors;
+            VolunteerRequestId volunteerRequestId = VolunteerRequestId.Create(command.VolunteerRequestId);
 
-            var discussionId = await _discussionContract.CreateDiscussionHandler(
+            Result<VolunteerRequest> volunteerRequest =
+                await _repository.GetById(volunteerRequestId, cancellationToken).ConfigureAwait(false);
+            if (volunteerRequest.IsFailure)
+            {
+                return volunteerRequest.Errors;
+            }
+
+            Guid discussionId = await _discussionContract.CreateDiscussionHandler(
                 command.AdminId,
                 volunteerRequest.Value.UserId,
                 command.VolunteerRequestId,
-                cancellationToken);
+                cancellationToken).ConfigureAwait(false);
 
-            var result = volunteerRequest.Value.TakeRequestForSubmit(command.AdminId, discussionId);
+            Result result = volunteerRequest.Value.TakeRequestForSubmit(command.AdminId, discussionId);
             if (result.IsFailure)
+            {
                 return result.Errors;
-            
-            await _publisher.PublishDomainEvents(volunteerRequest.Value, cancellationToken);
+            }
 
-            await _unitOfWork.SaveChanges(cancellationToken);
-            
+            await _publisher.PublishDomainEvents(volunteerRequest.Value, cancellationToken).ConfigureAwait(false);
+
+            await _unitOfWork.SaveChanges(cancellationToken).ConfigureAwait(false);
+
             scope.Complete();
-            
-            _logger.LogInformation("admin with id {id} take volunteer request for submit with id {volunteerRequestId}",
+
+            _logger.LogInformation(
+                "admin with id {id} take volunteer request for submit with id {volunteerRequestId}",
                 command.AdminId, command.VolunteerRequestId);
 
             return Result.Success();
@@ -86,8 +86,9 @@ public class TakeRequestForSubmitHandler: ICommandHandler<TakeRequestForSubmitCo
         catch (Exception)
         {
             _logger.LogError("Cannot take request for submit");
-            
-            return Error.Failure("take.request.for.submit.failure",
+
+            return Error.Failure(
+                "take.request.for.submit.failure",
                 "Something went wrong with take request for submit");
         }
     }

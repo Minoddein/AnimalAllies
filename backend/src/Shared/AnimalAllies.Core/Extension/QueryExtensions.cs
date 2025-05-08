@@ -12,27 +12,19 @@ public static class QueryExtensions
         int pageSize,
         CancellationToken cancellationToken = default)
     {
-        var totalCount = await source.CountAsync(cancellationToken);
-        
-        var items = await source
+        int totalCount = await source.CountAsync(cancellationToken).ConfigureAwait(false);
+
+        List<T> items = await source
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
-            .ToListAsync(cancellationToken);
-        
-        return new PagedList<T>
-        {
-            Items = items,
-            Page = page,
-            PageSize = pageSize,
-            TotalCount = totalCount
-        };
+            .ToListAsync(cancellationToken).ConfigureAwait(false);
+
+        return new PagedList<T> { Items = items, Page = page, PageSize = pageSize, TotalCount = totalCount };
     }
-    
+
     public static IQueryable<T> WhereIf<T>(
         this IQueryable<T> source,
         bool condition,
-        Expression<Func<T, bool>> predicate)
-    {
-        return condition ? source.Where(predicate) : source;
-    }
+        Expression<Func<T, bool>> predicate) =>
+        condition ? source.Where(predicate) : source;
 }

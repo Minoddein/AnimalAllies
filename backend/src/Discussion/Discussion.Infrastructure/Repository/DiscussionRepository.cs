@@ -7,39 +7,44 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Discussion.Infrastructure.Repository;
 
-public class DiscussionRepository: IDiscussionRepository
+public class DiscussionRepository(WriteDbContext context) : IDiscussionRepository
 {
-    private readonly WriteDbContext _context;
+    private readonly WriteDbContext _context = context;
 
-    public DiscussionRepository(WriteDbContext context)
+    public async Task<Result<DiscussionId>> Create(
+        Domain.Aggregate.Discussion entity,
+        CancellationToken cancellationToken = default)
     {
-        _context = context;
-    }
-
-    public async Task<Result<DiscussionId>> Create(Domain.Aggregate.Discussion entity, CancellationToken cancellationToken = default)
-    {
-        await _context.Discussions.AddAsync(entity, cancellationToken);
+        await _context.Discussions.AddAsync(entity, cancellationToken).ConfigureAwait(false);
         return entity.Id;
     }
 
-    public async Task<Result<Domain.Aggregate.Discussion>> GetById(DiscussionId id, CancellationToken cancellationToken = default)
+    public async Task<Result<Domain.Aggregate.Discussion>> GetById(
+        DiscussionId id,
+        CancellationToken cancellationToken = default)
     {
-        var discussion = await _context.Discussions.Include(d => d.Messages)
-            .FirstOrDefaultAsync(v => v.Id == id, cancellationToken);
+        Domain.Aggregate.Discussion? discussion = await _context.Discussions.Include(d => d.Messages)
+            .FirstOrDefaultAsync(v => v.Id == id, cancellationToken).ConfigureAwait(false);
 
         if (discussion == null)
+        {
             return Errors.General.NotFound();
+        }
 
         return discussion;
     }
 
-    public async Task<Result<Domain.Aggregate.Discussion>> GetByRelationId(Guid relationId, CancellationToken cancellationToken = default)
+    public async Task<Result<Domain.Aggregate.Discussion>> GetByRelationId(
+        Guid relationId,
+        CancellationToken cancellationToken = default)
     {
-        var discussion = await _context.Discussions.Include(d => d.Messages)
-            .FirstOrDefaultAsync(v => v.RelationId == relationId, cancellationToken);
+        Domain.Aggregate.Discussion? discussion = await _context.Discussions.Include(d => d.Messages)
+            .FirstOrDefaultAsync(v => v.RelationId == relationId, cancellationToken).ConfigureAwait(false);
 
         if (discussion == null)
+        {
             return Errors.General.NotFound();
+        }
 
         return discussion;
     }

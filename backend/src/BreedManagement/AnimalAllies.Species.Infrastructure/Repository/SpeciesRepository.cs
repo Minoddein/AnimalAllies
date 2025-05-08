@@ -7,18 +7,13 @@ using Microsoft.EntityFrameworkCore;
 
 namespace AnimalAllies.Species.Infrastructure.Repository;
 
-public class SpeciesRepository : ISpeciesRepository
+public class SpeciesRepository(SpeciesWriteDbContext context) : ISpeciesRepository
 {
-    private readonly SpeciesWriteDbContext _context;
-
-    public SpeciesRepository(SpeciesWriteDbContext context)
-    {
-        _context = context;
-    }
+    private readonly SpeciesWriteDbContext _context = context;
 
     public async Task<Result<SpeciesId>> Create(Domain.Species entity, CancellationToken cancellationToken = default)
     {
-        await _context.Species.AddAsync(entity, cancellationToken);
+        await _context.Species.AddAsync(entity, cancellationToken).ConfigureAwait(false);
 
         return entity.Id;
     }
@@ -39,20 +34,20 @@ public class SpeciesRepository : ISpeciesRepository
 
     public async Task<Result<Domain.Species>> GetById(SpeciesId id, CancellationToken cancellationToken = default)
     {
-        var species = await _context.Species
+        Domain.Species? species = await _context.Species
             .Include(s => s.Breeds)
-            .FirstOrDefaultAsync(s => s.Id == id, cancellationToken);
+            .FirstOrDefaultAsync(s => s.Id == id, cancellationToken).ConfigureAwait(false);
 
         if (species == null)
+        {
             return Result<Domain.Species>.Failure(Errors.General.NotFound());
+        }
 
         return Result<Domain.Species>.Success(species);
     }
 
-    public async Task<Result<List<Domain.Species>>> Get(CancellationToken cancellationToken = default)
-    {
-        return await _context.Species
+    public async Task<Result<List<Domain.Species>>> Get(CancellationToken cancellationToken = default) =>
+        await _context.Species
             .Include(s => s.Breeds)
-            .ToListAsync(cancellationToken);
-    }
+            .ToListAsync(cancellationToken).ConfigureAwait(false);
 }

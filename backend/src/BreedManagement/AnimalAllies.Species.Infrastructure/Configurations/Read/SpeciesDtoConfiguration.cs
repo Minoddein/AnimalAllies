@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace AnimalAllies.Species.Infrastructure.Configurations.Read;
 
-public class SpeciesDtoConfiguration: IEntityTypeConfiguration<SpeciesDto>
+public class SpeciesDtoConfiguration : IEntityTypeConfiguration<SpeciesDto>
 {
     public void Configure(EntityTypeBuilder<SpeciesDto> builder)
     {

@@ -5,18 +5,18 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Discussion.Infrastructure.Configurations.Write;
 
-public class DiscussionConfiguration: IEntityTypeConfiguration<Domain.Aggregate.Discussion>
+public class DiscussionConfiguration : IEntityTypeConfiguration<Domain.Aggregate.Discussion>
 {
     public void Configure(EntityTypeBuilder<Domain.Aggregate.Discussion> builder)
     {
         builder.ToTable("discussions");
         builder.HasKey(x => x.Id);
-        
+
         builder.Property(x => x.Id)
             .HasConversion(
                 id => id.Id,
                 id => DiscussionId.Create(id));
-        
+
         builder.ComplexProperty(d => d.DiscussionStatus, d =>
         {
             d.IsRequired();
@@ -24,13 +24,13 @@ public class DiscussionConfiguration: IEntityTypeConfiguration<Domain.Aggregate.
                 .HasColumnName("discussion_status")
                 .HasMaxLength(Constraints.MAX_VALUE_LENGTH);
         });
-        
+
         builder.ComplexProperty(d => d.Users, u =>
         {
             u.IsRequired();
             u.Property(x => x.FirstMember)
                 .HasColumnName("first_member");
-            
+
             u.Property(x => x.SecondMember)
                 .HasColumnName("second_member");
         });

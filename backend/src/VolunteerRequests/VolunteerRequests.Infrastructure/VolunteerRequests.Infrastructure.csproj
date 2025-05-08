@@ -1,16 +1,16 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-    <PropertyGroup>
-        <TargetFramework>net9.0</TargetFramework>
-        <ImplicitUsings>enable</ImplicitUsings>
-        <Nullable>enable</Nullable>
-    </PropertyGroup>
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
 
-    <ItemGroup>
-      <ProjectReference Include="..\..\Outbox\Outbox\Outbox.csproj" />
-      <ProjectReference Include="..\..\Shared\AnimalAllies.Core\AnimalAllies.Core.csproj" />
-      <ProjectReference Include="..\VolunteerRequests.Application\VolunteerRequests.Application.csproj" />
-      <ProjectReference Include="..\VolunteerRequests.Domain\VolunteerRequests.Domain.csproj" />
-    </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\Outbox\Outbox\Outbox.csproj"/>
+    <ProjectReference Include="..\..\Shared\AnimalAllies.Core\AnimalAllies.Core.csproj"/>
+    <ProjectReference Include="..\VolunteerRequests.Application\VolunteerRequests.Application.csproj"/>
+    <ProjectReference Include="..\VolunteerRequests.Domain\VolunteerRequests.Domain.csproj"/>
+  </ItemGroup>
 
 </Project>

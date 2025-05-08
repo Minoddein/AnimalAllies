@@ -8,42 +8,41 @@ using VolunteerRequests.Infrastructure.DbContexts;
 
 namespace VolunteerRequests.Infrastructure.Repository;
 
-public class VolunteerRequestsRepository : IVolunteerRequestsRepository
+public class VolunteerRequestsRepository(WriteDbContext context) : IVolunteerRequestsRepository
 {
-    private readonly WriteDbContext _context;
-    
-    public VolunteerRequestsRepository(WriteDbContext context)
-    {
-        _context = context;
-    }
-    
+    private readonly WriteDbContext _context = context;
+
     public async Task<Result<VolunteerRequestId>> Create(
         VolunteerRequest entity, CancellationToken cancellationToken = default)
     {
-        await _context.VolunteerRequests.AddAsync(entity, cancellationToken);
+        await _context.VolunteerRequests.AddAsync(entity, cancellationToken).ConfigureAwait(false);
 
         return entity.Id;
     }
 
-    public async Task<Result<VolunteerRequest>> GetById(VolunteerRequestId id, CancellationToken cancellationToken = default)
+    public async Task<Result<VolunteerRequest>> GetById(
+        VolunteerRequestId id,
+        CancellationToken cancellationToken = default)
     {
-        var volunteerRequest = await _context.VolunteerRequests
-            .FirstOrDefaultAsync(v => v.Id == id, cancellationToken);
+        VolunteerRequest? volunteerRequest = await _context.VolunteerRequests
+            .FirstOrDefaultAsync(v => v.Id == id, cancellationToken).ConfigureAwait(false);
 
         if (volunteerRequest == null)
+        {
             return Errors.General.NotFound();
+        }
 
         return volunteerRequest;
     }
 
-    public async Task<Result<IReadOnlyList<VolunteerRequest>>> GetByUserId(Guid userId, CancellationToken cancellationToken = default)
-    {
-        return await _context.VolunteerRequests
-            .Where(v => v.UserId == userId).ToListAsync(cancellationToken);
-    }
+    public async Task<Result<IReadOnlyList<VolunteerRequest>>> GetByUserId(
+        Guid userId,
+        CancellationToken cancellationToken = default) =>
+        await _context.VolunteerRequests
+            .Where(v => v.UserId == userId).ToListAsync(cancellationToken).ConfigureAwait(false);
 
     public Result<VolunteerRequestId> Delete(VolunteerRequest entity)
-    { 
+    {
         _context.VolunteerRequests.Remove(entity);
 
         return entity.Id;

@@ -3,6 +3,7 @@ using AnimalAllies.Accounts.Domain;
 using AnimalAllies.Accounts.Infrastructure.IdentityManagers;
 using AnimalAllies.Accounts.Infrastructure.Options;
 using AnimalAllies.Framework;
+using AnimalAllies.SharedKernel.Shared;
 using AnimalAllies.SharedKernel.Shared.ValueObjects;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Logging;
@@ -10,109 +11,103 @@ using Microsoft.Extensions.Options;
 
 namespace AnimalAllies.Accounts.Infrastructure.Seeding;
 
-public class AccountSeedService
+public class AccountSeedService(
+    UserManager<User> userManager,
+    RoleManager<Role> roleManager,
+    PermissionManager permissionManager,
+    RolePermissionManager rolePermissionManager,
+    IOptions<AdminOptions> adminOptions,
+    ILogger<AccountSeedService> logger,
+    AccountManager accountManager)
 {
-    private readonly UserManager<User> _userManager;
-    private readonly RoleManager<Role> _roleManager;
-    private readonly PermissionManager _permissionManager;
-    private readonly RolePermissionManager _rolePermissionManager;
-    private readonly AccountManager _accountManager;
-    private readonly AdminOptions _adminOptions;
-    private readonly ILogger<AccountSeedService> _logger;
-
-    public AccountSeedService(
-        UserManager<User> userManager,
-        RoleManager<Role> roleManager,
-        PermissionManager permissionManager,
-        RolePermissionManager rolePermissionManager,
-        IOptions<AdminOptions> adminOptions, 
-        ILogger<AccountSeedService> logger,
-        AccountManager accountManager)
-    {
-        _userManager = userManager;
-        _roleManager = roleManager;
-        _permissionManager = permissionManager;
-        _rolePermissionManager = rolePermissionManager;
-        _logger = logger;
-        _accountManager = accountManager;
-        _adminOptions = adminOptions.Value;
-    }
+    private readonly AccountManager _accountManager = accountManager;
+    private readonly AdminOptions _adminOptions = adminOptions.Value;
+    private readonly ILogger<AccountSeedService> _logger = logger;
+    private readonly PermissionManager _permissionManager = permissionManager;
+    private readonly RoleManager<Role> _roleManager = roleManager;
+    private readonly RolePermissionManager _rolePermissionManager = rolePermissionManager;
+    private readonly UserManager<User> _userManager = userManager;
 
     public async Task SeedAsync()
     {
         _logger.LogInformation("Seeding accounts...");
 
-        var json = await File.ReadAllTextAsync(FilePaths.Accounts);
-        
-        var seedData = JsonSerializer.Deserialize<RolePermissionOptions>(json)
-                       ?? throw new ApplicationException("Could not deserialize role permission config.");
+        string json = await File.ReadAllTextAsync(FilePaths.Accounts).ConfigureAwait(false);
 
-        await SeedPermissions(seedData);
+        RolePermissionOptions seedData = JsonSerializer.Deserialize<RolePermissionOptions>(json)
+                                         ?? throw new ApplicationException(
+                                             "Could not deserialize role permission config.");
 
-        await SeedRoles(seedData);
+        await SeedPermissions(seedData).ConfigureAwait(false);
 
-        await SeedRolePermissions(seedData);
+        await SeedRoles(seedData).ConfigureAwait(false);
 
-        await CreateAdmin();
+        await SeedRolePermissions(seedData).ConfigureAwait(false);
+
+        await CreateAdmin().ConfigureAwait(false);
     }
 
     private async Task CreateAdmin()
     {
-        var adminRole = await _roleManager.FindByNameAsync(AdminProfile.ADMIN)
-                        ?? throw new ApplicationException("Could not find admin role");
+        Role adminRole = await _roleManager.FindByNameAsync(AdminProfile.ADMIN).ConfigureAwait(false)
+                         ?? throw new ApplicationException("Could not find admin role");
 
-        var adminUser = User.CreateAdmin(_adminOptions.UserName, _adminOptions.Email, adminRole);
+        User adminUser = User.CreateAdmin(_adminOptions.UserName, _adminOptions.Email, adminRole);
 
-        var isAdminExist = await _userManager.FindByNameAsync(AdminProfile.ADMIN);
-        if(isAdminExist is not null)
+        User? isAdminExist = await _userManager.FindByNameAsync(AdminProfile.ADMIN).ConfigureAwait(false);
+        if (isAdminExist is not null)
+        {
             return;
+        }
 
         adminUser.EmailConfirmed = true;
-        
-        await _userManager.CreateAsync(adminUser, _adminOptions.Password);
 
-        var fullName = FullName.Create(
+        await _userManager.CreateAsync(adminUser, _adminOptions.Password).ConfigureAwait(false);
+
+        Result<FullName> fullName = FullName.Create(
             _adminOptions.UserName,
-            _adminOptions.UserName, 
+            _adminOptions.UserName,
             _adminOptions.UserName);
-        
-        var adminProfile = new AdminProfile(fullName.Value, adminUser);
 
-        await _accountManager.CreateAdminAccount(adminProfile);
+        AdminProfile adminProfile = new(fullName.Value, adminUser);
+
+        await _accountManager.CreateAdminAccount(adminProfile).ConfigureAwait(false);
     }
 
-    private  async Task SeedRolePermissions(RolePermissionOptions seedData)
+    private async Task SeedRolePermissions(RolePermissionOptions seedData)
     {
-        foreach (var roleName in seedData.Roles.Keys)
+        foreach (string roleName in seedData.Roles.Keys)
         {
-            var role = await _roleManager.FindByNameAsync(roleName);
+            Role? role = await _roleManager.FindByNameAsync(roleName).ConfigureAwait(false);
 
-            await _rolePermissionManager.AddRangeIfExist(role!.Id, seedData.Roles[roleName]);
+            await _rolePermissionManager.AddRangeIfExist(role!.Id, seedData.Roles[roleName]).ConfigureAwait(false);
         }
-        
+
         _logger.LogInformation("RolePermission added to database");
     }
 
     private async Task SeedRoles(RolePermissionOptions seedData)
     {
-        foreach (var roleName in seedData.Roles.Keys)
+        foreach (string roleName in seedData.Roles.Keys)
         {
-            var existingRole = await _roleManager.FindByNameAsync(roleName);
+            Role? existingRole = await _roleManager.FindByNameAsync(roleName).ConfigureAwait(false);
 
             if (existingRole is null)
-                await _roleManager.CreateAsync(new Role { Name = roleName });
+            {
+                await _roleManager.CreateAsync(new Role { Name = roleName }).ConfigureAwait(false);
+            }
         }
-        
+
         _logger.LogInformation("Roles added to database");
     }
 
     private async Task SeedPermissions(RolePermissionOptions seedData)
     {
-        var permissionsToAdd = seedData.Permissions
+        IEnumerable<string> permissionsToAdd = seedData.Permissions
             .SelectMany(permissionGroup => permissionGroup.Value);
 
-        await _permissionManager.AddRangeIfExist(permissionsToAdd);
-        
+        await _permissionManager.AddRangeIfExist(permissionsToAdd).ConfigureAwait(false);
+
         _logger.LogInformation("Permissions added to database");
     }
 }

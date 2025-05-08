@@ -1,18 +1,17 @@
-using AnimalAllies.Core.Validators;
+﻿using AnimalAllies.Core.Validators;
 using AnimalAllies.SharedKernel.Constraints;
-using AnimalAllies.SharedKernel.Shared;
 using AnimalAllies.SharedKernel.Shared.Errors;
 using FluentValidation;
 
 namespace AnimalAllies.Volunteer.Application.VolunteerManagement.Commands.DeletePetPhoto;
 
-public class DeletePetPhotosCommandValidator: AbstractValidator<DeletePetPhotosCommand>
+public class DeletePetPhotosCommandValidator : AbstractValidator<DeletePetPhotosCommand>
 {
     public DeletePetPhotosCommandValidator()
     {
         RuleFor(p => p.PetId)
             .NotEmpty().WithError(Errors.General.ValueIsRequired("PetId"));
-        
+
         RuleFor(p => p.VolunteerId)
             .NotEmpty().WithError(Errors.General.ValueIsRequired("VolunteerId"));
 
@@ -21,7 +20,8 @@ public class DeletePetPhotosCommandValidator: AbstractValidator<DeletePetPhotosC
             {
                 p.RuleFor(p => p)
                     .Must(ext => Constraints.Extensions.Contains(Path.GetExtension(ext)))
-                    .NotEmpty().WithError(Error.Null("filename.is.null", 
+                    .NotEmpty().WithError(Error.Null(
+                        "filename.is.null",
                         "filename cannot be null or empty"));
             });
     }

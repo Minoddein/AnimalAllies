@@ -1,14 +1,14 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-    <PropertyGroup>
-        <TargetFramework>net9.0</TargetFramework>
-        <ImplicitUsings>enable</ImplicitUsings>
-        <Nullable>enable</Nullable>
-    </PropertyGroup>
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
 
-    <ItemGroup>
-      <ProjectReference Include="..\..\Shared\AnimalAllies.SharedKernel\AnimalAllies.SharedKernel.csproj" />
-      <ProjectReference Include="..\VolunteerRequests.Contracts\VolunteerRequests.Contracts.csproj" />
-    </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\Shared\AnimalAllies.SharedKernel\AnimalAllies.SharedKernel.csproj"/>
+    <ProjectReference Include="..\VolunteerRequests.Contracts\VolunteerRequests.Contracts.csproj"/>
+  </ItemGroup>
 
 </Project>

@@ -7,57 +7,63 @@ using AnimalAllies.SharedKernel.Shared.Ids;
 using AnimalAllies.Volunteer.Application.Repository;
 using AnimalAllies.Volunteer.Domain.VolunteerManagement.Entities.Pet.ValueObjects;
 using FluentValidation;
+using FluentValidation.Results;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
 namespace AnimalAllies.Volunteer.Application.VolunteerManagement.Commands.UpdatePetStatus;
 
-public class UpdatePetStatusHandler : ICommandHandler<UpdatePetStatusCommand, PetId>
+public class UpdatePetStatusHandler(
+    IVolunteerRepository volunteerRepository,
+    ILogger<UpdatePetStatusHandler> logger,
+    IValidator<UpdatePetStatusCommand> validator,
+    [FromKeyedServices(Constraints.Context.PetManagement)]
+    IUnitOfWork unitOfWork) : ICommandHandler<UpdatePetStatusCommand, PetId>
 {
-    private readonly IVolunteerRepository _volunteerRepository;
-    private readonly IUnitOfWork _unitOfWork;
-    private readonly ILogger<UpdatePetStatusHandler> _logger;
-    private readonly IValidator<UpdatePetStatusCommand> _validator;
+    private readonly ILogger<UpdatePetStatusHandler> _logger = logger;
+    private readonly IUnitOfWork _unitOfWork = unitOfWork;
+    private readonly IValidator<UpdatePetStatusCommand> _validator = validator;
+    private readonly IVolunteerRepository _volunteerRepository = volunteerRepository;
 
-    public UpdatePetStatusHandler(
-        IVolunteerRepository volunteerRepository,
-        ILogger<UpdatePetStatusHandler> logger,
-        IValidator<UpdatePetStatusCommand> validator,
-        [FromKeyedServices(Constraints.Context.PetManagement)]IUnitOfWork unitOfWork)
+    public async Task<Result<PetId>> Handle(
+        UpdatePetStatusCommand command,
+        CancellationToken cancellationToken = default)
     {
-        _volunteerRepository = volunteerRepository;
-        _logger = logger;
-        _validator = validator;
-        _unitOfWork = unitOfWork;
-    }
-    
-    
-    public async Task<Result<PetId>> Handle(UpdatePetStatusCommand command, CancellationToken cancellationToken = default)
-    {
-        var validatorResult = await _validator.ValidateAsync(command, cancellationToken);
+        ValidationResult? validatorResult =
+            await _validator.ValidateAsync(command, cancellationToken).ConfigureAwait(false);
         if (!validatorResult.IsValid)
+        {
             return validatorResult.ToErrorList();
+        }
 
-        var volunteerId = VolunteerId.Create(command.VolunteerId);
-        
-        var volunteer = await _volunteerRepository.GetById(volunteerId, cancellationToken);
+        VolunteerId volunteerId = VolunteerId.Create(command.VolunteerId);
+
+        Result<Domain.VolunteerManagement.Aggregate.Volunteer> volunteer =
+            await _volunteerRepository.GetById(volunteerId, cancellationToken).ConfigureAwait(false);
         if (volunteer.IsFailure)
+        {
             return volunteer.Errors;
+        }
 
-        var petId = PetId.Create(command.PetId);
+        PetId petId = PetId.Create(command.PetId);
 
-        var helpStatus = HelpStatus.Create(command.HelpStatus);
+        Result<HelpStatus> helpStatus = HelpStatus.Create(command.HelpStatus);
         if (helpStatus.IsFailure)
+        {
             return helpStatus.Errors;
+        }
 
-        var result = volunteer.Value.UpdatePetStatus(petId, helpStatus.Value);
+        Result result = volunteer.Value.UpdatePetStatus(petId, helpStatus.Value);
         if (result.IsFailure)
+        {
             return result.Errors;
-        
-        _logger.LogInformation("Update status to pet with id {petId} from volunteer with id {volunteerId}",
+        }
+
+        _logger.LogInformation(
+            "Update status to pet with id {petId} from volunteer with id {volunteerId}",
             petId.Id, volunteerId.Id);
 
-        await _unitOfWork.SaveChanges(cancellationToken);
+        await _unitOfWork.SaveChanges(cancellationToken).ConfigureAwait(false);
 
         return petId;
     }

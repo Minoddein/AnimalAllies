@@ -2,10 +2,7 @@
 
 namespace AnimalAllies.Framework.Authorization;
 
-public class PermissionAttribute: AuthorizeAttribute, IAuthorizationRequirement
+public sealed class PermissionAttribute(string code) : AuthorizeAttribute(code), IAuthorizationRequirement
 {
-    public string Code { get; }
-
-    public PermissionAttribute(string code) : base(policy: code) => Code = code;
-
+    public string Code { get; } = code;
 }

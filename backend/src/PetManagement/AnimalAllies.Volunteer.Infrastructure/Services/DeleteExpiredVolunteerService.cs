@@ -5,30 +5,26 @@ using Microsoft.Extensions.Options;
 
 namespace AnimalAllies.Volunteer.Infrastructure.Services;
 
-public class DeleteExpiredVolunteerService
+public class DeleteExpiredVolunteerService(
+    VolunteerWriteDbContext dbContext,
+    IOptions<EntityDeletion> entityDeletion)
 {
-    private readonly VolunteerWriteDbContext _dbContext;
-    private readonly EntityDeletion _entityDeletion;
-
-    public DeleteExpiredVolunteerService(
-        VolunteerWriteDbContext dbContext,
-        IOptions<EntityDeletion> entityDeletion)
-    {
-        _dbContext = dbContext;
-        _entityDeletion = entityDeletion.Value;
-    }
+    private readonly VolunteerWriteDbContext _dbContext = dbContext;
+    private readonly EntityDeletion _entityDeletion = entityDeletion.Value;
 
     public async Task Process(CancellationToken cancellationToken = default)
     {
-        var volunteers = await _dbContext.Volunteers
-            .Where(v => v.IsDeleted).ToListAsync(cancellationToken);
-        
-        foreach (var volunteer in volunteers)
+        List<Domain.VolunteerManagement.Aggregate.Volunteer> volunteers = await _dbContext.Volunteers
+            .Where(v => v.IsDeleted).ToListAsync(cancellationToken).ConfigureAwait(false);
+
+        foreach (Domain.VolunteerManagement.Aggregate.Volunteer volunteer in volunteers)
         {
             if (volunteer.DeletionDate!.Value.AddDays(_entityDeletion.ExpiredTime) <= DateTime.UtcNow)
+            {
                 _dbContext.Volunteers.Remove(volunteer);
+            }
         }
 
-        await _dbContext.SaveChangesAsync(cancellationToken);
+        await _dbContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
     }
 }

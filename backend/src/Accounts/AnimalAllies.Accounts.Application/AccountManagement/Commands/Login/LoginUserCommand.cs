@@ -2,4 +2,4 @@
 
 namespace AnimalAllies.Accounts.Application.AccountManagement.Commands.Login;
 
-public record LoginUserCommand(string Email, string Password): ICommand;
+public record LoginUserCommand(string Email, string Password) : ICommand;

@@ -4,12 +4,10 @@ using FluentValidation;
 
 namespace AnimalAllies.Accounts.Application.AccountManagement.Commands.DeleteRefreshSession;
 
-public class DeleteRefreshTokenValidator: AbstractValidator<DeleteRefreshTokenCommand>
+public class DeleteRefreshTokenValidator : AbstractValidator<DeleteRefreshTokenCommand>
 {
-    public DeleteRefreshTokenValidator()
-    {
+    public DeleteRefreshTokenValidator() =>
         RuleFor(r => r.RefreshToken)
             .NotEmpty()
             .WithError(Errors.General.ValueIsRequired("refresh token"));
-    }
 }

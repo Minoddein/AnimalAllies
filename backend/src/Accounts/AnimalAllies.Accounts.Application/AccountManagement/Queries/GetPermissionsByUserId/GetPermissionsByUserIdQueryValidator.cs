@@ -1,5 +1,4 @@
 ﻿using AnimalAllies.Core.Validators;
-using AnimalAllies.SharedKernel.Shared;
 using AnimalAllies.SharedKernel.Shared.Errors;
 using FluentValidation;
 
@@ -7,10 +6,8 @@ namespace AnimalAllies.Accounts.Application.AccountManagement.Queries.GetPermiss
 
 public class GetPermissionsByUserIdQueryValidator : AbstractValidator<GetPermissionsByUserIdQuery>
 {
-    public GetPermissionsByUserIdQueryValidator()
-    {
+    public GetPermissionsByUserIdQueryValidator() =>
         RuleFor(u => u.UserId)
             .NotEmpty()
             .WithError(Errors.General.ValueIsRequired("user id"));
-    }
 }

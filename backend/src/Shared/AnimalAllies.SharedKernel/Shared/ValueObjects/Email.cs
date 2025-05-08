@@ -1,22 +1,17 @@
-using System.Text.RegularExpressions;
+﻿using System.Text.RegularExpressions;
 using AnimalAllies.SharedKernel.Shared.Objects;
 
 namespace AnimalAllies.SharedKernel.Shared.ValueObjects;
 
-public class Email: ValueObject
+public partial class Email : ValueObject
 {
-    public static readonly Regex ValidationRegex = new Regex(
-        @"^[\w-\.]{1,40}@([\w-]+\.)+[\w-]{2,4}$",
-        RegexOptions.Singleline | RegexOptions.Compiled);
-    
-    public string Value { get; }
-    
-    private Email(){}
+    public static readonly Regex ValidationRegex = MyRegex();
 
-    private Email(string value)
-    {
-        Value = value;
-    }
+    private Email() { }
+
+    private Email(string value) => Value = value;
+
+    public string Value { get; }
 
     public static Result<Email> Create(string email)
     {
@@ -27,9 +22,12 @@ public class Email: ValueObject
 
         return new Email(email);
     }
-    
+
     protected override IEnumerable<object> GetEqualityComponents()
     {
         yield return Value;
     }
+
+    [GeneratedRegex(@"^[\w-\.]{1,40}@([\w-]+\.)+[\w-]{2,4}$", RegexOptions.Compiled | RegexOptions.Singleline)]
+    private static partial Regex MyRegex();
 }

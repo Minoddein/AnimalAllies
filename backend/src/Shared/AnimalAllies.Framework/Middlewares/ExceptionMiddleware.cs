@@ -1,5 +1,4 @@
-using AnimalAllies.Core.Models;
-using AnimalAllies.SharedKernel.Shared;
+﻿using AnimalAllies.Core.Models;
 using AnimalAllies.SharedKernel.Shared.Errors;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
@@ -7,42 +6,34 @@ using Microsoft.Extensions.Logging;
 
 namespace AnimalAllies.Framework.Middlewares;
 
-public class ExceptionMiddleware
+public class ExceptionMiddleware(RequestDelegate next, ILogger<ExceptionMiddleware> logger)
 {
-    private readonly RequestDelegate _next;
-    private readonly ILogger<ExceptionMiddleware> _logger;
-
-    public ExceptionMiddleware(RequestDelegate next, ILogger<ExceptionMiddleware> logger)
-    {
-        _next = next;
-        _logger = logger;
-    }
+    private readonly ILogger<ExceptionMiddleware> _logger = logger;
+    private readonly RequestDelegate _next = next;
 
     public async Task InvokeAsync(HttpContext context)
     {
         try
         {
-            await _next(context);
+            await _next(context).ConfigureAwait(false);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, ex.Message);
 
-            var error = Error.Failure("server.internal", ex.Message);
-            var envelope = Envelope.Error(error);
+            Error error = Error.Failure("server.internal", ex.Message);
+            Envelope envelope = Envelope.Error(error);
 
             context.Response.ContentType = "application/json";
             context.Response.StatusCode = StatusCodes.Status500InternalServerError;
 
-            await context.Response.WriteAsJsonAsync(envelope);
+            await context.Response.WriteAsJsonAsync(envelope).ConfigureAwait(false);
         }
     }
 }
 
 public static class ExceptionMiddlewareExtensions
 {
-    public static IApplicationBuilder UseExceptionMiddleware(this IApplicationBuilder builder)
-    {
-        return builder.UseMiddleware<ExceptionMiddleware>();
-    }
+    public static IApplicationBuilder UseExceptionMiddleware(this IApplicationBuilder builder) =>
+        builder.UseMiddleware<ExceptionMiddleware>();
 }

@@ -9,31 +9,34 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace AnimalAllies.Accounts.Infrastructure.IdentityManagers;
 
-public class RefreshSessionManager(AccountsDbContext accountsDbContext,
-    [FromKeyedServices(Constraints.Context.Accounts)] IUnitOfWork unitOfWork) : IRefreshSessionManager
+public class RefreshSessionManager(
+    AccountsDbContext accountsDbContext,
+    [FromKeyedServices(Constraints.Context.Accounts)]
+    IUnitOfWork unitOfWork) : IRefreshSessionManager
 {
-
     public async Task<Result<RefreshSession>> GetByRefreshToken(
         Guid refreshToken, CancellationToken cancellationToken = default)
     {
-        var refreshSession = await accountsDbContext.RefreshSessions
+        RefreshSession? refreshSession = await accountsDbContext.RefreshSessions
             .Include(r => r.User)
-                .ThenInclude(u => u.ParticipantAccount)
+            .ThenInclude(u => u.ParticipantAccount)
             .Include(r => r.User)
-                .ThenInclude(u => u.Roles)
-                    .ThenInclude(r => r.RolePermissions)
-                        .ThenInclude(rp => rp.Permission)
-            .FirstOrDefaultAsync(r => r.RefreshToken == refreshToken, cancellationToken);
+            .ThenInclude(u => u.Roles)
+            .ThenInclude(r => r.RolePermissions)
+            .ThenInclude(rp => rp.Permission)
+            .FirstOrDefaultAsync(r => r.RefreshToken == refreshToken, cancellationToken).ConfigureAwait(false);
 
         if (refreshSession is null)
+        {
             return Errors.General.NotFound();
+        }
 
         return refreshSession;
     }
-    
+
     public async Task Delete(RefreshSession refreshSession, CancellationToken cancellationToken = default)
     {
         accountsDbContext.RefreshSessions.Remove(refreshSession);
-        await unitOfWork.SaveChanges(cancellationToken);
+        await unitOfWork.SaveChanges(cancellationToken).ConfigureAwait(false);
     }
 }

@@ -7,23 +7,22 @@ namespace VolunteerRequests.Domain.ValueObjects;
 
 public class RejectionComment : ValueObject
 {
-    public string Value { get; }
-    
-    private RejectionComment() {}
+    private RejectionComment() { }
 
-    private RejectionComment(string value)
-    {
-        Value = value;
-    }
+    private RejectionComment(string value) => Value = value;
+
+    public string Value { get; }
 
     public static Result<RejectionComment> Create(string value)
     {
         if (string.IsNullOrEmpty(value) && value.Length > Constraints.MAX_DESCRIPTION_LENGTH)
+        {
             return Errors.General.ValueIsRequired("rejection comment");
+        }
 
         return new RejectionComment(value);
     }
-    
+
     protected override IEnumerable<object> GetEqualityComponents()
     {
         yield return Value;

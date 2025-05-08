@@ -1,25 +1,25 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-    <PropertyGroup>
-        <TargetFramework>net9.0</TargetFramework>
-        <ImplicitUsings>enable</ImplicitUsings>
-        <Nullable>enable</Nullable>
-    </PropertyGroup>
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
 
-    <ItemGroup>
-      <ProjectReference Include="..\..\Accounts\AnimalAllies.Accounts.Contracts\AnimalAllies.Accounts.Contracts.csproj" />
-      <ProjectReference Include="..\..\Shared\AnimalAllies.Core\AnimalAllies.Core.csproj" />
-      <ProjectReference Include="..\..\Shared\AnimalAllies.SharedKernel\AnimalAllies.SharedKernel.csproj" />
-      <ProjectReference Include="..\..\VolunteerRequests\VolunteerRequests.Contracts\VolunteerRequests.Contracts.csproj" />
-      <ProjectReference Include="..\Discussion.Domain\Discussion.Domain.csproj" />
-    </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\Accounts\AnimalAllies.Accounts.Contracts\AnimalAllies.Accounts.Contracts.csproj"/>
+    <ProjectReference Include="..\..\Shared\AnimalAllies.Core\AnimalAllies.Core.csproj"/>
+    <ProjectReference Include="..\..\Shared\AnimalAllies.SharedKernel\AnimalAllies.SharedKernel.csproj"/>
+    <ProjectReference Include="..\..\VolunteerRequests\VolunteerRequests.Contracts\VolunteerRequests.Contracts.csproj"/>
+    <ProjectReference Include="..\Discussion.Domain\Discussion.Domain.csproj"/>
+  </ItemGroup>
 
-    <ItemGroup>
-      <Folder Include="Features\Commands\" />
-    </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Features\Commands\"/>
+  </ItemGroup>
 
-    <ItemGroup>
-      <PackageReference Include="Outbox.Abstractions" Version="1.0.0" />
-    </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Outbox.Abstractions" Version="1.0.0"/>
+  </ItemGroup>
 
 </Project>

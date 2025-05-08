@@ -1,7 +1,7 @@
 ﻿namespace AnimalAllies.Accounts.Contracts.Responses;
 
 public record LoginResponse(
-    string AccessToken, 
+    string AccessToken,
     Guid RefreshToken,
     Guid UserId,
     string UserName,

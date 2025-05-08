@@ -9,6 +9,7 @@ using AnimalAllies.SharedKernel.Shared.Errors;
 using AnimalAllies.SharedKernel.Shared.Ids;
 using AnimalAllies.SharedKernel.Shared.ValueObjects;
 using FluentValidation;
+using FluentValidation.Results;
 using MediatR;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -18,39 +19,33 @@ using VolunteerRequests.Domain.Events;
 
 namespace VolunteerRequests.Application.Features.Commands.CreateVolunteerRequest;
 
-public class CreateVolunteerRequestHandler: ICommandHandler<CreateVolunteerRequestCommand,VolunteerRequestId>
+public class CreateVolunteerRequestHandler(
+    [FromKeyedServices(Constraints.Context.VolunteerRequests)]
+    IUnitOfWork unitOfWork,
+    ILogger<CreateVolunteerRequestHandler> logger,
+    IValidator<CreateVolunteerRequestCommand> validator,
+    IVolunteerRequestsRepository repository,
+    IPublisher publisher,
+    IDateTimeProvider dateTimeProvider) : ICommandHandler<CreateVolunteerRequestCommand, VolunteerRequestId>
 {
-    private readonly IUnitOfWork _unitOfWork;
-    private readonly ILogger<CreateVolunteerRequestHandler> _logger;
-    private readonly IVolunteerRequestsRepository _repository;
-    private readonly IValidator<CreateVolunteerRequestCommand> _validator;
-    private readonly IDateTimeProvider _dateTimeProvider;
-    private readonly IPublisher _publisher;
-
-    public CreateVolunteerRequestHandler(
-        [FromKeyedServices(Constraints.Context.VolunteerRequests)]IUnitOfWork unitOfWork,
-        ILogger<CreateVolunteerRequestHandler> logger,
-        IValidator<CreateVolunteerRequestCommand> validator,
-        IVolunteerRequestsRepository repository,
-        IPublisher publisher,
-        IDateTimeProvider dateTimeProvider)
-    {
-        _unitOfWork = unitOfWork;
-        _logger = logger;
-        _validator = validator;
-        _repository = repository;
-        _publisher = publisher;
-        _dateTimeProvider = dateTimeProvider;
-    }
+    private readonly IDateTimeProvider _dateTimeProvider = dateTimeProvider;
+    private readonly ILogger<CreateVolunteerRequestHandler> _logger = logger;
+    private readonly IPublisher _publisher = publisher;
+    private readonly IVolunteerRequestsRepository _repository = repository;
+    private readonly IUnitOfWork _unitOfWork = unitOfWork;
+    private readonly IValidator<CreateVolunteerRequestCommand> _validator = validator;
 
     public async Task<Result<VolunteerRequestId>> Handle(
         CreateVolunteerRequestCommand command, CancellationToken cancellationToken = default)
     {
-        var resultValidator = await _validator.ValidateAsync(command, cancellationToken);
+        ValidationResult? resultValidator =
+            await _validator.ValidateAsync(command, cancellationToken).ConfigureAwait(false);
         if (!resultValidator.IsValid)
+        {
             return resultValidator.ToErrorList();
+        }
 
-        using var scope = new TransactionScope(
+        using TransactionScope scope = new(
             TransactionScopeOption.Required,
             new TransactionOptions { IsolationLevel = IsolationLevel.ReadCommitted },
             TransactionScopeAsyncFlowOption.Enabled
@@ -59,23 +54,26 @@ public class CreateVolunteerRequestHandler: ICommandHandler<CreateVolunteerReque
         try
         {
             await _publisher.PublishDomainEvent(
-                new ProhibitionOnVolunteerRequestCheckedEvent(command.UserId), cancellationToken);
+                new ProhibitionOnVolunteerRequestCheckedEvent(command.UserId), cancellationToken).ConfigureAwait(false);
 
-            var volunteerRequestResult = InitVolunteerRequest(command);
+            Result<VolunteerRequest> volunteerRequestResult = InitVolunteerRequest(command);
             if (volunteerRequestResult.IsFailure)
+            {
                 return volunteerRequestResult.Errors;
+            }
 
-            var volunteerRequest = volunteerRequestResult.Value;
+            VolunteerRequest volunteerRequest = volunteerRequestResult.Value;
 
-            await _repository.Create(volunteerRequest, cancellationToken);
+            await _repository.Create(volunteerRequest, cancellationToken).ConfigureAwait(false);
 
-            await _publisher.PublishDomainEvents(volunteerRequest, cancellationToken);
-            
-            await _unitOfWork.SaveChanges(cancellationToken);
+            await _publisher.PublishDomainEvents(volunteerRequest, cancellationToken).ConfigureAwait(false);
+
+            await _unitOfWork.SaveChanges(cancellationToken).ConfigureAwait(false);
 
             scope.Complete();
-            
-            _logger.LogInformation("user with id {userId} created volunteer request with id {volunteerRequestId}",
+
+            _logger.LogInformation(
+                "user with id {userId} created volunteer request with id {volunteerRequestId}",
                 command.UserId,
                 volunteerRequest.Id);
 
@@ -84,33 +82,34 @@ public class CreateVolunteerRequestHandler: ICommandHandler<CreateVolunteerReque
         catch (AccountBannedException)
         {
             _logger.LogError($"User was prohibited for creating request with id {command.UserId}");
-            
-            return Error.Failure("access.denied", 
+
+            return Error.Failure(
+                "access.denied",
                 $"User was prohibited for creating request with id {command.UserId}");
         }
         catch (Exception)
         {
             _logger.LogError("Fail to create volunteer request");
-            
+
             return Error.Failure("fail.create.request", "Fail to create volunteer request");
         }
     }
 
     private Result<VolunteerRequest> InitVolunteerRequest(CreateVolunteerRequestCommand command)
     {
-        var fullName = FullName.Create(
+        FullName fullName = FullName.Create(
             command.FullNameDto.FirstName,
             command.FullNameDto.SecondName,
             command.FullNameDto.Patronymic).Value;
 
-        var email = Email.Create(command.Email).Value;
-        var phoneNumber = PhoneNumber.Create(command.PhoneNumber).Value;
-        var workExperience = WorkExperience.Create(command.WorkExperience).Value;
-        var volunteerDescription = VolunteerDescription.Create(command.VolunteerDescription).Value;
-        var socialNetworks = command
+        Email email = Email.Create(command.Email).Value;
+        PhoneNumber phoneNumber = PhoneNumber.Create(command.PhoneNumber).Value;
+        WorkExperience workExperience = WorkExperience.Create(command.WorkExperience).Value;
+        VolunteerDescription volunteerDescription = VolunteerDescription.Create(command.VolunteerDescription).Value;
+        IEnumerable<SocialNetwork> socialNetworks = command
             .SocialNetworkDtos.Select(s => SocialNetwork.Create(s.Title, s.Url).Value);
 
-        var volunteerInfo = new VolunteerInfo(
+        VolunteerInfo volunteerInfo = new(
             fullName,
             email,
             phoneNumber,
@@ -118,15 +117,17 @@ public class CreateVolunteerRequestHandler: ICommandHandler<CreateVolunteerReque
             volunteerDescription,
             socialNetworks);
 
-        var createdAt = CreatedAt.Create(_dateTimeProvider.UtcNow).Value;
-        var volunteerRequestId = VolunteerRequestId.NewGuid();
+        CreatedAt createdAt = CreatedAt.Create(_dateTimeProvider.UtcNow).Value;
+        VolunteerRequestId volunteerRequestId = VolunteerRequestId.NewGuid();
 
-        var volunteerRequest = VolunteerRequest.Create(
+        Result<VolunteerRequest> volunteerRequest = VolunteerRequest.Create(
             volunteerRequestId, createdAt, volunteerInfo, command.UserId);
 
         if (volunteerRequest.IsFailure)
+        {
             return volunteerRequest.Errors;
-        
+        }
+
         return volunteerRequest.Value;
     }
 }

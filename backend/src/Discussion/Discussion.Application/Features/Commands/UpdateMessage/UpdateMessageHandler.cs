@@ -9,42 +9,38 @@ using AnimalAllies.SharedKernel.Shared.Ids;
 using Discussion.Application.Repository;
 using Discussion.Domain.ValueObjects;
 using FluentValidation;
+using FluentValidation.Results;
 using MediatR;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
 namespace Discussion.Application.Features.Commands.UpdateMessage;
 
-public class UpdateMessageHandler: ICommandHandler<UpdateMessageCommand, MessageId>
+public class UpdateMessageHandler(
+    ILogger<UpdateMessageHandler> logger,
+    [FromKeyedServices(Constraints.Context.Discussion)]
+    IUnitOfWork unitOfWork,
+    IValidator<UpdateMessageCommand> validator,
+    IDiscussionRepository repository,
+    IPublisher publisher) : ICommandHandler<UpdateMessageCommand, MessageId>
 {
-    private readonly ILogger<UpdateMessageHandler> _logger;
-    private readonly IUnitOfWork _unitOfWork;
-    private readonly IValidator<UpdateMessageCommand> _validator;
-    private readonly IDiscussionRepository _repository;
-    private readonly IPublisher _publisher;
-
-    public UpdateMessageHandler(
-        ILogger<UpdateMessageHandler> logger, 
-        [FromKeyedServices(Constraints.Context.Discussion)]IUnitOfWork unitOfWork, 
-        IValidator<UpdateMessageCommand> validator,
-        IDiscussionRepository repository,
-        IPublisher publisher)
-    {
-        _logger = logger;
-        _unitOfWork = unitOfWork;
-        _validator = validator;
-        _repository = repository;
-        _publisher = publisher;
-    }
+    private readonly ILogger<UpdateMessageHandler> _logger = logger;
+    private readonly IPublisher _publisher = publisher;
+    private readonly IDiscussionRepository _repository = repository;
+    private readonly IUnitOfWork _unitOfWork = unitOfWork;
+    private readonly IValidator<UpdateMessageCommand> _validator = validator;
 
     public async Task<Result<MessageId>> Handle(
         UpdateMessageCommand command, CancellationToken cancellationToken = default)
     {
-        var validationResult = await _validator.ValidateAsync(command, cancellationToken);
+        ValidationResult? validationResult =
+            await _validator.ValidateAsync(command, cancellationToken).ConfigureAwait(false);
         if (!validationResult.IsValid)
+        {
             return validationResult.ToErrorList();
+        }
 
-        using var scope = new TransactionScope(
+        using TransactionScope scope = new(
             TransactionScopeOption.Required,
             new TransactionOptions { IsolationLevel = IsolationLevel.ReadCommitted },
             TransactionScopeAsyncFlowOption.Enabled
@@ -52,27 +48,33 @@ public class UpdateMessageHandler: ICommandHandler<UpdateMessageCommand, Message
 
         try
         {
-            var discussionId = DiscussionId.Create(command.DiscussionId);
+            DiscussionId discussionId = DiscussionId.Create(command.DiscussionId);
 
-            var discussion = await _repository.GetById(discussionId, cancellationToken);
+            Result<Domain.Aggregate.Discussion> discussion =
+                await _repository.GetById(discussionId, cancellationToken).ConfigureAwait(false);
             if (discussion.IsFailure)
+            {
                 return discussion.Errors;
+            }
 
-            var messageId = MessageId.Create(command.MessageId);
-            var text = Text.Create(command.Text).Value;
+            MessageId messageId = MessageId.Create(command.MessageId);
+            Text text = Text.Create(command.Text).Value;
 
-            var result = discussion.Value.EditComment(command.UserId, messageId, text);
+            Result result = discussion.Value.EditComment(command.UserId, messageId, text);
             if (result.IsFailure)
+            {
                 return result.Errors;
+            }
 
-            await _publisher.PublishDomainEvents(discussion.Value, cancellationToken);
-            
-            await _unitOfWork.SaveChanges(cancellationToken);
+            await _publisher.PublishDomainEvents(discussion.Value, cancellationToken).ConfigureAwait(false);
+
+            await _unitOfWork.SaveChanges(cancellationToken).ConfigureAwait(false);
 
             scope.Complete();
-            
-            _logger.LogInformation("user with id {userId} edit message with id {messageId}" +
-                                   " from discussion with id {discussionId}",
+
+            _logger.LogInformation(
+                "user with id {userId} edit message with id {messageId}" +
+                " from discussion with id {discussionId}",
                 command.UserId, command.MessageId, command.DiscussionId);
 
             return messageId;
@@ -80,7 +82,7 @@ public class UpdateMessageHandler: ICommandHandler<UpdateMessageCommand, Message
         catch (Exception)
         {
             _logger.LogError("Cannot update message");
-            
+
             return Error.Failure("cannot.update.message", "Cannot update message");
         }
     }

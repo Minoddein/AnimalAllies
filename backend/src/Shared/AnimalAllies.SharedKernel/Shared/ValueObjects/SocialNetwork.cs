@@ -1,23 +1,23 @@
-using System.Text.Json.Serialization;
+﻿using System.Text.Json.Serialization;
 using AnimalAllies.SharedKernel.Shared.Objects;
 
 namespace AnimalAllies.SharedKernel.Shared.ValueObjects;
 
-public class SocialNetwork: ValueObject
+public class SocialNetwork : ValueObject
 {
-    public string Title { get; }
-    public string Url { get; }
+    private SocialNetwork() { }
 
-    private SocialNetwork(){}
-    
     [JsonConstructor]
     private SocialNetwork(string title, string url)
     {
         Title = title;
         Url = url;
     }
-    
-    
+
+    public string Title { get; }
+
+    public string Url { get; }
+
     public static Result<SocialNetwork> Create(string title, string url)
     {
         if (string.IsNullOrWhiteSpace(title) || title.Length > Constraints.Constraints.MAX_VALUE_LENGTH)
@@ -32,10 +32,12 @@ public class SocialNetwork: ValueObject
 
         return new SocialNetwork(title, url);
     }
-    
+
     protected override IEnumerable<object> GetEqualityComponents()
     {
         yield return Title;
         yield return Url;
     }
+
+    public static Result<SocialNetwork> Create(string title, Uri url) => throw new NotImplementedException();
 }

@@ -1,4 +1,4 @@
-using AnimalAllies.Accounts.Contracts.Events;
+﻿using AnimalAllies.Accounts.Contracts.Events;
 using AnimalAllies.SharedKernel.CachingConstants;
 using MediatR;
 using Microsoft.Extensions.Logging;
@@ -8,30 +8,22 @@ using VolunteerRequests.Domain.Events;
 
 namespace VolunteerRequests.Application.EventHandlers.TookVolunteerRequestForSubmit;
 
-public class TookVolunteerRequestForSubmitEventHandler : INotificationHandler<TookRequestForSubmitDomainEvent>
+public class TookVolunteerRequestForSubmitEventHandler(
+    ILogger<TookVolunteerRequestForSubmitEventHandler> logger,
+    IOutboxRepository outboxRepository,
+    IUnitOfWorkOutbox unitOfWork) : INotificationHandler<TookRequestForSubmitDomainEvent>
 {
-    private readonly ILogger<TookVolunteerRequestForSubmitEventHandler> _logger;
-    private readonly IOutboxRepository _outboxRepository;
-    private readonly IUnitOfWorkOutbox _unitOfWork;
-
-    public TookVolunteerRequestForSubmitEventHandler(
-        ILogger<TookVolunteerRequestForSubmitEventHandler> logger,
-        IOutboxRepository outboxRepository,
-        IUnitOfWorkOutbox unitOfWork)
-    {
-        _logger = logger;
-        _outboxRepository = outboxRepository;
-        _unitOfWork = unitOfWork;
-    }
+    private readonly ILogger<TookVolunteerRequestForSubmitEventHandler> _logger = logger;
+    private readonly IOutboxRepository _outboxRepository = outboxRepository;
+    private readonly IUnitOfWorkOutbox _unitOfWork = unitOfWork;
 
     public async Task Handle(
         TookRequestForSubmitDomainEvent notification,
         CancellationToken cancellationToken)
     {
-        var notificationEvent =
-            new SendNotificationCreateVolunteerRequestEvent(notification.UserId, notification.Email);
+        SendNotificationCreateVolunteerRequestEvent notificationEvent = new(notification.UserId, notification.Email);
 
-        var integrationEvent = new CacheInvalidateIntegrationEvent(
+        CacheInvalidateIntegrationEvent integrationEvent = new(
             null,
             [
                 new string(TagsConstants.VOLUNTEER_REQUESTS + "_" + TagsConstants.VolunteerRequests.IN_WAITING),
@@ -41,10 +33,10 @@ public class TookVolunteerRequestForSubmitEventHandler : INotificationHandler<To
                            TagsConstants.VolunteerRequests.BY_ADMIN + "_" + notification.AdminId)
             ]);
 
-        await _outboxRepository.AddAsync(integrationEvent, cancellationToken);
-        await _outboxRepository.AddAsync(notificationEvent, cancellationToken);
+        await _outboxRepository.AddAsync(integrationEvent, cancellationToken).ConfigureAwait(false);
+        await _outboxRepository.AddAsync(notificationEvent, cancellationToken).ConfigureAwait(false);
 
-        await _unitOfWork.SaveChanges(cancellationToken);
+        await _unitOfWork.SaveChanges(cancellationToken).ConfigureAwait(false);
 
         _logger.LogInformation("Volunteer request from user {userId} took for submit", notification.UserId);
     }

@@ -1,6 +1,4 @@
-using Microsoft.EntityFrameworkCore;
-
-namespace AnimalAllies.Web.Extensions;
+﻿namespace AnimalAllies.Web.Extensions;
 
 /*public static class AppExtensions
 {

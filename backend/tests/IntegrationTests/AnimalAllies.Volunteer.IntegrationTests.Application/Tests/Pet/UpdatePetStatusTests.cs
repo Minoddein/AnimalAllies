@@ -11,13 +11,15 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace AnimalAllies.Volunteer.IntegrationTests.Application.Tests.Pet;
-//test
+
+// test
 public class UpdatePetStatusTests : VolunteerTestsBase
 {
-    private readonly ICommandHandler<UpdatePetStatusCommand, PetId> _sut;
     private readonly IntegrationTestsWebFactory _factory;
+    private readonly ICommandHandler<UpdatePetStatusCommand, PetId> _sut;
 
-    public UpdatePetStatusTests(IntegrationTestsWebFactory factory) : base(factory)
+    public UpdatePetStatusTests(IntegrationTestsWebFactory factory)
+        : base(factory)
     {
         _factory = factory;
         _sut = _scope.ServiceProvider.GetRequiredService<ICommandHandler<UpdatePetStatusCommand, PetId>>();
@@ -27,15 +29,15 @@ public class UpdatePetStatusTests : VolunteerTestsBase
     public async Task UpdatePetStatus_ShouldUpdateStatus_WhenValidDataProvided()
     {
         // Arrange
-        var species = new Species.Domain.Species(SpeciesId.Create(Guid.NewGuid()), Name.Create("Dog").Value);
+        Species.Domain.Species species = new(SpeciesId.Create(Guid.NewGuid()), Name.Create("Dog").Value);
         species.AddBreed(new Breed(BreedId.Create(Guid.NewGuid()), Name.Create("Labrador").Value));
 
-        await _speciesDbContext.Species.AddAsync(species);
-        await _speciesDbContext.SaveChangesAsync();
-        
+        await _speciesDbContext.Species.AddAsync(species).ConfigureAwait(false);
+        await _speciesDbContext.SaveChangesAsync().ConfigureAwait(false);
+
         _factory.SetupSuccessSpeciesContractsMock(species.Id.Id, species.Breeds[0].Id.Id);
-        
-        var volunteer = new Domain.VolunteerManagement.Aggregate.Volunteer(
+
+        Domain.VolunteerManagement.Aggregate.Volunteer volunteer = new(
             VolunteerId.NewGuid(),
             FullName.Create("Иван", "Иванов", "Иванович").Value,
             Email.Create("ivan@mail.com").Value,
@@ -44,13 +46,14 @@ public class UpdatePetStatusTests : VolunteerTestsBase
             PhoneNumber.Create("+79991234567").Value,
             new ValueObjectList<Requisite>([]));
 
-        var petId = PetId.NewGuid();
-        var initialPet = new Domain.VolunteerManagement.Entities.Pet.Pet(
+        PetId petId = PetId.NewGuid();
+        Domain.VolunteerManagement.Entities.Pet.Pet initialPet = new(
             petId,
             Name.Create("Барсик").Value,
-            PetPhysicCharacteristics.Create("Черный", "Здоров", 
+            PetPhysicCharacteristics.Create("Черный", "Здоров",
                 4.5f, 0.4f, false, false).Value,
-            PetDetails.Create("Спокойный кот",
+            PetDetails.Create(
+                "Спокойный кот",
                 DateOnly.FromDateTime(DateTime.Now.AddYears(-1)), DateTime.UtcNow).Value,
             Address.Create("ул. Пушкина", "Москва", "Московская область", "123456").Value,
             PhoneNumber.Create("+79998887766").Value,
@@ -59,27 +62,27 @@ public class UpdatePetStatusTests : VolunteerTestsBase
             new ValueObjectList<Requisite>([]));
 
         volunteer.AddPet(initialPet);
-        await _volunteerDbContext.Volunteers.AddAsync(volunteer);
-        await _volunteerDbContext.SaveChangesAsync();
+        await _volunteerDbContext.Volunteers.AddAsync(volunteer).ConfigureAwait(false);
+        await _volunteerDbContext.SaveChangesAsync().ConfigureAwait(false);
 
-        var command = new UpdatePetStatusCommand(
-            VolunteerId: volunteer.Id.Id,
-            PetId: petId.Id,
-            HelpStatus: "FoundHome");
-        
+        UpdatePetStatusCommand command = new(
+            volunteer.Id.Id,
+            petId.Id,
+            "FoundHome");
+
         // Act
-        var result = await _sut.Handle(command, CancellationToken.None);
-        
+        Result<PetId> result = await _sut.Handle(command, CancellationToken.None).ConfigureAwait(false);
+
         // Assert
         result.IsSuccess.Should().BeTrue();
         result.Value.Should().Be(petId);
-        
-        var updatedVolunteer = await _volunteerDbContext.Volunteers
+
+        Domain.VolunteerManagement.Aggregate.Volunteer? updatedVolunteer = await _volunteerDbContext.Volunteers
             .Include(v => v.Pets)
-            .FirstOrDefaultAsync(v => v.Id == volunteer.Id);
-            
+            .FirstOrDefaultAsync(v => v.Id == volunteer.Id).ConfigureAwait(false);
+
         updatedVolunteer.Should().NotBeNull();
-        var updatedPet = updatedVolunteer.Pets.First();
+        Domain.VolunteerManagement.Entities.Pet.Pet updatedPet = updatedVolunteer.Pets.First();
         updatedPet.HelpStatus.Value.Should().Be("FoundHome");
     }
 
@@ -87,15 +90,15 @@ public class UpdatePetStatusTests : VolunteerTestsBase
     public async Task UpdatePetStatus_ShouldReturnError_WhenVolunteerNotFound()
     {
         // Arrange
-        var nonExistentVolunteerId = Guid.NewGuid();
-        var command = new UpdatePetStatusCommand(
-            VolunteerId: nonExistentVolunteerId,
-            PetId: Guid.NewGuid(),
-            HelpStatus: "FoundHome");
-        
+        Guid nonExistentVolunteerId = Guid.NewGuid();
+        UpdatePetStatusCommand command = new(
+            nonExistentVolunteerId,
+            Guid.NewGuid(),
+            "FoundHome");
+
         // Act
-        var result = await _sut.Handle(command, CancellationToken.None);
-        
+        Result<PetId> result = await _sut.Handle(command, CancellationToken.None).ConfigureAwait(false);
+
         // Assert
         result.IsSuccess.Should().BeFalse();
         result.Errors.Should().Contain(e => e.ErrorCode == Errors.General.NotFound(null).ErrorCode);
@@ -105,7 +108,7 @@ public class UpdatePetStatusTests : VolunteerTestsBase
     public async Task UpdatePetStatus_ShouldReturnError_WhenPetNotFound()
     {
         // Arrange
-        var volunteer = new Domain.VolunteerManagement.Aggregate.Volunteer(
+        Domain.VolunteerManagement.Aggregate.Volunteer volunteer = new(
             VolunteerId.NewGuid(),
             FullName.Create("Иван", "Иванов", "Иванович").Value,
             Email.Create("ivan@mail.com").Value,
@@ -114,18 +117,18 @@ public class UpdatePetStatusTests : VolunteerTestsBase
             PhoneNumber.Create("+79991234567").Value,
             new ValueObjectList<Requisite>([]));
 
-        await _volunteerDbContext.Volunteers.AddAsync(volunteer);
-        await _volunteerDbContext.SaveChangesAsync();
+        await _volunteerDbContext.Volunteers.AddAsync(volunteer).ConfigureAwait(false);
+        await _volunteerDbContext.SaveChangesAsync().ConfigureAwait(false);
 
-        var nonExistentPetId = Guid.NewGuid();
-        var command = new UpdatePetStatusCommand(
-            VolunteerId: volunteer.Id.Id,
-            PetId: nonExistentPetId,
-            HelpStatus: "FoundHome");
-        
+        Guid nonExistentPetId = Guid.NewGuid();
+        UpdatePetStatusCommand command = new(
+            volunteer.Id.Id,
+            nonExistentPetId,
+            "FoundHome");
+
         // Act
-        var result = await _sut.Handle(command, CancellationToken.None);
-        
+        Result<PetId> result = await _sut.Handle(command, CancellationToken.None).ConfigureAwait(false);
+
         // Assert
         result.IsSuccess.Should().BeFalse();
         result.Errors.Should().Contain(e => e.ErrorCode == Errors.General.NotFound(null).ErrorCode);
@@ -135,15 +138,15 @@ public class UpdatePetStatusTests : VolunteerTestsBase
     public async Task UpdatePetStatus_ShouldReturnError_WhenInvalidStatusProvided()
     {
         // Arrange
-        var species = new Species.Domain.Species(SpeciesId.Create(Guid.NewGuid()), Name.Create("Dog").Value);
+        Species.Domain.Species species = new(SpeciesId.Create(Guid.NewGuid()), Name.Create("Dog").Value);
         species.AddBreed(new Breed(BreedId.Create(Guid.NewGuid()), Name.Create("Labrador").Value));
 
-        await _speciesDbContext.Species.AddAsync(species);
-        await _speciesDbContext.SaveChangesAsync();
-        
+        await _speciesDbContext.Species.AddAsync(species).ConfigureAwait(false);
+        await _speciesDbContext.SaveChangesAsync().ConfigureAwait(false);
+
         _factory.SetupSuccessSpeciesContractsMock(species.Id.Id, species.Breeds[0].Id.Id);
-        
-        var volunteer = new Domain.VolunteerManagement.Aggregate.Volunteer(
+
+        Domain.VolunteerManagement.Aggregate.Volunteer volunteer = new(
             VolunteerId.NewGuid(),
             FullName.Create("Иван", "Иванов", "Иванович").Value,
             Email.Create("ivan@mail.com").Value,
@@ -152,13 +155,14 @@ public class UpdatePetStatusTests : VolunteerTestsBase
             PhoneNumber.Create("+79991234567").Value,
             new ValueObjectList<Requisite>([]));
 
-        var petId = PetId.NewGuid();
-        var initialPet = new Domain.VolunteerManagement.Entities.Pet.Pet(
+        PetId petId = PetId.NewGuid();
+        Domain.VolunteerManagement.Entities.Pet.Pet initialPet = new(
             petId,
             Name.Create("Барсик").Value,
-            PetPhysicCharacteristics.Create("Черный", "Здоров", 
+            PetPhysicCharacteristics.Create("Черный", "Здоров",
                 4.5f, 0.4f, false, false).Value,
-            PetDetails.Create("Спокойный кот",
+            PetDetails.Create(
+                "Спокойный кот",
                 DateOnly.FromDateTime(DateTime.Now.AddYears(-1)), DateTime.UtcNow).Value,
             Address.Create("ул. Пушкина", "Москва", "Московская область", "123456").Value,
             PhoneNumber.Create("+79998887766").Value,
@@ -167,17 +171,17 @@ public class UpdatePetStatusTests : VolunteerTestsBase
             new ValueObjectList<Requisite>([]));
 
         volunteer.AddPet(initialPet);
-        await _volunteerDbContext.Volunteers.AddAsync(volunteer);
-        await _volunteerDbContext.SaveChangesAsync();
+        await _volunteerDbContext.Volunteers.AddAsync(volunteer).ConfigureAwait(false);
+        await _volunteerDbContext.SaveChangesAsync().ConfigureAwait(false);
 
-        var command = new UpdatePetStatusCommand(
-            VolunteerId: volunteer.Id.Id,
-            PetId: petId.Id,
-            HelpStatus: "InvalidStatus");
-        
+        UpdatePetStatusCommand command = new(
+            volunteer.Id.Id,
+            petId.Id,
+            "InvalidStatus");
+
         // Act
-        var result = await _sut.Handle(command, CancellationToken.None);
-        
+        Result<PetId> result = await _sut.Handle(command, CancellationToken.None).ConfigureAwait(false);
+
         // Assert
         result.IsSuccess.Should().BeFalse();
     }

@@ -1,37 +1,37 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-    <PropertyGroup>
-        <TargetFramework>net9.0</TargetFramework>
-        <ImplicitUsings>enable</ImplicitUsings>
-        <Nullable>enable</Nullable>
-    </PropertyGroup>
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
 
-    <ItemGroup>
-      <PackageReference Include="Dapper" Version="2.1.66" />
-      <PackageReference Include="EFCore.NamingConventions" Version="9.0.0" />
-      <PackageReference Include="FluentValidation" Version="11.11.0" />
-        <PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="11.11.0" />
-        <PackageReference Include="MassTransit" Version="8.4.0" />
-        <PackageReference Include="MassTransit.RabbitMQ" Version="8.4.0" />
-      <PackageReference Include="Microsoft.EntityFrameworkCore" Version="9.0.3" />
-      <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="9.0.3" />
-      <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="9.0.3">
-        <PrivateAssets>all</PrivateAssets>
-        <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-      </PackageReference>
-      <PackageReference Include="Microsoft.Extensions.Caching.Hybrid" Version="9.4.0" />
-      <PackageReference Include="Microsoft.Extensions.Caching.StackExchangeRedis" Version="9.0.2" />
-      <PackageReference Include="Npgsql" Version="9.0.3" />
-      <PackageReference Include="Microsoft.Extensions.Logging" Version="9.0.3" />
-      <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="9.0.3" />
-      <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="9.0.4" />
-      <PackageReference Include="Scrutor" Version="6.0.1" />
-    </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Dapper" Version="2.1.66"/>
+    <PackageReference Include="EFCore.NamingConventions" Version="9.0.0"/>
+    <PackageReference Include="FluentValidation" Version="11.11.0"/>
+    <PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="11.11.0"/>
+    <PackageReference Include="MassTransit" Version="8.4.0"/>
+    <PackageReference Include="MassTransit.RabbitMQ" Version="8.4.0"/>
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="9.0.3"/>
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="9.0.3"/>
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="9.0.3">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="Microsoft.Extensions.Caching.Hybrid" Version="9.4.0"/>
+    <PackageReference Include="Microsoft.Extensions.Caching.StackExchangeRedis" Version="9.0.2"/>
+    <PackageReference Include="Npgsql" Version="9.0.3"/>
+    <PackageReference Include="Microsoft.Extensions.Logging" Version="9.0.3"/>
+    <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="9.0.3"/>
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="9.0.4"/>
+    <PackageReference Include="Scrutor" Version="6.0.1"/>
+  </ItemGroup>
 
-    <ItemGroup>
-      <ProjectReference Include="..\..\PetManagement\AnimalAllies.Volunteer.Contracts\AnimalAllies.Volunteer.Contracts.csproj" />
-      <ProjectReference Include="..\..\VolunteerRequests\VolunteerRequests.Contracts\VolunteerRequests.Contracts.csproj" />
-      <ProjectReference Include="..\AnimalAllies.SharedKernel\AnimalAllies.SharedKernel.csproj" />
-    </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\PetManagement\AnimalAllies.Volunteer.Contracts\AnimalAllies.Volunteer.Contracts.csproj"/>
+    <ProjectReference Include="..\..\VolunteerRequests\VolunteerRequests.Contracts\VolunteerRequests.Contracts.csproj"/>
+    <ProjectReference Include="..\AnimalAllies.SharedKernel\AnimalAllies.SharedKernel.csproj"/>
+  </ItemGroup>
 
 </Project>

@@ -1,5 +1,5 @@
-using AnimalAllies.SharedKernel.Shared;
+﻿using AnimalAllies.SharedKernel.Shared;
 
 namespace Discussion.Domain.DomainEvents;
 
-public record UpdatedMessageDomainEvent(Guid RelationId): IDomainEvent;
+public record UpdatedMessageDomainEvent(Guid RelationId) : IDomainEvent;

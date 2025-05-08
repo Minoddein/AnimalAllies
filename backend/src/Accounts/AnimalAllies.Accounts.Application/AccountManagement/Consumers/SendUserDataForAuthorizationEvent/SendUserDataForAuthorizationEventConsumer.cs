@@ -1,8 +1,5 @@
-using System.Security.Authentication;
-using AnimalAllies.Accounts.Application.AccountManagement.Consumers.ApprovedVolunteerRequestEvent;
-using AnimalAllies.Accounts.Application.Managers;
+﻿using System.Security.Authentication;
 using AnimalAllies.Accounts.Domain;
-using AnimalAllies.SharedKernel.Shared.Errors;
 using MassTransit;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -11,42 +8,36 @@ using TelegramBotService.Contracts;
 
 namespace AnimalAllies.Accounts.Application.AccountManagement.Consumers.SendUserDataForAuthorizationEvent;
 
-public class SendUserDataForAuthorizationEventConsumer: 
+public class SendUserDataForAuthorizationEventConsumer(
+    UserManager<User> userManager,
+    ILogger<SendUserDataForAuthorizationEventConsumer> logger,
+    IPublishEndpoint publishEndpoint) :
     IConsumer<TelegramBotService.Contracts.SendUserDataForAuthorizationEvent>
 {
-    private readonly UserManager<User> _userManager;
-    private readonly ILogger<SendUserDataForAuthorizationEventConsumer> _logger;
-    private readonly IPublishEndpoint _publishEndpoint;
-
-    public SendUserDataForAuthorizationEventConsumer(
-        UserManager<User> userManager, 
-        ILogger<SendUserDataForAuthorizationEventConsumer> logger,
-        IPublishEndpoint publishEndpoint)
-    {
-        _userManager = userManager;
-        _logger = logger;
-        _publishEndpoint = publishEndpoint;
-    }
+    private readonly ILogger<SendUserDataForAuthorizationEventConsumer> _logger = logger;
+    private readonly IPublishEndpoint _publishEndpoint = publishEndpoint;
+    private readonly UserManager<User> _userManager = userManager;
 
     public async Task Consume(ConsumeContext<TelegramBotService.Contracts.SendUserDataForAuthorizationEvent> context)
     {
-        var  message = context.Message;
-        
-        var user = await _userManager.Users
-            .Include(u => u.Roles)
-            .FirstOrDefaultAsync(u => u.Email == message.Email, context.CancellationToken);
+        TelegramBotService.Contracts.SendUserDataForAuthorizationEvent message = context.Message;
 
-        if (user is null)
-            throw new InvalidCredentialException();
+        User? user = await _userManager.Users
+                         .Include(u => u.Roles)
+                         .FirstOrDefaultAsync(u => u.Email == message.Email, context.CancellationToken)
+                         .ConfigureAwait(false) ??
+                     throw new InvalidCredentialException();
 
-        var passwordConfirmed = await _userManager.CheckPasswordAsync(user, message.Password);
+        bool passwordConfirmed = await _userManager.CheckPasswordAsync(user, message.Password).ConfigureAwait(false);
         if (!passwordConfirmed)
+        {
             throw new InvalidCredentialException();
+        }
 
-        var messageEvent = new SendAuthorizationResponseEvent(message.ChatId, user.Id);
-        
-        await _publishEndpoint.Publish(messageEvent,  context.CancellationToken);
-        
+        SendAuthorizationResponseEvent messageEvent = new(message.ChatId, user.Id);
+
+        await _publishEndpoint.Publish(messageEvent, context.CancellationToken).ConfigureAwait(false);
+
         _logger.LogInformation("User {email} authorized by telegram", user.Email);
     }
 }
@@ -54,18 +45,12 @@ public class SendUserDataForAuthorizationEventConsumer:
 public class SendUserDataForAuthorizationEventConsumerDefinition :
     ConsumerDefinition<SendUserDataForAuthorizationEventConsumer>
 {
-    public SendUserDataForAuthorizationEventConsumerDefinition()
-    {
-        
-    }
-
+    [Obsolete]
     protected override void ConfigureConsumer(
         IReceiveEndpointConfigurator endpointConfigurator,
-        IConsumerConfigurator<SendUserDataForAuthorizationEventConsumer> consumerConfigurator)
-    {
+        IConsumerConfigurator<SendUserDataForAuthorizationEventConsumer> consumerConfigurator) =>
         endpointConfigurator.UseMessageRetry(c =>
         {
             c.Incremental(3, TimeSpan.FromSeconds(5), TimeSpan.FromSeconds(10));
         });
-    }
 }

@@ -1,7 +1,5 @@
-using AnimalAllies.Core.DTOs.FileService;
-using AnimalAllies.Core.DTOs.ValueObjects;
+﻿using AnimalAllies.Core.DTOs.FileService;
 using AnimalAllies.Volunteer.Application.VolunteerManagement.Commands.AddPetPhoto;
-using Microsoft.AspNetCore.Http;
 
 namespace AnimalAllies.Volunteer.Presentation.Requests.Volunteer;
 

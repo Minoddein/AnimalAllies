@@ -1,11 +1,10 @@
-﻿
-using AnimalAllies.Accounts.Domain;
+﻿using AnimalAllies.Accounts.Domain;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace AnimalAllies.Accounts.Infrastructure.Configurations;
 
-public class RefreshSessionConfiguration: IEntityTypeConfiguration<RefreshSession>
+public class RefreshSessionConfiguration : IEntityTypeConfiguration<RefreshSession>
 {
     public void Configure(EntityTypeBuilder<RefreshSession> builder)
     {

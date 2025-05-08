@@ -4,14 +4,11 @@ namespace AnimalAllies.SharedKernel.Shared.ValueObjects;
 
 public class Name : ValueObject
 {
-    public string Value { get; }
-    
-    private Name(){}
+    private Name() { }
 
-    private Name(string value)
-    {
-        Value = value;
-    }
+    private Name(string value) => Value = value;
+
+    public string Value { get; }
 
     public static Result<Name> Create(string value)
     {
@@ -22,7 +19,7 @@ public class Name : ValueObject
 
         return Result<Name>.Success(new Name(value));
     }
-    
+
     protected override IEnumerable<object> GetEqualityComponents()
     {
         yield return Value;

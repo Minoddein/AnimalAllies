@@ -4,7 +4,7 @@ using FluentValidation;
 
 namespace Discussion.Application.Features.Queries.GetDiscussionByRelationId;
 
-public class GetDiscussionByRelationIdQueryValidator: AbstractValidator<GetDiscussionByRelationIdQuery>
+public class GetDiscussionByRelationIdQueryValidator : AbstractValidator<GetDiscussionByRelationIdQuery>
 {
     public GetDiscussionByRelationIdQueryValidator()
     {
@@ -15,6 +15,5 @@ public class GetDiscussionByRelationIdQueryValidator: AbstractValidator<GetDiscu
         RuleFor(d => d.RelationId)
             .NotEmpty()
             .WithError(Errors.General.Null("relation id"));
-        
     }
 }

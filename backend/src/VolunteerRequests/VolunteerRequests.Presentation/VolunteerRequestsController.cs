@@ -1,11 +1,12 @@
-﻿using AnimalAllies.Core.DTOs.ValueObjects;
+﻿using AnimalAllies.Core.DTOs;
+using AnimalAllies.Core.DTOs.ValueObjects;
 using AnimalAllies.Core.Models;
 using AnimalAllies.Framework;
 using AnimalAllies.Framework.Authorization;
 using AnimalAllies.Framework.Models;
 using AnimalAllies.SharedKernel.Shared;
+using AnimalAllies.SharedKernel.Shared.Ids;
 using Microsoft.AspNetCore.Mvc;
-using VolunteerRequests.Application.Features.Commands;
 using VolunteerRequests.Application.Features.Commands.ApproveVolunteerRequest;
 using VolunteerRequests.Application.Features.Commands.CreateVolunteerRequest;
 using VolunteerRequests.Application.Features.Commands.RejectVolunteerRequest;
@@ -20,7 +21,7 @@ using VolunteerRequests.Contracts.Requests;
 
 namespace VolunteerRequests.Presentation;
 
-public class VolunteerRequestsController: ApplicationController
+public class VolunteerRequestsController : ApplicationController
 {
     [Permission("volunteerRequests.create")]
     [HttpPost("creation-volunteer-request")]
@@ -30,24 +31,26 @@ public class VolunteerRequestsController: ApplicationController
         [FromServices] CreateVolunteerRequestHandler handler,
         CancellationToken cancellationToken = default)
     {
-        var command = new CreateVolunteerRequestCommand(
+        CreateVolunteerRequestCommand command = new(
             userScopedData.UserId,
-            new FullNameDto(request.FirstName, request.SecondName,  request.Patronymic), 
+            new FullNameDto(request.FirstName, request.SecondName, request.Patronymic),
             request.Email,
             request.PhoneNumber,
             request.WorkExperience,
             request.VolunteerDescription,
             request.SocialNetworks.Select(s =>
-                new SocialNetworkDto{Title = s.Title,Url = s.Url}));
+                new SocialNetworkDto { Title = s.Title, Url = s.Url }));
 
-        var result = await handler.Handle(command, cancellationToken);
+        Result<VolunteerRequestId> result = await handler.Handle(command, cancellationToken).ConfigureAwait(false);
 
         if (result.IsFailure)
+        {
             return result.Errors.ToResponse();
+        }
 
         return Ok(result);
     }
-    
+
     [Permission("volunteerRequests.review")]
     [HttpPost("{volunteerRequestId:guid}/taking-request-for-submitting")]
     public async Task<IActionResult> TakeRequestForSubmit(
@@ -56,16 +59,18 @@ public class VolunteerRequestsController: ApplicationController
         [FromServices] TakeRequestForSubmitHandler handler,
         CancellationToken cancellationToken = default)
     {
-        var command = new TakeRequestForSubmitCommand(userScopedData.UserId, volunteerRequestId);
+        TakeRequestForSubmitCommand command = new(userScopedData.UserId, volunteerRequestId);
 
-        var result = await handler.Handle(command, cancellationToken);
+        Result result = await handler.Handle(command, cancellationToken).ConfigureAwait(false);
 
         if (result.IsFailure)
-           return result.Errors.ToResponse();
+        {
+            return result.Errors.ToResponse();
+        }
 
         return Ok(result);
     }
-    
+
     [Permission("volunteerRequests.review")]
     [HttpPost("sending-for-revision")]
     public async Task<IActionResult> SendRequestForRevision(
@@ -74,17 +79,19 @@ public class VolunteerRequestsController: ApplicationController
         [FromServices] SendRequestForRevisionHandler handler,
         CancellationToken cancellationToken = default)
     {
-        var command = new SendRequestForRevisionCommand(
+        SendRequestForRevisionCommand command = new(
             userScopedData.UserId, request.VolunteerRequestId, request.RejectComment);
 
-        var result = await handler.Handle(command, cancellationToken);
+        Result<VolunteerRequestId> result = await handler.Handle(command, cancellationToken).ConfigureAwait(false);
 
         if (result.IsFailure)
+        {
             return result.Errors.ToResponse();
+        }
 
         return Ok(result);
     }
-    
+
     [Permission("volunteerRequests.review")]
     [HttpPost("rejecting-request")]
     public async Task<IActionResult> RejectRequest(
@@ -93,17 +100,19 @@ public class VolunteerRequestsController: ApplicationController
         [FromServices] RejectVolunteerRequestHandler handler,
         CancellationToken cancellationToken = default)
     {
-        var command = new RejectVolunteerRequestCommand(
+        RejectVolunteerRequestCommand command = new(
             userScopedData.UserId, request.VolunteerRequestId, request.RejectComment);
 
-        var result = await handler.Handle(command, cancellationToken);
+        Result<string> result = await handler.Handle(command, cancellationToken).ConfigureAwait(false);
 
         if (result.IsFailure)
+        {
             return result.Errors.ToResponse();
+        }
 
         return Ok(result);
     }
-    
+
     [Permission("volunteerRequests.review")]
     [HttpPost("{volunteerRequestId:guid}approving-request")]
     public async Task<IActionResult> ApproveRequest(
@@ -112,16 +121,18 @@ public class VolunteerRequestsController: ApplicationController
         [FromServices] ApproveVolunteerRequestHandler handler,
         CancellationToken cancellationToken = default)
     {
-        var command = new ApproveVolunteerRequestCommand(userScopedData.UserId, volunteerRequestId);
+        ApproveVolunteerRequestCommand command = new(userScopedData.UserId, volunteerRequestId);
 
-        var result = await handler.Handle(command, cancellationToken);
+        Result result = await handler.Handle(command, cancellationToken).ConfigureAwait(false);
 
         if (result.IsFailure)
+        {
             return result.Errors.ToResponse();
+        }
 
         return Ok(result);
     }
-    
+
     [Permission("volunteerRequests.read")]
     [HttpGet("volunteer-requests-in-waiting-with-pagination")]
     public async Task<ActionResult> GetVolunteerRequestsInWaiting(
@@ -129,20 +140,23 @@ public class VolunteerRequestsController: ApplicationController
         [FromServices] GetVolunteerRequestsInWaitingWithPaginationHandler handler,
         CancellationToken cancellationToken = default)
     {
-        var query = new GetVolunteerRequestsInWaitingWithPaginationQuery(
+        GetVolunteerRequestsInWaitingWithPaginationQuery query = new(
             request.SortBy,
             request.SortDirection,
-            request.Page, 
+            request.Page,
             request.PageSize);
 
-        var result = await handler.Handle(query, cancellationToken);
+        Result<PagedList<VolunteerRequestDto>> result =
+            await handler.Handle(query, cancellationToken).ConfigureAwait(false);
 
         if (result.IsFailure)
+        {
             result.Errors.ToResponse();
+        }
 
         return Ok(result);
     }
-    
+
     [Permission("volunteerRequests.read")]
     [HttpGet("filtered-volunteer-requests-by-admin-id-with-pagination")]
     public async Task<ActionResult> GetFilteredVolunteerRequestsByAdminId(
@@ -151,22 +165,25 @@ public class VolunteerRequestsController: ApplicationController
         [FromServices] GetFilteredVolunteerRequestsByAdminIdWithPaginationHandler handler,
         CancellationToken cancellationToken = default)
     {
-        var query = new GetFilteredVolunteerRequestsByAdminIdWithPaginationQuery(
+        GetFilteredVolunteerRequestsByAdminIdWithPaginationQuery query = new(
             userScopedData.UserId,
             request.RequestStatus,
             request.SortBy,
             request.SortDirection,
-            request.Page, 
+            request.Page,
             request.PageSize);
 
-        var result = await handler.Handle(query, cancellationToken);
+        Result<PagedList<VolunteerRequestDto>> result =
+            await handler.Handle(query, cancellationToken).ConfigureAwait(false);
 
         if (result.IsFailure)
+        {
             result.Errors.ToResponse();
+        }
 
         return Ok(result);
     }
-    
+
     [Permission("volunteerRequests.readOwn")]
     [HttpGet("filtered-volunteer-requests-by-user-id-with-pagination")]
     public async Task<ActionResult> GetFilteredVolunteerRequestsByUserId(
@@ -175,22 +192,25 @@ public class VolunteerRequestsController: ApplicationController
         [FromServices] GetFilteredVolunteerRequestsByUserIdWithPaginationHandler handler,
         CancellationToken cancellationToken = default)
     {
-        var query = new GetFilteredVolunteerRequestsByUserIdWithPaginationQuery(
+        GetFilteredVolunteerRequestsByUserIdWithPaginationQuery query = new(
             userScopedData.UserId,
             request.RequestStatus,
             request.SortBy,
             request.SortDirection,
-            request.Page, 
+            request.Page,
             request.PageSize);
 
-        var result = await handler.Handle(query, cancellationToken);
+        Result<PagedList<VolunteerRequestDto>> result =
+            await handler.Handle(query, cancellationToken).ConfigureAwait(false);
 
         if (result.IsFailure)
+        {
             result.Errors.ToResponse();
+        }
 
         return Ok(result);
     }
-    
+
     [Permission("volunteerRequests.update")]
     [HttpPut("update-volunteer-request")]
     public async Task<ActionResult> UpdateVolunteerRequest(
@@ -199,25 +219,27 @@ public class VolunteerRequestsController: ApplicationController
         [FromServices] UpdateVolunteerRequestHandler handler,
         CancellationToken cancellationToken = default)
     {
-        var command = new UpdateVolunteerRequestCommand(
+        UpdateVolunteerRequestCommand command = new(
             userScopedData.UserId,
             request.VolunteerRequestId,
-            new FullNameDto(request.FirstName, request.SecondName,  request.Patronymic), 
+            new FullNameDto(request.FirstName, request.SecondName, request.Patronymic),
             request.Email,
             request.PhoneNumber,
             request.WorkExperience,
             request.VolunteerDescription,
             request.SocialNetworks.Select(s =>
-                new SocialNetworkDto{Title = s.Title,Url = s.Url}));
+                new SocialNetworkDto { Title = s.Title, Url = s.Url }));
 
-        var result = await handler.Handle(command, cancellationToken);
+        Result<VolunteerRequestId> result = await handler.Handle(command, cancellationToken).ConfigureAwait(false);
 
         if (result.IsFailure)
+        {
             result.Errors.ToResponse();
+        }
 
         return Ok(result);
     }
-    
+
     [Permission("volunteerRequests.update")]
     [HttpPut("{volunteerRequestId:guid}/resending-volunteer-request")]
     public async Task<ActionResult> ResendVolunteerRequest(
@@ -226,12 +248,14 @@ public class VolunteerRequestsController: ApplicationController
         [FromServices] ResendVolunteerRequestHandler handler,
         CancellationToken cancellationToken = default)
     {
-        var query = new ResendVolunteerRequestCommand(userScopedData.UserId, volunteerRequestId);
+        ResendVolunteerRequestCommand query = new(userScopedData.UserId, volunteerRequestId);
 
-        var result = await handler.Handle(query, cancellationToken);
+        Result<VolunteerRequestId> result = await handler.Handle(query, cancellationToken).ConfigureAwait(false);
 
         if (result.IsFailure)
+        {
             result.Errors.ToResponse();
+        }
 
         return Ok(result);
     }

@@ -1,5 +1,4 @@
 ﻿using AnimalAllies.Core.Validators;
-using AnimalAllies.SharedKernel.Shared;
 using AnimalAllies.SharedKernel.Shared.Errors;
 using FluentValidation;
 
@@ -7,9 +6,7 @@ namespace AnimalAllies.Volunteer.Application.VolunteerManagement.Queries.GetVolu
 
 public class GetVolunteerByIdQueryValidator : AbstractValidator<GetVolunteerByIdQuery>
 {
-    public GetVolunteerByIdQueryValidator()
-    {
+    public GetVolunteerByIdQueryValidator() =>
         RuleFor(v => v.VolunteerId)
             .NotEmpty().WithError(Errors.General.ValueIsRequired("volunteer id"));
-    }
 }

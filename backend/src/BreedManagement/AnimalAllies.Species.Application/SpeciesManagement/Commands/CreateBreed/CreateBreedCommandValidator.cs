@@ -1,6 +1,5 @@
 ﻿using AnimalAllies.Core.Validators;
 using AnimalAllies.SharedKernel.Constraints;
-using AnimalAllies.SharedKernel.Shared;
 using AnimalAllies.SharedKernel.Shared.Errors;
 using FluentValidation;
 
@@ -13,7 +12,7 @@ public class CreateBreedCommandValidator : AbstractValidator<CreateBreedCommand>
         RuleFor(b => b.SpeciesId)
             .NotEmpty()
             .WithError(Errors.General.ValueIsRequired("species id"));
-        
+
         RuleFor(b => b.Name)
             .NotEmpty()
             .MaximumLength(Constraints.MAX_VALUE_LENGTH)

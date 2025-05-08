@@ -1,4 +1,3 @@
-using AnimalAllies.SharedKernel.Shared;
 using AnimalAllies.SharedKernel.Shared.Errors;
 using FluentValidation.Results;
 
@@ -8,10 +7,10 @@ public static class ValidationExtension
 {
     public static ErrorList ToErrorList(this ValidationResult validationResult)
     {
-        var validationErrors = validationResult.Errors;
+        List<ValidationFailure>? validationErrors = validationResult.Errors;
 
-        //TODO: Ошибка десериализации, пофиксить позже
-        var errors = from validationError in validationErrors
+        // TODO: Ошибка десериализации, пофиксить позже
+        IEnumerable<Error> errors = from validationError in validationErrors
             let errorMessage = validationError.ErrorMessage
             let error = Error.Deserialize(errorMessage)
             select Error.Validation(error.ErrorCode, error.ErrorMessage, validationError.PropertyName);

@@ -12,7 +12,7 @@ public static class SqlExtensions
     {
         if (!string.IsNullOrWhiteSpace(sortBy) && !string.IsNullOrWhiteSpace(sortDirection))
         {
-            var validSortDirections = new[]{"asc", "desc"};
+            string[] validSortDirections = ["asc", "desc"];
 
             if (validSortDirections.Contains(sortDirection?.ToLower()))
             {
@@ -24,15 +24,13 @@ public static class SqlExtensions
             }
         }
     }
-    
+
     public static void ApplyPagination(
         this StringBuilder sqlBuilder,
         int page,
-        int pageSize)
-    {
+        int pageSize) =>
         sqlBuilder.Append($"\nlimit {pageSize} offset {(page - 1) * pageSize}");
-    }
-    
+
     public static void ApplyBetweenFilter<TValue>(
         this StringBuilder sqlBuilder,
         ref bool hasWhereClause,
@@ -81,7 +79,7 @@ public static class SqlExtensions
         ref bool hasWhereClause,
         Dictionary<string, string> properties)
     {
-        foreach (var property in properties)
+        foreach (KeyValuePair<string, string> property in properties)
         {
             if (!string.IsNullOrWhiteSpace(property.Key) && !string.IsNullOrWhiteSpace(property.Value))
             {
@@ -91,7 +89,7 @@ public static class SqlExtensions
             }
         }
     }
-    
+
     public static void ApplyFilterByEqualsValue<TValue>(
         this StringBuilder sqlBuilder,
         ref bool hasWhereClause,
@@ -105,5 +103,4 @@ public static class SqlExtensions
             hasWhereClause = true;
         }
     }
-    
 }

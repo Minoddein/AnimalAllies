@@ -1,10 +1,10 @@
-using AnimalAllies.Core.Validators;
+﻿using AnimalAllies.Core.Validators;
 using AnimalAllies.SharedKernel.Shared.ValueObjects;
 using FluentValidation;
 
 namespace AnimalAllies.Volunteer.Application.VolunteerManagement.Commands.CreateVolunteer;
 
-public class CreateVolunteerCommandValidator: AbstractValidator<CreateVolunteerCommand>
+public class CreateVolunteerCommandValidator : AbstractValidator<CreateVolunteerCommand>
 {
     public CreateVolunteerCommandValidator()
     {
@@ -19,12 +19,11 @@ public class CreateVolunteerCommandValidator: AbstractValidator<CreateVolunteerC
 
         RuleFor(x => x.PhoneNumber)
             .MustBeValueObject(PhoneNumber.Create);
-        
+
         RuleFor(x => x.Email)
             .MustBeValueObject(Email.Create);
-        
+
         RuleForEach(x => x.Requisites)
             .MustBeValueObject(x => Requisite.Create(x.Title, x.Description));
-
     }
 }

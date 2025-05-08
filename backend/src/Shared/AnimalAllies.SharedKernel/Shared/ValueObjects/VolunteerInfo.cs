@@ -4,18 +4,11 @@ namespace AnimalAllies.SharedKernel.Shared.ValueObjects;
 
 public class VolunteerInfo : ValueObject
 {
-    public FullName FullName { get; }
-    public Email Email { get; }
-    public PhoneNumber PhoneNumber { get; }
-    public WorkExperience WorkExperience { get; }
-    public VolunteerDescription VolunteerDescription { get; }
-    public IReadOnlyList<SocialNetwork> SocialNetworks { get; }
-    
-    private VolunteerInfo(){}
+    private VolunteerInfo() { }
 
     public VolunteerInfo(
-        FullName fullName, 
-        Email email, 
+        FullName fullName,
+        Email email,
         PhoneNumber phoneNumber,
         WorkExperience workExperience,
         VolunteerDescription volunteerDescription,
@@ -26,9 +19,21 @@ public class VolunteerInfo : ValueObject
         PhoneNumber = phoneNumber;
         WorkExperience = workExperience;
         VolunteerDescription = volunteerDescription;
-        SocialNetworks = socialNetworks.ToList();
+        SocialNetworks = [.. socialNetworks];
     }
-    
+
+    public FullName FullName { get; }
+
+    public Email Email { get; }
+
+    public PhoneNumber PhoneNumber { get; }
+
+    public WorkExperience WorkExperience { get; }
+
+    public VolunteerDescription VolunteerDescription { get; }
+
+    public IReadOnlyList<SocialNetwork> SocialNetworks { get; }
+
     protected override IEnumerable<object> GetEqualityComponents()
     {
         yield return FullName;

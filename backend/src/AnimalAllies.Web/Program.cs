@@ -1,12 +1,13 @@
-using AnimalAllies.Accounts.Infrastructure.Seeding;
+﻿using AnimalAllies.Accounts.Infrastructure.Seeding;
 using AnimalAllies.Framework.Middlewares;
 using AnimalAllies.Web;
 using AnimalAllies.Web.Extensions;
+using DotNetEnv;
 using Serilog;
 
-DotNetEnv.Env.Load();
+Env.Load();
 
-var builder = WebApplication.CreateBuilder(args);
+WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
 builder.Configuration.AddEnvironmentVariables();
 
@@ -16,7 +17,6 @@ builder.Services.AddHttpLogging(o =>
 {
     o.CombineLogs = true;
 });
-
 
 builder.Services.AddSerilog();
 
@@ -40,22 +40,22 @@ builder.Services.AddEndpointsApiExplorer();
 
 builder.Services.AddSwagger();
 
-var app = builder.Build();
+WebApplication app = builder.Build();
 
-var accountsSeeder = app.Services.GetRequiredService<AccountsSeeder>();
+AccountsSeeder accountsSeeder = app.Services.GetRequiredService<AccountsSeeder>();
 
-await accountsSeeder.SeedAsync();
+await accountsSeeder.SeedAsync().ConfigureAwait(false);
 
 app.UseExceptionMiddleware();
 
 app.UseSerilogRequestLogging();
 
-if (app.Environment.IsDevelopment() | app.Environment.EnvironmentName == "Docker")
+if (app.Environment.IsDevelopment() | (app.Environment.EnvironmentName == "Docker"))
 {
     app.UseSwagger();
     app.UseSwaggerUI();
 
-    //await app.ApplyMigrations();
+    // await app.ApplyMigrations();
 }
 
 app.UseCors(builder =>
@@ -75,10 +75,6 @@ app.UseAuthorization();
 
 app.MapControllers();
 
+await app.RunAsync();
 
-app.Run();
-
-namespace AnimalAllies.Web
-{
-    public partial class Program;
-}
+public partial class Program;

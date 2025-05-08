@@ -1,4 +1,4 @@
-using System.Collections.Concurrent;
+﻿using System.Collections.Concurrent;
 using System.Reflection;
 using System.Text.Json;
 using MassTransit;
@@ -9,49 +9,46 @@ using Polly.Retry;
 
 namespace Outbox.Outbox;
 
-public class ProcessOutboxMessageService
+public class ProcessOutboxMessageService(
+    OutboxContext context,
+    IPublishEndpoint publishEndpoint,
+    ILogger<ProcessOutboxMessageService> logger)
 {
-    private readonly OutboxContext _context;
-    private readonly IPublishEndpoint _publishEndpoint;
-    private readonly ILogger<ProcessOutboxMessageService> _logger;
-    private readonly ConcurrentDictionary<string, Type> _typeCache = new();
     private static readonly Assembly[] _contractAssemblies;
+    private readonly OutboxContext _context = context;
+    private readonly ILogger<ProcessOutboxMessageService> _logger = logger;
+    private readonly IPublishEndpoint _publishEndpoint = publishEndpoint;
+    private readonly ConcurrentDictionary<string, Type> _typeCache = new();
 
     static ProcessOutboxMessageService()
     {
-        var baseDirectory = AppContext.BaseDirectory; 
-        var contractAssemblies = Directory.GetFiles(
-                baseDirectory, "*.Contracts.dll", SearchOption.AllDirectories)
-            .Where(File.Exists) 
-            .Select(Assembly.LoadFrom)
-            .ToArray();
+        string baseDirectory = AppContext.BaseDirectory;
+        Assembly[] contractAssemblies =
+        [
+            .. Directory.GetFiles(
+                    baseDirectory, "*.Contracts.dll", SearchOption.AllDirectories)
+                .Where(File.Exists)
+                .Select(Assembly.LoadFrom)
+        ];
 
         _contractAssemblies = contractAssemblies;
-    }
-    
-    public ProcessOutboxMessageService(
-        OutboxContext context, 
-        IPublishEndpoint publishEndpoint, 
-        ILogger<ProcessOutboxMessageService> logger)
-    {
-        _context = context;
-        _publishEndpoint = publishEndpoint;
-        _logger = logger;
     }
 
     public async Task Execute(CancellationToken cancellationToken)
     {
-        var messages = await _context
+        List<OutboxMessage> messages = await _context
             .Set<OutboxMessage>()
             .OrderBy(m => m.OccurredOnUtc)
             .Where(m => m.ProcessedOnUtc == null)
             .Take(100)
-            .ToListAsync(cancellationToken);
-        
-        if(messages.Count == 0)
+            .ToListAsync(cancellationToken).ConfigureAwait(false);
+
+        if (messages.Count == 0)
+        {
             return;
-        
-        var pipeline = new ResiliencePipelineBuilder()
+        }
+
+        ResiliencePipeline pipeline = new ResiliencePipelineBuilder()
             .AddRetry(new RetryStrategyOptions
             {
                 MaxRetryAttempts = 3,
@@ -66,26 +63,25 @@ public class ProcessOutboxMessageService
                         retryArguments.AttemptNumber);
 
                     return ValueTask.CompletedTask;
-                },
+                }
             })
             .Build();
 
-        var processingTasks = messages.Select(message =>
+        IEnumerable<Task> processingTasks = messages.Select(message =>
             ProcessMessageAsync(message, pipeline, cancellationToken));
-        
-        await Task.WhenAll(processingTasks);
+
+        await Task.WhenAll(processingTasks).ConfigureAwait(false);
 
         try
         {
-            await _context.SaveChangesAsync(cancellationToken);
+            await _context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to save changed to the database");
         }
-        
     }
-    
+
     private async Task ProcessMessageAsync(
         OutboxMessage message,
         ResiliencePipeline pipeline,
@@ -95,18 +91,18 @@ public class ProcessOutboxMessageService
 
         try
         {
-            var messageType = GetMessageType(message.Type);
+            Type messageType = GetMessageType(message.Type);
 
-            var deserializedMessage = JsonSerializer.Deserialize(message.Payload, messageType)
-                                      ?? throw new NullReferenceException("Message payload not found");
+            object deserializedMessage = JsonSerializer.Deserialize(message.Payload, messageType)
+                                         ?? throw new NullReferenceException("Message payload not found");
 
             await pipeline.ExecuteAsync(
                 async token =>
                 {
-                    await _publishEndpoint.Publish(deserializedMessage, messageType, token);
-                    
+                    await _publishEndpoint.Publish(deserializedMessage, messageType, token).ConfigureAwait(false);
+
                     message.ProcessedOnUtc = DateTime.UtcNow;
-                }, cancellationToken);
+                }, cancellationToken).ConfigureAwait(false);
         }
         catch (Exception ex)
         {
@@ -115,16 +111,14 @@ public class ProcessOutboxMessageService
             _logger.LogError(ex, "Failed to process message ID: {MessageId}", message.Id);
         }
     }
-    
-    private Type GetMessageType(string typeName)
-    {
-        return _typeCache.GetOrAdd(typeName, name =>
+
+    private Type GetMessageType(string typeName) =>
+        _typeCache.GetOrAdd(typeName, name =>
         {
-            var type = _contractAssemblies
+            Type? type = _contractAssemblies
                 .Select(assembly => assembly.GetType(name))
                 .FirstOrDefault(t => t != null);
 
             return type ?? throw new TypeLoadException($"Type '{name}' not found in any assembly");
         });
-    }
-} 
+}

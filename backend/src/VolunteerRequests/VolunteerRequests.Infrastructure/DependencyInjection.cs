@@ -1,5 +1,6 @@
 ﻿using AnimalAllies.Core.Database;
 using AnimalAllies.SharedKernel.Constraints;
+using Dapper;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Outbox;
@@ -19,36 +20,35 @@ public static class DependencyInjection
             .AddDbContexts()
             .AddRepositories()
             .AddOutbox(configuration);
-        
+
         return services;
     }
 
     private static IServiceCollection AddOutbox(this IServiceCollection services, IConfiguration configuration)
     {
         services.AddOutboxCore(configuration);
-        
+
         return services;
     }
-    
+
     private static IServiceCollection AddRepositories(this IServiceCollection services)
     {
         services.AddScoped<IVolunteerRequestsRepository, VolunteerRequestsRepository>();
         services.AddScoped<IProhibitionSendingRepository, ProhibitionSendingRepository>();
-        
+
         return services;
     }
-    
-    
+
     private static IServiceCollection AddDatabase(this IServiceCollection services)
     {
         services.AddKeyedScoped<IUnitOfWork, UnitOfWork>(Constraints.Context.VolunteerRequests);
-        services.AddKeyedSingleton<ISqlConnectionFactory,SqlConnectionFactory>(Constraints.Context.VolunteerRequests);
+        services.AddKeyedSingleton<ISqlConnectionFactory, SqlConnectionFactory>(Constraints.Context.VolunteerRequests);
 
-        Dapper.DefaultTypeMap.MatchNamesWithUnderscores = true;
-        
+        DefaultTypeMap.MatchNamesWithUnderscores = true;
+
         return services;
     }
-    
+
     private static IServiceCollection AddDbContexts(this IServiceCollection services)
     {
         services.AddScoped<WriteDbContext>();

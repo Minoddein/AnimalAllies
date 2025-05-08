@@ -13,7 +13,7 @@ public record UpdatePetRequest(
     AnimalTypeDto AnimalTypeDto,
     IEnumerable<RequisiteDto> RequisitesDto)
 {
-    public UpdatePetCommand ToCommand(Guid volunteerId,Guid petId)
+    public UpdatePetCommand ToCommand(Guid volunteerId, Guid petId)
         => new(volunteerId,
             petId,
             Name,

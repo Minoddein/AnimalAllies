@@ -1,5 +1,4 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 
 namespace AnimalAllies.Accounts.Infrastructure.Seeding;
 
@@ -7,11 +6,10 @@ public class AccountsSeeder(IServiceScopeFactory serviceScopeFactory)
 {
     public async Task SeedAsync()
     {
-        using var scope = serviceScopeFactory.CreateScope();
+        using IServiceScope scope = serviceScopeFactory.CreateScope();
 
-        var service = scope.ServiceProvider.GetRequiredService<AccountSeedService>();
+        AccountSeedService service = scope.ServiceProvider.GetRequiredService<AccountSeedService>();
 
-        await service.SeedAsync();
+        await service.SeedAsync().ConfigureAwait(false);
     }
-
 }

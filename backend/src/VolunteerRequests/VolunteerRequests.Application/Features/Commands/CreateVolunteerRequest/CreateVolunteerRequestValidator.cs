@@ -1,12 +1,11 @@
 ﻿using AnimalAllies.Core.Validators;
-using AnimalAllies.SharedKernel.Shared;
 using AnimalAllies.SharedKernel.Shared.Errors;
 using AnimalAllies.SharedKernel.Shared.ValueObjects;
 using FluentValidation;
 
 namespace VolunteerRequests.Application.Features.Commands.CreateVolunteerRequest;
 
-public class CreateVolunteerRequestValidator: AbstractValidator<CreateVolunteerRequestCommand>
+public class CreateVolunteerRequestValidator : AbstractValidator<CreateVolunteerRequestCommand>
 {
     public CreateVolunteerRequestValidator()
     {

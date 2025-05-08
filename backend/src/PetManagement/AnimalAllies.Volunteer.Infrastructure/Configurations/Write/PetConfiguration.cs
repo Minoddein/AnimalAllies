@@ -1,4 +1,4 @@
-using AnimalAllies.Core.DTOs.ValueObjects;
+﻿using AnimalAllies.Core.DTOs.ValueObjects;
 using AnimalAllies.Core.Extension;
 using AnimalAllies.SharedKernel.Constraints;
 using AnimalAllies.SharedKernel.Shared.Ids;
@@ -10,13 +10,13 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace AnimalAllies.Volunteer.Infrastructure.Configurations.Write;
 
-public class PetConfiguration: IEntityTypeConfiguration<Pet>
+public class PetConfiguration : IEntityTypeConfiguration<Pet>
 {
     public void Configure(EntityTypeBuilder<Pet> builder)
     {
         builder.ToTable("pets");
         builder.HasKey(x => x.Id);
-        
+
         builder.Property(x => x.Id)
             .HasConversion(
                 id => id.Id,
@@ -90,9 +90,7 @@ public class PetConfiguration: IEntityTypeConfiguration<Pet>
             a.Property(x => x.ZipCode)
                 .HasColumnName("zip_code")
                 .HasMaxLength(Constraints.MAX_VALUE_LENGTH);
-            
         });
-        
 
         builder.ComplexProperty(x => x.PhoneNumber, p =>
         {
@@ -118,20 +116,18 @@ public class PetConfiguration: IEntityTypeConfiguration<Pet>
 
         builder.Property(p => p.PetPhotoDetails)
             .ValueObjectJsonConverter(
-                p => new PetPhotoDto() { Path = p.Path.Path, IsMain = p.IsMain },
+                p => new PetPhotoDto { Path = p.Path.Path, IsMain = p.IsMain },
                 dto => new PetPhoto(FilePath.Create(dto.Path).Value, dto.IsMain))
             .HasColumnName("pet_photos");
-        
+
         builder.Property(p => p.Requisites)
             .ValueObjectJsonConverter(
-                r => new RequisiteDto() { Title = r.Title, Description = r.Description },
+                r => new RequisiteDto { Title = r.Title, Description = r.Description },
                 dto => Requisite.Create(dto.Title, dto.Description).Value)
             .HasColumnName("requisites");
-        
-        
+
         builder.Property<bool>("IsDeleted")
             .UsePropertyAccessMode(PropertyAccessMode.Field)
             .HasColumnName("is_deleted");
-
     }
 }

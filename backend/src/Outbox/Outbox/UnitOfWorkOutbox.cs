@@ -1,28 +1,22 @@
-using System.Data;
+﻿using System.Data;
 using Microsoft.EntityFrameworkCore.Storage;
 using Outbox.Abstractions;
 using Outbox.Outbox;
 
 namespace Outbox;
 
-public class UnitOfWorkOutbox: IUnitOfWorkOutbox
+public class UnitOfWorkOutbox(OutboxContext dbContext) : IUnitOfWorkOutbox
 {
-    private readonly OutboxContext _dbContext;
+    private readonly OutboxContext _dbContext = dbContext;
 
-    public UnitOfWorkOutbox(OutboxContext dbContext)
-    {
-        _dbContext = dbContext;
-    }
-    
     public async Task<IDbTransaction> BeginTransaction(CancellationToken cancellationToken = default)
     {
-        var transaction = await _dbContext.Database.BeginTransactionAsync(cancellationToken);
+        IDbContextTransaction transaction =
+            await _dbContext.Database.BeginTransactionAsync(cancellationToken).ConfigureAwait(false);
 
         return transaction.GetDbTransaction();
     }
 
-    public async Task SaveChanges(CancellationToken cancellationToken = default)
-    {
-        await _dbContext.SaveChangesAsync(cancellationToken);
-    }
+    public async Task SaveChanges(CancellationToken cancellationToken = default) =>
+        await _dbContext.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
 }

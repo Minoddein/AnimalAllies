@@ -6,70 +6,78 @@ using AnimalAllies.SharedKernel.Shared;
 using AnimalAllies.SharedKernel.Shared.Ids;
 using AnimalAllies.Volunteer.Application.Providers;
 using AnimalAllies.Volunteer.Application.Repository;
+using AnimalAllies.Volunteer.Domain.VolunteerManagement.Entities.Pet;
 using FluentValidation;
+using FluentValidation.Results;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using FileInfo = AnimalAllies.Volunteer.Application.FileProvider.FileInfo;
 
 namespace AnimalAllies.Volunteer.Application.VolunteerManagement.Commands.DeletePetForce;
 
-public class DeletePetForceHandler: ICommandHandler<DeletePetForceCommand, PetId>
+public class DeletePetForceHandler(
+    IVolunteerRepository volunteerRepository,
+    ILogger<DeletePetForceHandler> logger,
+    IValidator<DeletePetForceCommand> validator,
+    [FromKeyedServices(Constraints.Context.PetManagement)]
+    IUnitOfWork unitOfWork,
+    IFileProvider fileProvider,
+    IDateTimeProvider dateTimeProvider) : ICommandHandler<DeletePetForceCommand, PetId>
 {
     private const string BUCKET_NAME = "photos";
-    private readonly IVolunteerRepository _volunteerRepository;
-    private readonly IUnitOfWork _unitOfWork;
-    private readonly ILogger<DeletePetForceHandler> _logger;
-    private readonly IValidator<DeletePetForceCommand> _validator;
-    private readonly IFileProvider _fileProvider;
-    private readonly IDateTimeProvider _dateTimeProvider;
-    
-    public DeletePetForceHandler(
-        IVolunteerRepository volunteerRepository,
-        ILogger<DeletePetForceHandler> logger,
-        IValidator<DeletePetForceCommand> validator,
-        [FromKeyedServices(Constraints.Context.PetManagement)]IUnitOfWork unitOfWork,
-        IFileProvider fileProvider, 
-        IDateTimeProvider dateTimeProvider)
+    private readonly IDateTimeProvider _dateTimeProvider = dateTimeProvider;
+    private readonly IFileProvider _fileProvider = fileProvider;
+    private readonly ILogger<DeletePetForceHandler> _logger = logger;
+    private readonly IUnitOfWork _unitOfWork = unitOfWork;
+    private readonly IValidator<DeletePetForceCommand> _validator = validator;
+    private readonly IVolunteerRepository _volunteerRepository = volunteerRepository;
+
+    public async Task<Result<PetId>> Handle(
+        DeletePetForceCommand command,
+        CancellationToken cancellationToken = default)
     {
-        _volunteerRepository = volunteerRepository;
-        _logger = logger;
-        _validator = validator;
-        _unitOfWork = unitOfWork;
-        _fileProvider = fileProvider;
-        _dateTimeProvider = dateTimeProvider;
-    }
-    
-    
-    public async Task<Result<PetId>> Handle(DeletePetForceCommand command, CancellationToken cancellationToken = default)
-    {
-        var validatorResult = await _validator.ValidateAsync(command, cancellationToken);
+        ValidationResult? validatorResult =
+            await _validator.ValidateAsync(command, cancellationToken).ConfigureAwait(false);
         if (!validatorResult.IsValid)
+        {
             return validatorResult.ToErrorList();
+        }
 
-        var volunteerId = VolunteerId.Create(command.VolunteerId);
-        
-        var volunteer = await _volunteerRepository.GetById(volunteerId, cancellationToken);
+        VolunteerId volunteerId = VolunteerId.Create(command.VolunteerId);
+
+        Result<Domain.VolunteerManagement.Aggregate.Volunteer> volunteer =
+            await _volunteerRepository.GetById(volunteerId, cancellationToken).ConfigureAwait(false);
         if (volunteer.IsFailure)
+        {
             return volunteer.Errors;
+        }
 
-        var petId = PetId.Create(command.PetId);
-        var pet = volunteer.Value.GetPetById(petId);
-        if(pet.IsFailure)
+        PetId petId = PetId.Create(command.PetId);
+        Result<Pet> pet = volunteer.Value.GetPetById(petId);
+        if (pet.IsFailure)
+        {
             return pet.Errors;
+        }
 
-        var result = volunteer.Value.DeletePetForce(petId,_dateTimeProvider.UtcNow);
+        Result result = volunteer.Value.DeletePetForce(petId, _dateTimeProvider.UtcNow);
         if (result.IsFailure)
+        {
             return result.Errors;
-        
-        var petPreviousPhotos = pet.Value.PetPhotoDetails
-            .Select(f => new FileProvider.FileInfo(f.Path, BUCKET_NAME)).ToList();
-            
-        if(petPreviousPhotos.Any())
+        }
+
+        List<FileInfo> petPreviousPhotos =
+            [.. pet.Value.PetPhotoDetails.Select(f => new FileInfo(f.Path, BUCKET_NAME))];
+
+        if (petPreviousPhotos.Count != 0)
+        {
             petPreviousPhotos.ForEach(f => _fileProvider.RemoveFile(f, cancellationToken));
-        
-        _logger.LogInformation("Soft deleted pet with id {petId} from volunteer with id {volunteerId}",
+        }
+
+        _logger.LogInformation(
+            "Soft deleted pet with id {petId} from volunteer with id {volunteerId}",
             petId.Id, volunteerId.Id);
 
-        await _unitOfWork.SaveChanges(cancellationToken);
+        await _unitOfWork.SaveChanges(cancellationToken).ConfigureAwait(false);
 
         return petId;
     }

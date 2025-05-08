@@ -1,3 +1,3 @@
-namespace AnimalAllies.Core.DTOs.ValueObjects;
+﻿namespace AnimalAllies.Core.DTOs.ValueObjects;
 
 public record PositionDto(int Position);

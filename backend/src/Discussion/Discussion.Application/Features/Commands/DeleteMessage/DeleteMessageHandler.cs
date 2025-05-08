@@ -8,41 +8,37 @@ using AnimalAllies.SharedKernel.Shared.Errors;
 using AnimalAllies.SharedKernel.Shared.Ids;
 using Discussion.Application.Repository;
 using FluentValidation;
+using FluentValidation.Results;
 using MediatR;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
 namespace Discussion.Application.Features.Commands.DeleteMessage;
 
-public class DeleteMessageHandler: ICommandHandler<DeleteMessageCommand>
+public class DeleteMessageHandler(
+    ILogger<DeleteMessageHandler> logger,
+    [FromKeyedServices(Constraints.Context.Discussion)]
+    IUnitOfWork unitOfWork,
+    IValidator<DeleteMessageCommand> validator,
+    IDiscussionRepository repository,
+    IPublisher publisher) : ICommandHandler<DeleteMessageCommand>
 {
-    private readonly ILogger<DeleteMessageHandler> _logger;
-    private readonly IUnitOfWork _unitOfWork;
-    private readonly IValidator<DeleteMessageCommand> _validator;
-    private readonly IDiscussionRepository _repository;
-    private readonly IPublisher _publisher;
-    
-    public DeleteMessageHandler(
-        ILogger<DeleteMessageHandler> logger,
-        [FromKeyedServices(Constraints.Context.Discussion)]IUnitOfWork unitOfWork,
-        IValidator<DeleteMessageCommand> validator,
-        IDiscussionRepository repository,
-        IPublisher publisher)
-    {
-        _logger = logger;
-        _unitOfWork = unitOfWork;
-        _validator = validator;
-        _repository = repository;
-        _publisher = publisher;
-    }
+    private readonly ILogger<DeleteMessageHandler> _logger = logger;
+    private readonly IPublisher _publisher = publisher;
+    private readonly IDiscussionRepository _repository = repository;
+    private readonly IUnitOfWork _unitOfWork = unitOfWork;
+    private readonly IValidator<DeleteMessageCommand> _validator = validator;
 
     public async Task<Result> Handle(DeleteMessageCommand command, CancellationToken cancellationToken = default)
     {
-        var validationResult = await _validator.ValidateAsync(command, cancellationToken);
+        ValidationResult? validationResult =
+            await _validator.ValidateAsync(command, cancellationToken).ConfigureAwait(false);
         if (!validationResult.IsValid)
+        {
             return validationResult.ToErrorList();
+        }
 
-        using var scope = new TransactionScope(
+        using TransactionScope scope = new(
             TransactionScopeOption.Required,
             new TransactionOptions { IsolationLevel = IsolationLevel.ReadCommitted },
             TransactionScopeAsyncFlowOption.Enabled
@@ -50,26 +46,32 @@ public class DeleteMessageHandler: ICommandHandler<DeleteMessageCommand>
 
         try
         {
-            var discussionId = DiscussionId.Create(command.DiscussionId);
+            DiscussionId discussionId = DiscussionId.Create(command.DiscussionId);
 
-            var discussion = await _repository.GetById(discussionId, cancellationToken);
+            Result<Domain.Aggregate.Discussion> discussion =
+                await _repository.GetById(discussionId, cancellationToken).ConfigureAwait(false);
             if (discussion.IsFailure)
+            {
                 return discussion.Errors;
+            }
 
-            var messageId = MessageId.Create(command.MessageId);
+            MessageId messageId = MessageId.Create(command.MessageId);
 
-            var result = discussion.Value.DeleteComment(command.UserId, messageId);
+            Result result = discussion.Value.DeleteComment(command.UserId, messageId);
             if (result.IsFailure)
+            {
                 return result.Errors;
+            }
 
-            await _publisher.PublishDomainEvents(discussion.Value, cancellationToken);
-            
-            await _unitOfWork.SaveChanges(cancellationToken);
+            await _publisher.PublishDomainEvents(discussion.Value, cancellationToken).ConfigureAwait(false);
+
+            await _unitOfWork.SaveChanges(cancellationToken).ConfigureAwait(false);
 
             scope.Complete();
-            
-            _logger.LogInformation("user with id {userId} delete message with id {messageId}" +
-                                   " from discussion with id {discussionId}",
+
+            _logger.LogInformation(
+                "user with id {userId} delete message with id {messageId}" +
+                " from discussion with id {discussionId}",
                 command.UserId, command.MessageId, command.DiscussionId);
 
             return Result.Success();
@@ -77,7 +79,7 @@ public class DeleteMessageHandler: ICommandHandler<DeleteMessageCommand>
         catch (Exception)
         {
             _logger.LogError("Cannot delete message");
-            
+
             return Error.Failure("cannot.delete.message", "Cannot delete message");
         }
     }

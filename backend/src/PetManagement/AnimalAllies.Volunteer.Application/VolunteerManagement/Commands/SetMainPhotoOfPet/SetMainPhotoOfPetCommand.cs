@@ -1,5 +1,4 @@
-﻿
-using AnimalAllies.Core.Abstractions;
+﻿using AnimalAllies.Core.Abstractions;
 
 namespace AnimalAllies.Volunteer.Application.VolunteerManagement.Commands.SetMainPhotoOfPet;
 

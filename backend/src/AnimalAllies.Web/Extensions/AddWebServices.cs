@@ -1,17 +1,17 @@
-using Microsoft.OpenApi.Models;
+﻿using Microsoft.OpenApi.Models;
 using Serilog;
 using Serilog.Events;
 
 namespace AnimalAllies.Web.Extensions;
 
-public static class AddWebServices
+internal static class AddWebServices
 {
     public static IServiceCollection AddLogger(this IServiceCollection services, IConfiguration configuration)
     {
         Log.Logger = new LoggerConfiguration()
             .WriteTo.Console()
             .WriteTo.Debug()
-            .WriteTo.Seq(configuration.GetConnectionString("Seq") 
+            .WriteTo.Seq(configuration.GetConnectionString("Seq")
                          ?? throw new ArgumentNullException("Seq"))
             .Enrich.WithThreadId()
             .Enrich.WithThreadName()
@@ -22,7 +22,7 @@ public static class AddWebServices
             .MinimumLevel.Override("Microsoft.AspNetCore.Mvc", LogEventLevel.Warning)
             .MinimumLevel.Override("Microsoft.AspNetCore.Routing", LogEventLevel.Warning)
             .CreateLogger();
-        
+
         services.AddLogging(loggingBuilder =>
         {
             loggingBuilder.ClearProviders();
@@ -37,35 +37,28 @@ public static class AddWebServices
         services.AddSwaggerGen(c =>
         {
             c.CustomSchemaIds(type => type.FullName);
-            c.SwaggerDoc("v1", new OpenApiInfo
-            {
-                Title = "My API",
-                Version = "v1"
-            });
-            c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
-            {
-                In = ParameterLocation.Header,
-                Description = "Please insert JWT with Bearer into field",
-                Name = "Authorization",
-                Type = SecuritySchemeType.ApiKey
-            });
+            c.SwaggerDoc("v1", new OpenApiInfo { Title = "My API", Version = "v1" });
+            c.AddSecurityDefinition(
+                "Bearer",
+                new OpenApiSecurityScheme
+                {
+                    In = ParameterLocation.Header,
+                    Description = "Please insert JWT with Bearer into field",
+                    Name = "Authorization",
+                    Type = SecuritySchemeType.ApiKey
+                });
             c.AddSecurityRequirement(new OpenApiSecurityRequirement
             {
                 {
                     new OpenApiSecurityScheme
                     {
-                        Reference = new OpenApiReference
-                        {
-                            Type = ReferenceType.SecurityScheme,
-                            Id = "Bearer"
-                        }
+                        Reference = new OpenApiReference { Type = ReferenceType.SecurityScheme, Id = "Bearer" }
                     },
                     []
                 }
             });
         });
-        
+
         return services;
     }
-
 }

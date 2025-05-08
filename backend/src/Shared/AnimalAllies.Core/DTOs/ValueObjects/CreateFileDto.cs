@@ -1,3 +1,3 @@
-namespace AnimalAllies.Core.DTOs.ValueObjects;
+﻿namespace AnimalAllies.Core.DTOs.ValueObjects;
 
-public record CreateFileDto(Stream Content,string FileName);
+public record CreateFileDto(Stream Content, string FileName);

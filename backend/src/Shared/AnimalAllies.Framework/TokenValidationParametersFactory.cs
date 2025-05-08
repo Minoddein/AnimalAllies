@@ -4,12 +4,10 @@ using Microsoft.IdentityModel.Tokens;
 
 namespace AnimalAllies.Framework;
 
-
 public static class TokenValidationParametersFactory
 {
-    public static TokenValidationParameters CreateWithLifeTime(JwtOptions jwtOptions)
-    {
-        return new TokenValidationParameters
+    public static TokenValidationParameters CreateWithLifeTime(JwtOptions jwtOptions) =>
+        new()
         {
             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtOptions.Key)),
             ValidIssuer = jwtOptions.Issuer,
@@ -20,11 +18,9 @@ public static class TokenValidationParametersFactory
             ValidateLifetime = true,
             ClockSkew = TimeSpan.Zero
         };
-    }
-    
-    public static TokenValidationParameters CreateWithoutLifeTime(JwtOptions jwtOptions)
-    {
-        return new TokenValidationParameters
+
+    public static TokenValidationParameters CreateWithoutLifeTime(JwtOptions jwtOptions) =>
+        new()
         {
             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtOptions.Key)),
             ValidIssuer = jwtOptions.Issuer,
@@ -35,5 +31,4 @@ public static class TokenValidationParametersFactory
             ValidateLifetime = false,
             ClockSkew = TimeSpan.Zero
         };
-    }
 }

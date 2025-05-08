@@ -7,5 +7,5 @@ public record GetFilteredVolunteerRequestsByAdminIdWithPaginationQuery(
     string? RequestStatus,
     string? SortBy,
     string? SortDirection,
-    int Page, 
+    int Page,
     int PageSize) : IQuery;

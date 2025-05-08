@@ -1,6 +1,5 @@
 ﻿using AnimalAllies.Core.Validators;
 using AnimalAllies.SharedKernel.Constraints;
-using AnimalAllies.SharedKernel.Shared;
 using AnimalAllies.SharedKernel.Shared.Errors;
 using FluentValidation;
 
@@ -13,7 +12,7 @@ public class UpdatePetStatusCommandValidator : AbstractValidator<UpdatePetStatus
         RuleFor(p => p.VolunteerId)
             .NotEmpty()
             .WithError(Errors.General.ValueIsRequired("volunteer id"));
-        
+
         RuleFor(p => p.PetId)
             .NotEmpty()
             .WithError(Errors.General.ValueIsRequired("pet id"));
@@ -22,6 +21,5 @@ public class UpdatePetStatusCommandValidator : AbstractValidator<UpdatePetStatus
             .NotEmpty()
             .Must(p => Constraints.HELP_STATUS_PET_FROM_VOLUNTEER.Contains(p))
             .WithError(Errors.General.ValueIsInvalid("help status"));
-
     }
 }
