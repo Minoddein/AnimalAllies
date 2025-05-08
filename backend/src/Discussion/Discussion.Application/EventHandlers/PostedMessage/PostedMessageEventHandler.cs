@@ -1,12 +1,41 @@
+using AnimalAllies.Accounts.Contracts.Events;
+using AnimalAllies.SharedKernel.CachingConstants;
 using Discussion.Domain.DomainEvents;
 using MediatR;
+using Microsoft.Extensions.Logging;
+using Outbox.Abstractions;
 
 namespace Discussion.Application.EventHandlers.PostedMessage;
 
 public class PostedMessageEventHandler: INotificationHandler<PostedMessageDomainEvent>
 {
-    public Task Handle(PostedMessageDomainEvent notification, CancellationToken cancellationToken)
+    private readonly ILogger<PostedMessageEventHandler> _logger;
+    private readonly IOutboxRepository _outboxRepository;
+    private readonly IUnitOfWorkOutbox _unitOfWork;
+
+    public PostedMessageEventHandler(
+        ILogger<PostedMessageEventHandler> logger, 
+        IOutboxRepository outboxRepository,
+        IUnitOfWorkOutbox unitOfWork)
     {
-        throw new NotImplementedException();
+        _logger = logger;
+        _outboxRepository = outboxRepository;
+        _unitOfWork = unitOfWork;
+    }
+
+    public async Task Handle(PostedMessageDomainEvent notification, CancellationToken cancellationToken)
+    {
+        var invalidationIntegrationEvent = new CacheInvalidateIntegrationEvent(
+            null,
+            [
+                new string(TagsConstants.DISCUSSIONS + "_" + notification.RelationId)
+            ]);
+        
+        await _outboxRepository.AddAsync(invalidationIntegrationEvent, cancellationToken);
+
+        await _unitOfWork.SaveChanges(cancellationToken);
+
+        _logger.LogInformation("Posted message to discussion with relation id {relationId}",
+            notification.RelationId);
     }
 }

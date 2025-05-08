@@ -1,14 +1,17 @@
-﻿using AnimalAllies.Core.Abstractions;
+﻿using System.Transactions;
+using AnimalAllies.Core.Abstractions;
 using AnimalAllies.Core.Database;
 using AnimalAllies.Core.Extension;
 using AnimalAllies.SharedKernel.Constraints;
 using AnimalAllies.SharedKernel.Shared;
+using AnimalAllies.SharedKernel.Shared.Errors;
 using AnimalAllies.SharedKernel.Shared.Ids;
 using AnimalAllies.SharedKernel.Shared.ValueObjects;
 using Discussion.Application.Repository;
 using Discussion.Domain.Entities;
 using Discussion.Domain.ValueObjects;
 using FluentValidation;
+using MediatR;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
@@ -21,19 +24,22 @@ public class PostMessageHandler: ICommandHandler<PostMessageCommand, MessageId>
     private readonly IValidator<PostMessageCommand> _validator;
     private readonly IDiscussionRepository _repository;
     private readonly IDateTimeProvider _dateTimeProvider;
+    private readonly IPublisher _publisher;
     
     public PostMessageHandler(
         ILogger<PostMessageHandler> logger, 
         [FromKeyedServices(Constraints.Context.Discussion)]IUnitOfWork unitOfWork, 
         IValidator<PostMessageCommand> validator,
         IDiscussionRepository repository,
-        IDateTimeProvider dateTimeProvider)
+        IDateTimeProvider dateTimeProvider, 
+        IPublisher publisher)
     {
         _logger = logger;
         _unitOfWork = unitOfWork;
         _validator = validator;
         _repository = repository;
         _dateTimeProvider = dateTimeProvider;
+        _publisher = publisher;
     }
 
     public async Task<Result<MessageId>> Handle(
@@ -43,29 +49,48 @@ public class PostMessageHandler: ICommandHandler<PostMessageCommand, MessageId>
         if (!validationResult.IsValid)
             return validationResult.ToErrorList();
 
-        var discussionId = DiscussionId.Create(command.DiscussionId);
-        var discussion = await _repository.GetById(discussionId, cancellationToken);
-        if (discussion.IsFailure)
-            return discussion.Errors;
+        using var scope = new TransactionScope(
+            TransactionScopeOption.Required,
+            new TransactionOptions { IsolationLevel = IsolationLevel.ReadCommitted },
+            TransactionScopeAsyncFlowOption.Enabled
+        );
 
-        var messageId = MessageId.NewGuid();
-        var text = Text.Create(command.Text).Value;
-        var createdAt = CreatedAt.Create(_dateTimeProvider.UtcNow).Value;
-        var isEdited = new IsEdited(false);
-        
-        var message = Message.Create(messageId, text, createdAt, isEdited, command.UserId);
-        if (message.IsFailure)
-            return message.Errors;
+        try
+        {
+            var discussionId = DiscussionId.Create(command.DiscussionId);
+            var discussion = await _repository.GetById(discussionId, cancellationToken);
+            if (discussion.IsFailure)
+                return discussion.Errors;
 
-        var result = discussion.Value.SendComment(message.Value);
-        if (result.IsFailure)
-            return result.Errors;
+            var messageId = MessageId.NewGuid();
+            var text = Text.Create(command.Text).Value;
+            var createdAt = CreatedAt.Create(_dateTimeProvider.UtcNow).Value;
+            var isEdited = new IsEdited(false);
 
-        await _unitOfWork.SaveChanges(cancellationToken);
-        
-        _logger.LogInformation("user with id {userId} post comment to discussion with id {discussionId}",
-            command.UserId, discussionId.Id);
+            var message = Message.Create(messageId, text, createdAt, isEdited, command.UserId);
+            if (message.IsFailure)
+                return message.Errors;
 
-        return messageId;
+            var result = discussion.Value.SendComment(message.Value);
+            if (result.IsFailure)
+                return result.Errors;
+
+            await _publisher.PublishDomainEvents(discussion.Value, cancellationToken);
+            
+            await _unitOfWork.SaveChanges(cancellationToken);
+
+            scope.Complete();
+            
+            _logger.LogInformation("user with id {userId} post comment to discussion with id {discussionId}",
+                command.UserId, discussionId.Id);
+
+            return messageId;
+        }
+        catch (Exception)
+        {
+            _logger.LogError("Cannot post message in discussion");
+            
+            return Error.Failure("fail.to.post.message", "Cannot post message in discussion");
+        }
     }
 }

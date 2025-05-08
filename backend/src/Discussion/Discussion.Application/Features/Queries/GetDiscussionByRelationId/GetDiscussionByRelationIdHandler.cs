@@ -34,7 +34,8 @@ public class GetDiscussionByRelationIdHandler: IQueryHandler<List<MessageDto>, G
     {
         var options = new HybridCacheEntryOptions
         {
-            Expiration = TimeSpan.FromMinutes(1)
+            Expiration = TimeSpan.FromMinutes(1),
+            LocalCacheExpiration = TimeSpan.FromSeconds(15)
         };
 
         var cacheMessages = await _hybridCache.GetOrCreateAsync(
@@ -90,6 +91,7 @@ public class GetDiscussionByRelationIdHandler: IQueryHandler<List<MessageDto>, G
                 return messages;
             },
             options: options,
+            tags: [new string(TagsConstants.DISCUSSIONS + "_" + query.RelationId)],
             cancellationToken: cancellationToken);
         
         _logger.LogInformation("Got message from discussion with relation id {id}", query.RelationId);
