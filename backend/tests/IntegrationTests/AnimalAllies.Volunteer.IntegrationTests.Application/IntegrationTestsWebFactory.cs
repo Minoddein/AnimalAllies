@@ -73,7 +73,6 @@ public class IntegrationTestsWebFactory: WebApplicationFactory<Program>,IAsyncLi
     public async Task InitializeAsync()
     {
         await _dbContainer.StartAsync();
-
         using var scope = Services.CreateScope();
         
         var volunteerDbContext = scope.ServiceProvider.GetRequiredService<VolunteerWriteDbContext>();
