@@ -3,6 +3,7 @@ using AnimalAllies.Core.Abstractions;
 using AnimalAllies.Core.Database;
 using AnimalAllies.Core.DTOs;
 using AnimalAllies.Core.DTOs.Accounts;
+using AnimalAllies.SharedKernel.CachingConstants;
 using AnimalAllies.SharedKernel.Constraints;
 using AnimalAllies.SharedKernel.Shared;
 using Dapper;
@@ -14,8 +15,6 @@ namespace Discussion.Application.Features.Queries.GetDiscussionByRelationId;
 
 public class GetDiscussionByRelationIdHandler: IQueryHandler<List<MessageDto>, GetDiscussionByRelationIdQuery>
 {
-    private const string REDIS_KEY = "discussions_";
-    
     private readonly ISqlConnectionFactory _sqlConnectionFactory;
     private readonly ILogger<GetDiscussionByRelationIdHandler> _logger;
     private readonly HybridCache _hybridCache;
@@ -39,7 +38,7 @@ public class GetDiscussionByRelationIdHandler: IQueryHandler<List<MessageDto>, G
         };
 
         var cacheMessages = await _hybridCache.GetOrCreateAsync(
-            key: REDIS_KEY + query.RelationId,
+            key: $"{TagsConstants.DISCUSSIONS}_{query.RelationId}",
             factory: async _ =>
             {
                 var connection = _sqlConnectionFactory.Create();
@@ -82,10 +81,11 @@ public class GetDiscussionByRelationIdHandler: IQueryHandler<List<MessageDto>, G
                         splitOn:"message_id,user_id,participant_id",
                         param: parameters);
 
-                if (!discussion.Any())
+                var discussionDtos = discussion as DiscussionDto[] ?? discussion.ToArray();
+                if (!discussionDtos.Any())
                     return [];
 
-                var messages = discussion.SelectMany(d => d.Messages).ToList();
+                var messages = discussionDtos.SelectMany(d => d.Messages).ToList();
 
                 return messages;
             },

@@ -7,7 +7,7 @@ using Discussion.Domain.ValueObjects;
 
 namespace Discussion.Domain.Entities;
 
-public class Message: Entity<MessageId>
+public class Message: DomainEntity<MessageId>
 {
     private Message(MessageId id) : base(id){}
 
