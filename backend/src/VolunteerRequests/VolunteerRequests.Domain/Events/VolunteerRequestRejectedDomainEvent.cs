@@ -4,6 +4,6 @@ namespace VolunteerRequests.Domain.Events;
 
 public record VolunteerRequestRejectedDomainEvent(
     Guid AdminId,
-    Guid UserId, 
+    Guid UserId,
     string Email,
     string RejectionComment) : IDomainEvent;
