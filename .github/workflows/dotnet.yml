@@ -1,0 +1,99 @@
+# This workflow will build a .NET project
+# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-net
+
+name: AnimalAlliesBackend
+
+env:
+  NUGET_USERNAME: ${{ secrets.NUGET_USERNAME }}
+  NUGET_PASSWORD: ${{ secrets.NUGET_PASSWORD }}
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 9.0.x
+
+      - name: Verify project files exist
+        run: |
+          ls ./backend/src/Accounts/AnimalAllies.Accounts.Infrastructure
+          ls ./backend/src/PetManagement/AnimalAllies.Volunteer.Infrastructure
+          ls ./backend/src/BreedManagement/AnimalAllies.Species.Infrastructure
+          
+      - name: Install dotnet-ef globally
+        run: dotnet tool install --global dotnet-ef --version 9.0.0
+
+      - name: Add private NuGet source
+        run: |
+          dotnet nuget add source https://gitlab.com/api/v4/projects/63188031/packages/nuget/index.json --name GitLab --username ${{ secrets.NUGET_USERNAME }} --password ${{ secrets.NUGET_PASSWORD }} --store-password-in-clear-text
+
+      - name: Set up Docker Compose
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y docker-compose
+
+      - name: Create a simplified docker-compose.yml
+        run: |
+          echo "version: '3.8'" > ./backend/docker-compose.yml
+          echo "services:" >> ./backend/docker-compose.yml
+          echo "  postgres:" >> ./backend/docker-compose.yml
+          echo "    image: postgres:15" >> ./backend/docker-compose.yml
+          echo "    environment:" >> ./backend/docker-compose.yml
+          echo "      POSTGRES_USER: postgres" >> ./backend/docker-compose.yml
+          echo "      POSTGRES_PASSWORD: 345890" >> ./backend/docker-compose.yml
+          echo "      POSTGRES_DB: testdb" >> ./backend/docker-compose.yml
+          echo "    ports:" >> ./backend/docker-compose.yml
+          echo "      - \"5434:5432\"" >> ./backend/docker-compose.yml
+          echo "    healthcheck:" >> ./backend/docker-compose.yml
+          echo "      test: [\"CMD-SHELL\", \"pg_isready -U postgres\"]" >> ./backend/docker-compose.yml
+          echo "      interval: 10s" >> ./backend/docker-compose.yml
+          echo "      timeout: 5s" >> ./backend/docker-compose.yml
+          echo "      retries: 5" >> ./backend/docker-compose.yml
+
+      - name: Start PostgreSQL with Docker Compose
+        run: docker-compose -f ./backend/docker-compose.yml up -d
+
+      - name: Wait for PostgreSQL to be ready
+        run: |
+          until docker exec $(docker ps -qf "name=postgres") pg_isready -U postgres; do
+            echo "Waiting for PostgreSQL to start..."
+            sleep 5
+          done
+
+      - name: Restore dependencies
+        run: |
+          dotnet restore ./TelegramBotService/TelegramBotService.sln
+          dotnet restore ./NotificationService/NotificationService.sln
+          dotnet restore ./FileService/FileService.sln
+          dotnet restore ./CacheInvalidatorService/CacheInvalidatorService.sln
+          dotnet restore ./backend/backend.sln
+          
+      - name: Build
+        run: |
+          dotnet build ./TelegramBotService/TelegramBotService.sln --configuration Release --no-restore
+          dotnet build ./NotificationService/NotificationService.sln --configuration Release --no-restore
+          dotnet build ./FileService/FileService.sln --configuration Release --no-restore
+          dotnet build ./CacheInvalidatorService/CacheInvalidatorService.sln --configuration Release --no-restore
+          dotnet build ./backend/backend.sln --configuration Release --no-restore
+
+      - name: Make migration script executable
+        run: chmod +x ./backend/migrations-add-and-update.sh
+      
+      - name: Apply migrations using custom script
+        run: ./backend/migrations-add-and-update.sh
+
+      - name: Services_Tests
+        run: |
+          dotnet test ./backend/backend.sln --configuration Release --no-restore
+         

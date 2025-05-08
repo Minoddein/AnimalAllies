@@ -1,0 +1,55 @@
+name: CodeQL (C#, GH Actions)
+
+on:
+  push:
+    branches: [ "main" ]
+    paths:
+      - "**.cs"
+      - "**.csproj"
+      - ".github/**"
+  pull_request:
+    branches: [ "main" ]
+    paths:
+      - "**.cs"
+      - "**.csproj"
+      - ".github/**"
+  schedule:
+    - cron: '0 0 * * 1'
+
+jobs:
+  analyze:
+    runs-on: 'ubuntu-latest'
+    permissions:
+      security-events: write
+      packages: read
+      actions: read
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - language: csharp
+            build-mode: autobuild
+          - language: actions
+            build-mode: none
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Setup .NET SDK
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '9.0.x'
+
+    - name: Initialize CodeQL
+      uses: github/codeql-action/init@v3
+      with:
+        languages: ${{ matrix.language }}
+        build-mode: ${{ matrix.build-mode }}
+        dependency-caching: true
+
+    - name: Perform CodeQL Analysis
+      uses: github/codeql-action/analyze@v3
+      with:
+        category: "/language:${{ matrix.language }}"
