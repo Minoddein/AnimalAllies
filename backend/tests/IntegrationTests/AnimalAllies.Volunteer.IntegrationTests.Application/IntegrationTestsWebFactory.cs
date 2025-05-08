@@ -90,7 +90,8 @@ public class IntegrationTestsWebFactory: WebApplicationFactory<Program>,IAsyncLi
         _respawner = await Respawner.CreateAsync(_dbConnection, new RespawnerOptions
             {
                 DbAdapter = DbAdapter.Postgres,
-                SchemasToInclude = ["volunteers", "accounts", "species", "volunteer_requests", "discussions"]
+                SchemasToInclude = ["volunteers", "accounts", "species", "volunteer_requests", "discussions"],
+                WithReseed = true
             }
         );
     }
