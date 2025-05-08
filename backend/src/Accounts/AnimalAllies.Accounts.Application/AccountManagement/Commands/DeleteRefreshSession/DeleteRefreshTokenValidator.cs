@@ -1,13 +1,12 @@
 ﻿using AnimalAllies.Core.Validators;
-using AnimalAllies.SharedKernel.Shared;
 using AnimalAllies.SharedKernel.Shared.Errors;
 using FluentValidation;
 
-namespace AnimalAllies.Accounts.Application.AccountManagement.Commands.Refresh;
+namespace AnimalAllies.Accounts.Application.AccountManagement.Commands.DeleteRefreshSession;
 
-public class RefreshTokensCommandValidator: AbstractValidator<RefreshTokensCommand>
+public class DeleteRefreshTokenValidator: AbstractValidator<DeleteRefreshTokenCommand>
 {
-    public RefreshTokensCommandValidator()
+    public DeleteRefreshTokenValidator()
     {
         RuleFor(r => r.RefreshToken)
             .NotEmpty()

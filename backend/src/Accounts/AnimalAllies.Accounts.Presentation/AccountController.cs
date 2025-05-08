@@ -1,6 +1,7 @@
 ﻿using AnimalAllies.Accounts.Application.AccountManagement.Commands.AddAvatar;
 using AnimalAllies.Accounts.Application.AccountManagement.Commands.AddSocialNetworks;
 using AnimalAllies.Accounts.Application.AccountManagement.Commands.ConfirmEmail;
+using AnimalAllies.Accounts.Application.AccountManagement.Commands.DeleteRefreshSession;
 using AnimalAllies.Accounts.Application.AccountManagement.Commands.Login;
 using AnimalAllies.Accounts.Application.AccountManagement.Commands.Refresh;
 using AnimalAllies.Accounts.Application.AccountManagement.Commands.Register;
@@ -28,7 +29,7 @@ public class AccountController: ApplicationController
         var command = new RegisterUserCommand(
             request.Email,
             request.UserName,
-            new FullNameDto(request.FirstName, request.UserName, request.Patronymic),
+            new FullNameDto(request.FirstName, request.SecondName, request.Patronymic),
             request.Password);
 
         var result = await handler.Handle(command, cancellationToken);
@@ -69,21 +70,51 @@ public class AccountController: ApplicationController
         if (result.IsFailure)
             return result.Errors.ToResponse();
         
+        HttpContext.Response.Cookies.Append("refreshToken", result.Value.RefreshToken.ToString());
+        
         return Ok(result.Value);
     }
-
-    [HttpPost("refreshing")]
-    public async Task<IActionResult> Refresh(
-        [FromBody] RefreshTokenRequest request,
-        [FromServices] RefreshTokensHandler handler,
+    
+    [HttpPost("logout")]
+    public async Task<IActionResult> Delete(
+        [FromServices] DeleteRefreshTokenHandler handler,
         CancellationToken cancellationToken = default)
     {
-        var command = new RefreshTokensCommand(request.AccessToken, request.RefreshToken);
+        if (!HttpContext.Request.Cookies.TryGetValue("refreshToken", out var refreshToken))
+        {
+            return Unauthorized();
+        }
+        
+        var command = new DeleteRefreshTokenCommand(Guid.Parse(refreshToken));
 
+        HttpContext.Response.Cookies.Delete("refreshToken");
+        
         var result = await handler.Handle(command, cancellationToken);
         if (result.IsFailure)
             return result.Errors.ToResponse();
 
+        return Ok(result);
+    }
+
+    [HttpPost("refreshing")]
+    public async Task<IActionResult> Refresh(
+        [FromServices] RefreshTokensHandler handler,
+        CancellationToken cancellationToken = default)
+    {
+        if(!HttpContext.Request.Cookies.TryGetValue("refreshToken", out var refreshToken))
+        {
+            return Unauthorized();
+        }
+
+        var result = await handler.Handle(
+            new RefreshTokensCommand(Guid.Parse(refreshToken)),
+            cancellationToken);
+        
+        if (result.IsFailure)
+            return result.Errors.ToResponse();
+
+        HttpContext.Response.Cookies.Append("refreshToken", result.Value.RefreshToken.ToString());
+        
         return Ok(result.Value);
     }
 

@@ -40,6 +40,9 @@ public class LoginUserHandler : ICommandHandler<LoginUserCommand,LoginResponse>
         
         var user = await _userManager.Users
             .Include(u => u.Roles)
+            .ThenInclude(r => r.RolePermissions)
+            .ThenInclude(rp => rp.Permission)
+            .Include(u => u.ParticipantAccount)
             .FirstOrDefaultAsync(u => u.Email == command.Email, cancellationToken);
         
         if (user is null)
@@ -53,9 +56,26 @@ public class LoginUserHandler : ICommandHandler<LoginUserCommand,LoginResponse>
 
         var accessToken = await _tokenProvider.GenerateAccessToken(user, cancellationToken);
         var refreshToken = await _tokenProvider.GenerateRefreshToken(user, accessToken.Jti,cancellationToken);
+        
+        var roles = user.Roles.Select(r => r.Name).ToArray();
+        
+        var permissions = user.Roles
+            .SelectMany(r => r.RolePermissions)
+            .Select(rp => rp.Permission.Code)
+            .ToArray();
 
         _logger.LogInformation("Successfully logged in");
         
-        return new LoginResponse(accessToken.AccessToken, refreshToken);
+        return new LoginResponse(
+            accessToken.AccessToken,
+            refreshToken,
+            user.Id,
+            user.UserName!,
+            user.Email!,
+            user.ParticipantAccount!.FullName.FirstName,
+            user.ParticipantAccount.FullName.SecondName,
+            user.ParticipantAccount.FullName.Patronymic,
+            roles!,
+            permissions);
     }
 }
