@@ -5,6 +5,9 @@ WORKDIR /app
 FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
+
+COPY ["NuGet.Config", "./"]
+
 COPY ["src/CacheInvalidatorService/CacheInvalidatorService.csproj", "src/CacheInvalidatorService/"]
 RUN dotnet restore "src/CacheInvalidatorService/CacheInvalidatorService.csproj"
 COPY . .
