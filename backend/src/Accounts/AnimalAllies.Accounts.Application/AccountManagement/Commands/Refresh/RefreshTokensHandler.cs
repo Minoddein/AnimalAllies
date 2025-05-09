@@ -13,7 +13,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace AnimalAllies.Accounts.Application.AccountManagement.Commands.Refresh;
 
-public class RefreshTokensHandler: ICommandHandler<RefreshTokensCommand, LoginResponse>
+public class RefreshTokensHandler : ICommandHandler<RefreshTokensCommand, LoginResponse>
 {
     private readonly IRefreshSessionManager _refreshSessionManager;
     private readonly ITokenProvider _tokenProvider;
@@ -26,7 +26,8 @@ public class RefreshTokensHandler: ICommandHandler<RefreshTokensCommand, LoginRe
         IValidator<RefreshTokensCommand> validator,
         IDateTimeProvider dateTimeProvider,
         ITokenProvider tokenProvider,
-        [FromKeyedServices(Constraints.Context.Accounts)]IUnitOfWork unitOfWork)
+        [FromKeyedServices(Constraints.Context.Accounts)]
+        IUnitOfWork unitOfWork)
     {
         _refreshSessionManager = refreshSessionManager;
         _validator = validator;
@@ -34,7 +35,7 @@ public class RefreshTokensHandler: ICommandHandler<RefreshTokensCommand, LoginRe
         _tokenProvider = tokenProvider;
         _unitOfWork = unitOfWork;
     }
-    
+
     public async Task<Result<LoginResponse>> Handle(
         RefreshTokensCommand command, CancellationToken cancellationToken = default)
     {
@@ -44,23 +45,23 @@ public class RefreshTokensHandler: ICommandHandler<RefreshTokensCommand, LoginRe
 
         var refreshSession = await _refreshSessionManager
             .GetByRefreshToken(command.RefreshToken, cancellationToken);
-        
+
         if (refreshSession.IsFailure)
             return refreshSession.Errors;
 
         if (refreshSession.Value.ExpiresIn < _dateTimeProvider.UtcNow)
             return Errors.Tokens.ExpiredToken();
-        
+
         await _refreshSessionManager.Delete(refreshSession.Value, cancellationToken);
         await _unitOfWork.SaveChanges(cancellationToken);
 
         var accessToken = await _tokenProvider
-            .GenerateAccessToken(refreshSession.Value.User,cancellationToken);
+            .GenerateAccessToken(refreshSession.Value.User, cancellationToken);
         var refreshToken = await _tokenProvider
-            .GenerateRefreshToken(refreshSession.Value.User,accessToken.Jti, cancellationToken);
-        
+            .GenerateRefreshToken(refreshSession.Value.User, accessToken.Jti, cancellationToken);
+
         var roles = refreshSession.Value.User.Roles.Select(r => r.Name).ToArray();
-        
+
         var permissions = refreshSession.Value.User.Roles
             .SelectMany(r => r.RolePermissions)
             .Select(rp => rp.Permission.Code)
@@ -72,9 +73,15 @@ public class RefreshTokensHandler: ICommandHandler<RefreshTokensCommand, LoginRe
             refreshSession.Value.UserId,
             refreshSession.Value.User.UserName!,
             refreshSession.Value.User.Email!,
-            refreshSession.Value.User.ParticipantAccount!.FullName.FirstName,
-            refreshSession.Value.User.ParticipantAccount.FullName.SecondName,
-            refreshSession.Value.User.ParticipantAccount.FullName.Patronymic,
+            refreshSession.Value.User.ParticipantAccount is not null
+                ? refreshSession.Value.User.ParticipantAccount?.FullName.FirstName!
+                : string.Empty,
+            refreshSession.Value.User.ParticipantAccount is not null
+                ? refreshSession.Value.User.ParticipantAccount.FullName.SecondName
+                : string.Empty,
+            refreshSession.Value.User.ParticipantAccount is not null
+                ? refreshSession.Value.User.ParticipantAccount.FullName.Patronymic
+                : string.Empty,
             roles!,
             permissions);
     }

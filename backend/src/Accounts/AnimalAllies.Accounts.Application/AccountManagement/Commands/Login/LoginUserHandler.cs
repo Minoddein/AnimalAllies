@@ -72,9 +72,9 @@ public class LoginUserHandler : ICommandHandler<LoginUserCommand,LoginResponse>
             user.Id,
             user.UserName!,
             user.Email!,
-            user.ParticipantAccount!.FullName.FirstName,
-            user.ParticipantAccount.FullName.SecondName,
-            user.ParticipantAccount.FullName.Patronymic,
+            user.ParticipantAccount is not null ? user.ParticipantAccount?.FullName.FirstName! : string.Empty,
+            user.ParticipantAccount is not null ? user.ParticipantAccount.FullName.SecondName : string.Empty,
+            user.ParticipantAccount is not null ? user.ParticipantAccount.FullName.Patronymic : string.Empty,
             roles!,
             permissions);
     }
