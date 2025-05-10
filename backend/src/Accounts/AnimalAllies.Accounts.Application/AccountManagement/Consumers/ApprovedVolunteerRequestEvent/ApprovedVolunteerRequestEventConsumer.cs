@@ -43,7 +43,7 @@ public class ApprovedVolunteerRequestEventConsumer:
     {
         using var transaction = new TransactionScope(
             TransactionScopeOption.Required,
-            new TransactionOptions { IsolationLevel = IsolationLevel.Serializable },
+            new TransactionOptions { IsolationLevel = IsolationLevel.ReadCommitted },
             TransactionScopeAsyncFlowOption.Enabled);
 
         try
