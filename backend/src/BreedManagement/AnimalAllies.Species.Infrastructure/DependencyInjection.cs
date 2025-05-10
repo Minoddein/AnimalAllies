@@ -18,8 +18,7 @@ public static class DependencyInjection
         services
             .AddDatabase()
             .AddDbContexts()
-            .AddRepositories()
-            .AddOutboxCore(configuration);
+            .AddRepositories();
         
         return services;
     }

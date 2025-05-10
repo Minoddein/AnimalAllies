@@ -116,7 +116,7 @@ public static class DependencyInjection
         IConfiguration configuration)
     {
         services
-            .AddDiscussionInfrastructure(configuration)
+            .AddDiscussionInfrastructure()
             .AddDiscussionApplication()
             .AddDiscussionPresentation();
         

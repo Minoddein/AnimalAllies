@@ -3,7 +3,6 @@ using AnimalAllies.SharedKernel.Constraints;
 using Discussion.Application.Repository;
 using Discussion.Infrastructure.DbContexts;
 using Discussion.Infrastructure.Repository;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Discussion.Infrastructure;
@@ -11,7 +10,7 @@ namespace Discussion.Infrastructure;
 public static class DependencyInjection
 {
     public static IServiceCollection AddDiscussionInfrastructure(
-        this IServiceCollection services, IConfiguration configuration)
+        this IServiceCollection services)
     {
         services
             .AddDatabase()

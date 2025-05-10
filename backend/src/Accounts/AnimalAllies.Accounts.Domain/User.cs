@@ -1,5 +1,6 @@
 ﻿using System.Dynamic;
 using AnimalAllies.SharedKernel.Shared;
+using AnimalAllies.SharedKernel.Shared.Errors;
 using AnimalAllies.SharedKernel.Shared.ValueObjects;
 using Microsoft.AspNetCore.Identity;
 
@@ -42,7 +43,7 @@ public class User:IdentityUser<Guid>
 
         return Result.Success();
     }
-
+    
     public static User CreateParticipant(
         string userName,
         string email,
@@ -56,17 +57,5 @@ public class User:IdentityUser<Guid>
         };
     }
     
-    public static User CreateVolunteer(
-        string userName,
-        string email,
-        Role role)
-    {
-        return new User
-        {
-            UserName = userName,
-            Email = email,
-            _roles = [role]
-        };
-    }
 }
 

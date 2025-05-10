@@ -1,4 +1,5 @@
-﻿using AnimalAllies.Accounts.Application.Managers;
+﻿using System.Transactions;
+using AnimalAllies.Accounts.Application.Managers;
 using AnimalAllies.Accounts.Contracts.Events;
 using AnimalAllies.Accounts.Domain;
 using AnimalAllies.SharedKernel.CachingConstants;
@@ -16,6 +17,7 @@ public class ApprovedVolunteerRequestEventConsumer:
     IConsumer<VolunteerRequests.Contracts.Messaging.ApprovedVolunteerRequestEvent>
 {
     private readonly UserManager<User> _userManager;
+    private readonly RoleManager<Role> _roleManager;
     private readonly ILogger<ApprovedVolunteerRequestEventConsumer> _logger;
     private readonly IAccountManager _accountManager;
     private readonly IOutboxRepository _outboxRepository;
@@ -26,54 +28,81 @@ public class ApprovedVolunteerRequestEventConsumer:
         IAccountManager accountManager,
         ILogger<ApprovedVolunteerRequestEventConsumer> logger,
         IOutboxRepository outboxRepository,
-        IUnitOfWorkOutbox unitOfWorkOutbox)
+        IUnitOfWorkOutbox unitOfWorkOutbox, 
+        RoleManager<Role> roleManager)
     {
         _userManager = userManager;
         _accountManager = accountManager;
         _logger = logger;
         _outboxRepository = outboxRepository;
         _unitOfWorkOutbox = unitOfWorkOutbox;
+        _roleManager = roleManager;
     }
 
     public async Task Consume(ConsumeContext<VolunteerRequests.Contracts.Messaging.ApprovedVolunteerRequestEvent> context)
     {
-        var message = context.Message;
-        
-        var user = await _userManager.Users.FirstOrDefaultAsync(u => u.Id == context.Message.UserId);
-        if (user is null)
-            throw new Exception(Errors.General.NotFound(context.Message.UserId).ErrorMessage);
+        using var transaction = new TransactionScope(
+            TransactionScopeOption.Required,
+            new TransactionOptions { IsolationLevel = IsolationLevel.Serializable },
+            TransactionScopeAsyncFlowOption.Enabled);
 
-        var fullName = FullName.Create(
-            message.FirstName,
-            message.SecondName,
-            message.Patronymic).Value;
-        
-        var volunteer = new VolunteerAccount(fullName, message.WorkExperience, user);
-        user.VolunteerAccount = volunteer;
-        user.VolunteerAccountId = volunteer.Id;
+        try
+        {
+            var message = context.Message;
 
-        await _accountManager.CreateVolunteerAccount(volunteer);
-        
-        var key = TagsConstants.USERS + "_" + message.UserId;
-        
-        var integrationEvent = new CacheInvalidateIntegrationEvent(key, null);
+            var user = await _userManager.Users
+                .Include(u => u.VolunteerAccount)
+                .FirstOrDefaultAsync(u => u.Id == context.Message.UserId);
 
-        await _outboxRepository.AddAsync(integrationEvent, context.CancellationToken);
+            if (user is null || user.VolunteerAccount is not null)
+                throw new Exception(Errors.General.NotFound(context.Message.UserId).ErrorMessage);
+
+            var fullName = FullName.Create(
+                message.FirstName,
+                message.SecondName,
+                message.Patronymic).Value;
+
+            var volunteer = new VolunteerAccount(fullName, message.WorkExperience, user);
+            user.VolunteerAccount = volunteer;
+            user.VolunteerAccountId = volunteer.Id;
+
+            await _accountManager.CreateVolunteerAccount(volunteer);
+            
+            var role = await _roleManager.Roles.FirstOrDefaultAsync(r =>
+                r.Name == "Volunteer", context.CancellationToken);
+
+            if (role is null)
+                throw new Exception(Errors.General.NotFound().ErrorMessage);
+            
+            var result = await _userManager.AddToRoleAsync(user, role.Name!);
+            if (!result.Succeeded)
+                throw new Exception(result.Errors.First().Description);
+
+            var key = TagsConstants.USERS + "_" + message.UserId;
+
+            var integrationEvent = new CacheInvalidateIntegrationEvent(key, null);
+
+            await _outboxRepository.AddAsync(integrationEvent, context.CancellationToken);
+
+            await _unitOfWorkOutbox.SaveChanges(context.CancellationToken);
+            
+            transaction.Complete();
+
+            _logger.LogInformation("created volunteer account to user with id {userId}", user.Id);
+        }
+        catch (Exception)
+        {
+            _logger.LogError("failed to create volunteer account");
+        }
         
-        await _unitOfWorkOutbox.SaveChanges(context.CancellationToken);
-        
-        _logger.LogInformation("created volunteer account to user with id {userId}", user.Id);
     }
 }
 
 public class ApprovedVolunteerRequestEventConsumerDefinition : ConsumerDefinition<ApprovedVolunteerRequestEventConsumer>
 {
-    public ApprovedVolunteerRequestEventConsumerDefinition()
-    {
-        
-    }
-
-    protected override void ConfigureConsumer(IReceiveEndpointConfigurator endpointConfigurator, IConsumerConfigurator<ApprovedVolunteerRequestEventConsumer> consumerConfigurator)
+    protected override void ConfigureConsumer(
+        IReceiveEndpointConfigurator endpointConfigurator,
+        IConsumerConfigurator<ApprovedVolunteerRequestEventConsumer> consumerConfigurator)
     {
         endpointConfigurator.UseMessageRetry(c =>
         {

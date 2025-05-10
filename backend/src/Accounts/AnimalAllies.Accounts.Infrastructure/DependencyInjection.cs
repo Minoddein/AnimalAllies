@@ -30,8 +30,7 @@ public static class DependencyInjection
             .AddJwtAuthentication(configuration)
             .AddDbContexts()
             .AddAuthorizationServices()
-            .AddDatabase()
-            .AddOutboxCore(configuration);
+            .AddDatabase();
         
         return services;
     }
