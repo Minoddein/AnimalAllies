@@ -38,10 +38,6 @@
     </ItemGroup>
 
     <ItemGroup>
-      <Folder Include="Features\Setting\" />
-    </ItemGroup>
-
-    <ItemGroup>
       <ProjectReference Include="..\NotificationService.Contracts\NotificationService.Contracts.csproj" />
     </ItemGroup>
 

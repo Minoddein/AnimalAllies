@@ -21,7 +21,7 @@ public class SubscribeOnEmailNotifications
     {
         public void MapEndpoint(IEndpointRouteBuilder app)
         {
-            app.MapPost("email-notification", Handler);
+            app.MapPost("api/Notifications/email-notification", Handler);
         }
     }
     
