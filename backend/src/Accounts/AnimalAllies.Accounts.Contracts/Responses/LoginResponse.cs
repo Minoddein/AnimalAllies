@@ -10,4 +10,8 @@ public record LoginResponse(
     string SecondName,
     string? Patronymic,
     string[] Roles,
-    string[] Permissions);
+    string[] Permissions,
+    IEnumerable<SocialNetworkResponse> SocialNetworks,
+    VolunteerAccountResponse? VolunteerAccount);
+    
+public record SocialNetworkResponse(string Title, string Url);

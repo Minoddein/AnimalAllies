@@ -67,22 +67,61 @@ public class RefreshTokensHandler : ICommandHandler<RefreshTokensCommand, LoginR
             .Select(rp => rp.Permission.Code)
             .ToArray();
 
-        return new LoginResponse(
-            accessToken.AccessToken,
+        return InitLoginResponse(accessToken.AccessToken, refreshToken, refreshSession.Value.User);
+    }
+    
+    private LoginResponse InitLoginResponse(
+        string accessToken,
+        Guid refreshToken,
+        User user)
+    {
+        var roles = user.Roles.Select(r => r.Name).ToArray();
+        
+        var permissions = user.Roles
+            .SelectMany(r => r.RolePermissions)
+            .Select(rp => rp.Permission.Code)
+            .ToArray();
+
+        var socialNetworks = user.SocialNetworks.Select(s =>
+            new SocialNetworkResponse(s.Title, s.Url));
+
+        var certificates = user.VolunteerAccount?.Certificates.Select(c =>
+            new CertificateResponse(
+                c.Title,
+                c.IssuingOrganization,
+                c.IssueDate,
+                c.ExpirationDate, 
+                c.Description));
+
+        var requisites = user.VolunteerAccount?.Requisites.Select(r => 
+            new RequisiteResponse(r.Title, r.Description));
+        
+        var response = new LoginResponse(
+            accessToken,
             refreshToken,
-            refreshSession.Value.UserId,
-            refreshSession.Value.User.UserName!,
-            refreshSession.Value.User.Email!,
-            refreshSession.Value.User.ParticipantAccount is not null
-                ? refreshSession.Value.User.ParticipantAccount?.FullName.FirstName!
+            user.Id,
+            user.UserName!,
+            user.Email!,
+            user.ParticipantAccount is not null 
+                ? user.ParticipantAccount?.FullName.FirstName! 
                 : string.Empty,
-            refreshSession.Value.User.ParticipantAccount is not null
-                ? refreshSession.Value.User.ParticipantAccount.FullName.SecondName
+            user.ParticipantAccount is not null 
+                ? user.ParticipantAccount.FullName.SecondName 
                 : string.Empty,
-            refreshSession.Value.User.ParticipantAccount is not null
-                ? refreshSession.Value.User.ParticipantAccount.FullName.Patronymic
+            user.ParticipantAccount is not null 
+                ? user.ParticipantAccount.FullName.Patronymic 
                 : string.Empty,
             roles!,
-            permissions);
+            permissions,
+            socialNetworks,
+            user.VolunteerAccount is not null 
+                ? new VolunteerAccountResponse(
+                    user.VolunteerAccount.Id,
+                    certificates!,
+                    requisites!,
+                    user.VolunteerAccount.Experience)
+                : null);
+
+        return response;
     }
 }

@@ -1,4 +1,5 @@
-﻿using AnimalAllies.Accounts.Contracts.Responses;
+﻿using AnimalAllies.Accounts.Application.Models;
+using AnimalAllies.Accounts.Contracts.Responses;
 using AnimalAllies.Accounts.Domain;
 using AnimalAllies.Core.Abstractions;
 using AnimalAllies.Core.Extension;
@@ -43,6 +44,7 @@ public class LoginUserHandler : ICommandHandler<LoginUserCommand,LoginResponse>
             .ThenInclude(r => r.RolePermissions)
             .ThenInclude(rp => rp.Permission)
             .Include(u => u.ParticipantAccount)
+            .Include(u => u.VolunteerAccount)
             .FirstOrDefaultAsync(u => u.Email == command.Email, cancellationToken);
         
         if (user is null)
@@ -56,7 +58,17 @@ public class LoginUserHandler : ICommandHandler<LoginUserCommand,LoginResponse>
 
         var accessToken = await _tokenProvider.GenerateAccessToken(user, cancellationToken);
         var refreshToken = await _tokenProvider.GenerateRefreshToken(user, accessToken.Jti,cancellationToken);
+
+        _logger.LogInformation("Successfully logged in");
         
+        return InitLoginResponse(accessToken, refreshToken, user);
+    }
+
+    private LoginResponse InitLoginResponse(
+        JwtTokenResult accessToken,
+        Guid refreshToken,
+        User user)
+    {
         var roles = user.Roles.Select(r => r.Name).ToArray();
         
         var permissions = user.Roles
@@ -64,18 +76,46 @@ public class LoginUserHandler : ICommandHandler<LoginUserCommand,LoginResponse>
             .Select(rp => rp.Permission.Code)
             .ToArray();
 
-        _logger.LogInformation("Successfully logged in");
+        var socialNetworks = user.SocialNetworks.Select(s =>
+            new SocialNetworkResponse(s.Title, s.Url));
+
+        var certificates = user.VolunteerAccount?.Certificates.Select(c =>
+            new CertificateResponse(
+                c.Title,
+                c.IssuingOrganization,
+                c.IssueDate,
+                c.ExpirationDate, 
+                c.Description));
+
+        var requisites = user.VolunteerAccount?.Requisites.Select(r => 
+            new RequisiteResponse(r.Title, r.Description));
         
-        return new LoginResponse(
+        var response = new LoginResponse(
             accessToken.AccessToken,
             refreshToken,
             user.Id,
             user.UserName!,
             user.Email!,
-            user.ParticipantAccount is not null ? user.ParticipantAccount?.FullName.FirstName! : string.Empty,
-            user.ParticipantAccount is not null ? user.ParticipantAccount.FullName.SecondName : string.Empty,
-            user.ParticipantAccount is not null ? user.ParticipantAccount.FullName.Patronymic : string.Empty,
+            user.ParticipantAccount is not null 
+                ? user.ParticipantAccount?.FullName.FirstName! 
+                : string.Empty,
+            user.ParticipantAccount is not null 
+                ? user.ParticipantAccount.FullName.SecondName 
+                : string.Empty,
+            user.ParticipantAccount is not null 
+                ? user.ParticipantAccount.FullName.Patronymic 
+                : string.Empty,
             roles!,
-            permissions);
+            permissions,
+            socialNetworks,
+            user.VolunteerAccount is not null 
+                ? new VolunteerAccountResponse(
+                    user.VolunteerAccount.Id,
+                    certificates!,
+                    requisites!,
+                    user.VolunteerAccount.Experience)
+                : null);
+
+        return response;
     }
 }
