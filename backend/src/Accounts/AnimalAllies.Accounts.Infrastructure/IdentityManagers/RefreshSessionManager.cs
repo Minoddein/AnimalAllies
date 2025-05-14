@@ -23,6 +23,8 @@ public class RefreshSessionManager(AccountsDbContext accountsDbContext,
                 .ThenInclude(u => u.Roles)
                     .ThenInclude(r => r.RolePermissions)
                         .ThenInclude(rp => rp.Permission)
+            .Include(r => r.User)
+                .ThenInclude(u => u.VolunteerAccount)
             .FirstOrDefaultAsync(r => r.RefreshToken == refreshToken, cancellationToken);
 
         if (refreshSession is null)

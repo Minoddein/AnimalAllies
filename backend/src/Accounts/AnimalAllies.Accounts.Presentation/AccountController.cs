@@ -1,4 +1,5 @@
 ﻿using AnimalAllies.Accounts.Application.AccountManagement.Commands.AddAvatar;
+using AnimalAllies.Accounts.Application.AccountManagement.Commands.AddCertificates;
 using AnimalAllies.Accounts.Application.AccountManagement.Commands.AddSocialNetworks;
 using AnimalAllies.Accounts.Application.AccountManagement.Commands.ConfirmEmail;
 using AnimalAllies.Accounts.Application.AccountManagement.Commands.DeleteRefreshSession;
@@ -153,6 +154,31 @@ public class AccountController: ApplicationController
             Title = s.Title,
             Url = s.Url,
         }));
+
+        var result = await handler.Handle(command, cancellationToken);
+        if (result.IsFailure)
+            return result.Errors.ToResponse();
+
+        return Ok(result.IsSuccess);
+    }
+    
+    [Authorize]
+    [HttpPost("certificates-to-user")]
+    public async Task<IActionResult> AddCertificatesToUser(
+        [FromBody] AddCertificatesRequest request,
+        [FromServices] UserScopedData userScopedData,
+        [FromServices] AddCertificatesHandler handler,
+        CancellationToken cancellationToken = default)
+    {
+        var command = new AddCertificatesCommand(userScopedData.UserId, 
+            request.Certificates
+            .Select(c => 
+                new CertificateDto(
+                    c.Title,
+                    c.IssuingOrganization,
+                    c.IssueDate,
+                    c.ExpirationDate,
+                    c.Description)));
 
         var result = await handler.Handle(command, cancellationToken);
         if (result.IsFailure)
