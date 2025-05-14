@@ -6,4 +6,7 @@ public record ApprovedVolunteerRequestEvent(
     string FirstName,
     string SecondName,
     string? Patronymic,
-    int WorkExperience);
+    int WorkExperience,
+    string Description,
+    string Email,
+    string Phone);

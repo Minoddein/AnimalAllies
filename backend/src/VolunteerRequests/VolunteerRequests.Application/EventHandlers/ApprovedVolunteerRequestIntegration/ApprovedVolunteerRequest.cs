@@ -33,7 +33,10 @@ public class ApprovedVolunteerRequest : INotificationHandler<ApprovedVolunteerRe
             notification.FirstName,
             notification.SecondName,
             notification.Patronymic,
-            notification.WorkExperience);
+            notification.WorkExperience,
+            notification.Description,
+            notification.Email,
+            notification.Phone);
 
         await _outboxRepository.AddAsync(approvedIntegrationEvent, cancellationToken);
 

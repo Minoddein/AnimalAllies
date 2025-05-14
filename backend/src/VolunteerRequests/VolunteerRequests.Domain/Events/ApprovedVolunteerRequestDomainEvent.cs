@@ -8,5 +8,7 @@ public record ApprovedVolunteerRequestDomainEvent(
     string FirstName,
     string SecondName,
     string? Patronymic,
+    string Description,
     string Email,
+    string Phone,
     int WorkExperience): IDomainEvent;

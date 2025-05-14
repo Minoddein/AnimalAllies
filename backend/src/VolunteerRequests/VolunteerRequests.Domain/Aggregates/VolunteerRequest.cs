@@ -156,7 +156,9 @@ public class VolunteerRequest: DomainEntity<VolunteerRequestId>
             firstName,
             secondName,
             patronymic,
+            VolunteerInfo.VolunteerDescription.Value,
             VolunteerInfo.Email.Value,
+            VolunteerInfo.PhoneNumber.Number,
             VolunteerInfo.WorkExperience.Value);
         
         AddDomainEvent(@event);

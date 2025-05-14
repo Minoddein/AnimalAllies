@@ -72,6 +72,9 @@ public static class DependencyInjection
 
             configure.AddConsumer<ApprovedVolunteerRequestEventConsumer,
                 ApprovedVolunteerRequestEventConsumerDefinition>();
+            configure
+                .AddConsumer<Volunteer.Application.VolunteerManagement.Consumers.ApprovedVolunteerRequestEvent.
+                    ApprovedVolunteerRequestEventConsumer>();
             configure.AddConsumer<SendUserDataForAuthorizationEventConsumer,
                 SendUserDataForAuthorizationEventConsumerDefinition>();
             
