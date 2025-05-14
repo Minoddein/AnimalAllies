@@ -84,6 +84,10 @@ public class RegisterUserHandler : ICommandHandler<RegisterUserCommand>
             if (!result.Succeeded)
                 Error.Failure("cannot.create.user","Can not create user");
             
+            var resultAddToRole = await _userManager.AddToRoleAsync(user, "Participant");
+            if(!resultAddToRole.Succeeded)
+                Error.Failure("cannot.create.user","Can not create user");
+            
             var fullName = FullName.Create(
                 command.FullNameDto.FirstName,
                 command.FullNameDto.SecondName,

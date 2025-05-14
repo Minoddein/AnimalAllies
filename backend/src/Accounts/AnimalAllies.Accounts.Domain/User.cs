@@ -27,6 +27,8 @@ public class User:IdentityUser<Guid>
     public Guid? VolunteerAccountId { get; set; }
     public VolunteerAccount? VolunteerAccount { get; set; }
     
+    public void AddRole(Role role) => _roles.Add(role);
+    
     public static User CreateAdmin(string userName, string email, Role role)
     {
         return new User

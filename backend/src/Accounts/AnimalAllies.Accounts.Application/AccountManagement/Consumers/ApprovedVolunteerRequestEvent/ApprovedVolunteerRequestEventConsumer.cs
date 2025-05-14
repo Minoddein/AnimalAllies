@@ -56,7 +56,7 @@ public class ApprovedVolunteerRequestEventConsumer:
 
             if (user is null || user.VolunteerAccount is not null)
                 throw new Exception(Errors.General.NotFound(context.Message.UserId).ErrorMessage);
-
+            
             var fullName = FullName.Create(
                 message.FirstName,
                 message.SecondName,
@@ -74,6 +74,7 @@ public class ApprovedVolunteerRequestEventConsumer:
             if (role is null)
                 throw new Exception(Errors.General.NotFound().ErrorMessage);
             
+            user.AddRole(role);
             var result = await _userManager.AddToRoleAsync(user, role.Name!);
             if (!result.Succeeded)
                 throw new Exception(result.Errors.First().Description);
@@ -81,7 +82,7 @@ public class ApprovedVolunteerRequestEventConsumer:
             var key = TagsConstants.USERS + "_" + message.UserId;
 
             var integrationEvent = new CacheInvalidateIntegrationEvent(key, null);
-
+            
             await _outboxRepository.AddAsync(integrationEvent, context.CancellationToken);
 
             await _unitOfWorkOutbox.SaveChanges(context.CancellationToken);
