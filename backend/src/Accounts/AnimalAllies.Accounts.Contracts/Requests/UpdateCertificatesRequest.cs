@@ -1,6 +1,6 @@
 namespace AnimalAllies.Accounts.Contracts.Requests;
 
-public record AddCertificatesRequest(IEnumerable<CertificateRequest> Certificates);
+public record UpdateCertificatesRequest(IEnumerable<CertificateRequest> Certificates);
 
 public record CertificateRequest(
     string Title,

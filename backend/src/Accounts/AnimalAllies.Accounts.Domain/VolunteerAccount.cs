@@ -25,6 +25,13 @@ public class VolunteerAccount
     public Guid UserId { get; set; }
     public User User { get; set; }
 
-    public void AddCertificates(IEnumerable<Certificate> certificates) => _certificates.AddRange(certificates);
-    public void AddRequisites(IEnumerable<Requisite> requisites) => _requisites.AddRange(requisites);
+    public void UpdateCertificates(IEnumerable<Certificate> certificates)
+    {
+        _certificates = certificates.ToList();
+    }
+
+    public void UpdateRequisites(IEnumerable<Requisite> requisites)
+    {
+        _requisites = requisites.ToList();
+    }
 }

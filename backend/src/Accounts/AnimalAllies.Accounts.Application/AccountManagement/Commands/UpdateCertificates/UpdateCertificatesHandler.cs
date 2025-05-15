@@ -13,21 +13,21 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
-namespace AnimalAllies.Accounts.Application.AccountManagement.Commands.AddCertificates;
+namespace AnimalAllies.Accounts.Application.AccountManagement.Commands.UpdateCertificates;
 
-public class AddCertificatesHandler: ICommandHandler<AddCertificatesCommand>
+public class UpdateCertificatesHandler: ICommandHandler<UpdateCertificatesCommand>
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly UserManager<User> _userManager;
-    private readonly ILogger<AddCertificatesHandler> _logger;
-    private readonly IValidator<AddCertificatesCommand> _validator;
+    private readonly ILogger<UpdateCertificatesHandler> _logger;
+    private readonly IValidator<UpdateCertificatesCommand> _validator;
     private readonly IPublisher _publisher;
 
-    public AddCertificatesHandler(
+    public UpdateCertificatesHandler(
         [FromKeyedServices(Constraints.Context.Accounts)]IUnitOfWork unitOfWork,
         UserManager<User> userManager,
-        ILogger<AddCertificatesHandler> logger,
-        IValidator<AddCertificatesCommand> validator, 
+        ILogger<UpdateCertificatesHandler> logger,
+        IValidator<UpdateCertificatesCommand> validator, 
         IPublisher publisher)
     {
         _unitOfWork = unitOfWork;
@@ -37,7 +37,7 @@ public class AddCertificatesHandler: ICommandHandler<AddCertificatesCommand>
         _publisher = publisher;
     }
 
-    public async Task<Result> Handle(AddCertificatesCommand command, CancellationToken cancellationToken = default)
+    public async Task<Result> Handle(UpdateCertificatesCommand command, CancellationToken cancellationToken = default)
     {
         var validatorResult = await _validator.ValidateAsync(command, cancellationToken);
         if (!validatorResult.IsValid)
@@ -66,7 +66,7 @@ public class AddCertificatesHandler: ICommandHandler<AddCertificatesCommand>
                     c.ExpirationDate,
                     c.Description).Value);
 
-            user.VolunteerAccount.AddCertificates(certificates);
+            user.VolunteerAccount.UpdateCertificates(certificates);
 
             //var @event = new UserAddedSocialNetworkDomainEvent(user.Id);
 

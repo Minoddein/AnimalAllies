@@ -7,4 +7,4 @@ public class SocialNetworkRequest
 }
 
 
-public record AddSocialNetworksRequest(IEnumerable<SocialNetworkRequest> SocialNetworkRequests);
+public record UpdateSocialNetworksRequest(IEnumerable<SocialNetworkRequest> SocialNetworkRequests);

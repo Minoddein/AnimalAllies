@@ -39,7 +39,7 @@ public class User:IdentityUser<Guid>
         };
     }
 
-    public Result AddSocialNetwork(IEnumerable<SocialNetwork> socialNetworks)
+    public Result UpdateSocialNetwork(IEnumerable<SocialNetwork> socialNetworks)
     {
         _socialNetworks = socialNetworks.ToList();
 

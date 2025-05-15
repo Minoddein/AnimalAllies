@@ -1,6 +1,5 @@
-﻿using System.Transactions;
+using System.Transactions;
 using AnimalAllies.Accounts.Domain;
-using AnimalAllies.Accounts.Domain.DomainEvents;
 using AnimalAllies.Core.Abstractions;
 using AnimalAllies.Core.Database;
 using AnimalAllies.Core.Extension;
@@ -15,21 +14,21 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
-namespace AnimalAllies.Accounts.Application.AccountManagement.Commands.AddSocialNetworks;
+namespace AnimalAllies.Accounts.Application.AccountManagement.Commands.UpdateRequisites;
 
-public class AddSocialNetworkHandler: ICommandHandler<AddSocialNetworkCommand>
+public class UpdateRequisitesHandler: ICommandHandler<UpdateRequisitesCommand>
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly UserManager<User> _userManager;
-    private readonly ILogger<AddSocialNetworkHandler> _logger;
-    private readonly IValidator<AddSocialNetworkCommand> _validator;
+    private readonly ILogger<UpdateRequisitesHandler> _logger;
+    private readonly IValidator<UpdateRequisitesCommand> _validator;
     private readonly IPublisher _publisher;
 
-    public AddSocialNetworkHandler(
+    public UpdateRequisitesHandler(
         [FromKeyedServices(Constraints.Context.Accounts)]IUnitOfWork unitOfWork,
-        UserManager<User> userManager, 
-        ILogger<AddSocialNetworkHandler> logger, 
-        IValidator<AddSocialNetworkCommand> validator,
+        UserManager<User> userManager,
+        ILogger<UpdateRequisitesHandler> logger, 
+        IValidator<UpdateRequisitesCommand> validator,
         IPublisher publisher)
     {
         _unitOfWork = unitOfWork;
@@ -39,7 +38,9 @@ public class AddSocialNetworkHandler: ICommandHandler<AddSocialNetworkCommand>
         _publisher = publisher;
     }
 
-    public async Task<Result> Handle(AddSocialNetworkCommand command, CancellationToken cancellationToken = default)
+    public async Task<Result> Handle(
+        UpdateRequisitesCommand command,
+        CancellationToken cancellationToken = default)
     {
         var validatorResult = await _validator.ValidateAsync(command, cancellationToken);
         if (!validatorResult.IsValid)
@@ -53,33 +54,36 @@ public class AddSocialNetworkHandler: ICommandHandler<AddSocialNetworkCommand>
 
         try
         {
-            var user = await _userManager.Users.FirstOrDefaultAsync(u => u.Id == command.UserId, cancellationToken);
-            if (user is null)
+            var user = await _userManager.Users
+                .Include(u => u.VolunteerAccount)
+                .FirstOrDefaultAsync(u => u.Id == command.UserId, cancellationToken);
+            
+            if (user?.VolunteerAccount is null)
                 return Errors.General.NotFound();
 
-            var socialNetworks = command.SocialNetworkDtos
-                .Select(s => SocialNetwork.Create(s.Title, s.Url).Value);
+            var requisites = command.Requisites
+                .Select(c => Requisite.Create(c.Title, c.Description).Value);
 
-            user.AddSocialNetwork(socialNetworks);
+            user.VolunteerAccount.UpdateRequisites(requisites);
 
-            var @event = new UserAddedSocialNetworkDomainEvent(user.Id);
+            //var @event = new UserAddedSocialNetworkDomainEvent(user.Id);
 
-            await _publisher.Publish(@event, cancellationToken);
+            //await _publisher.Publish(@event, cancellationToken);
 
             await _unitOfWork.SaveChanges(cancellationToken);
 
             scope.Complete();
 
-            _logger.LogInformation("Added social networks to user with id {id}", command.UserId);
+            _logger.LogInformation("Added certificates to user with id {id}", command.UserId);
 
             return Result.Success();
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error adding social networks to user with id {id}", command.UserId);
+            _logger.LogError(ex, "Error adding certificates to user with id {id}", command.UserId);
 
-            return Error.Failure("fail.to.add.social_networks", 
-                "Fail to add social networks to user");
+            return Error.Failure("fail.to.add.certificates", 
+                "Fail to add certificates to user");
         }
     }
 }

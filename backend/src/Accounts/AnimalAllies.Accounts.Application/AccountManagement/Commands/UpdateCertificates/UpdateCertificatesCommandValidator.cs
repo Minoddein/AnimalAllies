@@ -1,14 +1,13 @@
 using AnimalAllies.Accounts.Domain;
 using AnimalAllies.Core.Validators;
 using AnimalAllies.SharedKernel.Shared.Errors;
-using AnimalAllies.SharedKernel.Shared.ValueObjects;
 using FluentValidation;
 
-namespace AnimalAllies.Accounts.Application.AccountManagement.Commands.AddCertificates;
+namespace AnimalAllies.Accounts.Application.AccountManagement.Commands.UpdateCertificates;
 
-public class AddCertificatesCommandValidator: AbstractValidator<AddCertificatesCommand>
+public class UpdateCertificatesCommandValidator: AbstractValidator<UpdateCertificatesCommand>
 {
-    public AddCertificatesCommandValidator()
+    public UpdateCertificatesCommandValidator()
     {
         RuleForEach(s => s.Certificates)
             .MustBeValueObject(c => Certificate

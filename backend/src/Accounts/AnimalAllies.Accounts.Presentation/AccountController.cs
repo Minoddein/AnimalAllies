@@ -1,14 +1,17 @@
 ﻿using AnimalAllies.Accounts.Application.AccountManagement.Commands.AddAvatar;
-using AnimalAllies.Accounts.Application.AccountManagement.Commands.AddCertificates;
-using AnimalAllies.Accounts.Application.AccountManagement.Commands.AddSocialNetworks;
 using AnimalAllies.Accounts.Application.AccountManagement.Commands.ConfirmEmail;
 using AnimalAllies.Accounts.Application.AccountManagement.Commands.DeleteRefreshSession;
 using AnimalAllies.Accounts.Application.AccountManagement.Commands.Login;
 using AnimalAllies.Accounts.Application.AccountManagement.Commands.Refresh;
 using AnimalAllies.Accounts.Application.AccountManagement.Commands.Register;
 using AnimalAllies.Accounts.Application.AccountManagement.Commands.SetNotificationSettings;
+using AnimalAllies.Accounts.Application.AccountManagement.Commands.UpdateCertificates;
+using AnimalAllies.Accounts.Application.AccountManagement.Commands.UpdateRequisites;
+using AnimalAllies.Accounts.Application.AccountManagement.Commands.UpdateSocialNetworks;
 using AnimalAllies.Accounts.Application.AccountManagement.Queries.GetUserById;
+using AnimalAllies.Accounts.Application.DTOs;
 using AnimalAllies.Accounts.Contracts.Requests;
+using AnimalAllies.Core.DTOs.ValueObjects;
 using AnimalAllies.Framework;
 using AnimalAllies.Framework.Models;
 using Microsoft.AspNetCore.Authorization;
@@ -143,12 +146,14 @@ public class AccountController: ApplicationController
     [Authorize]
     [HttpPost("social-networks-to-user")]
     public async Task<IActionResult> AddSocialNetworksToUser(
-        [FromBody] AddSocialNetworksRequest request,
+        [FromBody] UpdateSocialNetworksRequest request,
         [FromServices] UserScopedData userScopedData,
-        [FromServices] AddSocialNetworkHandler handler,
+        [FromServices] UpdateSocialNetworkHandler handler,
         CancellationToken cancellationToken = default)
     {
-        var command = new AddSocialNetworkCommand(userScopedData.UserId, request.SocialNetworkRequests
+        var command = new UpdateSocialNetworkCommand(
+            userScopedData.UserId,
+            request.SocialNetworkRequests
             .Select(s => new SocialNetworkDto
         {
             Title = s.Title,
@@ -165,12 +170,12 @@ public class AccountController: ApplicationController
     [Authorize]
     [HttpPost("certificates-to-user")]
     public async Task<IActionResult> AddCertificatesToUser(
-        [FromBody] AddCertificatesRequest request,
+        [FromBody] UpdateCertificatesRequest request,
         [FromServices] UserScopedData userScopedData,
-        [FromServices] AddCertificatesHandler handler,
+        [FromServices] UpdateCertificatesHandler handler,
         CancellationToken cancellationToken = default)
     {
-        var command = new AddCertificatesCommand(userScopedData.UserId, 
+        var command = new UpdateCertificatesCommand(userScopedData.UserId, 
             request.Certificates
             .Select(c => 
                 new CertificateDto(
@@ -179,6 +184,30 @@ public class AccountController: ApplicationController
                     c.IssueDate,
                     c.ExpirationDate,
                     c.Description)));
+
+        var result = await handler.Handle(command, cancellationToken);
+        if (result.IsFailure)
+            return result.Errors.ToResponse();
+
+        return Ok(result.IsSuccess);
+    }
+    
+    [Authorize]
+    [HttpPost("requisite-to-user")]
+    public async Task<IActionResult> UpdateRequisiteToUser(
+        [FromBody] UpdateRequisitesRequest request,
+        [FromServices] UserScopedData userScopedData,
+        [FromServices] UpdateRequisitesHandler handler,
+        CancellationToken cancellationToken = default)
+    {
+        var command = new UpdateRequisitesCommand(userScopedData.UserId, 
+            request.Requisites
+                .Select(c => 
+                    new RequisiteDto
+                    {
+                        Title = c.Title,
+                        Description = c.Description
+                    }));
 
         var result = await handler.Handle(command, cancellationToken);
         if (result.IsFailure)
