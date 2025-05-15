@@ -67,6 +67,7 @@ public class ApprovedVolunteerRequestEventConsumer:
                 Phone = PhoneNumber.Create(message.Phone).Value
             };
             
+            
             user.VolunteerAccount = volunteer;
             user.VolunteerAccountId = volunteer.Id;
 

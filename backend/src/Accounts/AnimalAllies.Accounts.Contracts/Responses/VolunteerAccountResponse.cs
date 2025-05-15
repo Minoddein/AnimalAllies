@@ -4,7 +4,8 @@ public record VolunteerAccountResponse(
     Guid Id,
     IEnumerable<CertificateResponse> Certificates,
     IEnumerable<RequisiteResponse> Requisites,
-    int Experience);
+    int Experience,
+    string? Phone);
     
 public record CertificateResponse(
     string Title,

@@ -119,7 +119,8 @@ public class RefreshTokensHandler : ICommandHandler<RefreshTokensCommand, LoginR
                     user.VolunteerAccount.Id,
                     certificates!,
                     requisites!,
-                    user.VolunteerAccount.Experience)
+                    user.VolunteerAccount.Experience,
+                    user.VolunteerAccount.Phone.Number)
                 : null);
 
         return response;

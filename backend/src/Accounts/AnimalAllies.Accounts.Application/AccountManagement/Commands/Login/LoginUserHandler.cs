@@ -113,7 +113,8 @@ public class LoginUserHandler : ICommandHandler<LoginUserCommand,LoginResponse>
                     user.VolunteerAccount.Id,
                     certificates!,
                     requisites!,
-                    user.VolunteerAccount.Experience)
+                    user.VolunteerAccount.Experience,
+                    user.VolunteerAccount.Phone.Number)
                 : null);
 
         return response;
