@@ -148,8 +148,7 @@ public class VolunteerRequest: DomainEntity<VolunteerRequestId>
         RequestStatus = RequestStatus.Approved;
         
         var (firstName, secondName, patronymic) = VolunteerInfo.FullName;
-
-        //TODO: Возможно стоит передавать SocialNetworkDtos и CertificateDtos, но он в Core, поэтому думаем
+        
         var @event = new ApprovedVolunteerRequestDomainEvent(
             UserId,
             AdminId,

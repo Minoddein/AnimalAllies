@@ -6,6 +6,7 @@ using AnimalAllies.Accounts.Application.AccountManagement.Commands.Refresh;
 using AnimalAllies.Accounts.Application.AccountManagement.Commands.Register;
 using AnimalAllies.Accounts.Application.AccountManagement.Commands.SetNotificationSettings;
 using AnimalAllies.Accounts.Application.AccountManagement.Commands.UpdateCertificates;
+using AnimalAllies.Accounts.Application.AccountManagement.Commands.UpdateInfo;
 using AnimalAllies.Accounts.Application.AccountManagement.Commands.UpdateRequisites;
 using AnimalAllies.Accounts.Application.AccountManagement.Commands.UpdateSocialNetworks;
 using AnimalAllies.Accounts.Application.AccountManagement.Queries.GetUserById;
@@ -208,6 +209,28 @@ public class AccountController: ApplicationController
                         Title = c.Title,
                         Description = c.Description
                     }));
+
+        var result = await handler.Handle(command, cancellationToken);
+        if (result.IsFailure)
+            return result.Errors.ToResponse();
+
+        return Ok(result.IsSuccess);
+    }
+    
+    [Authorize]
+    [HttpPost("updating-info")]
+    public async Task<IActionResult> UpdateInfoOfUser(
+        [FromBody] UpdateInfoRequest request,
+        [FromServices] UserScopedData userScopedData,
+        [FromServices] UpdateInfoHandler handler,
+        CancellationToken cancellationToken = default)
+    {
+        var command = new UpdateInfoCommand(
+            userScopedData.UserId, 
+            request.FirstName,
+            request.SecondName,
+            request.Patronymic,
+            request.Phone);
 
         var result = await handler.Handle(command, cancellationToken);
         if (result.IsFailure)

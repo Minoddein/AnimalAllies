@@ -62,7 +62,11 @@ public class ApprovedVolunteerRequestEventConsumer:
                 message.SecondName,
                 message.Patronymic).Value;
 
-            var volunteer = new VolunteerAccount(fullName, message.WorkExperience, user);
+            var volunteer = new VolunteerAccount(fullName, message.WorkExperience, user)
+            {
+                Phone = PhoneNumber.Create(message.Phone).Value
+            };
+            
             user.VolunteerAccount = volunteer;
             user.VolunteerAccountId = volunteer.Id;
 

@@ -30,6 +30,13 @@ public class VolunteerAccountConfiguration: IEntityTypeConfiguration<VolunteerAc
                     .HasMaxLength(Constraints.MAX_VALUE_LENGTH)
                     .HasColumnName("patronymic");
             });
+
+        builder.ComplexProperty(va => va.Phone, pb =>
+        {
+            pb.Property(p => p.Number)
+                .HasMaxLength(Constraints.MAX_PHONENUMBER_LENGTH)
+                .HasColumnName("phone");
+        });
         
         builder.Property(v => v.Requisites)
             .ValueObjectJsonConverter(

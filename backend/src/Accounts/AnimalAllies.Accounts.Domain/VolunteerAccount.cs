@@ -24,6 +24,7 @@ public class VolunteerAccount
     private List<Requisite> _requisites = [];
     public Guid UserId { get; set; }
     public User User { get; set; }
+    public PhoneNumber Phone { get; set; }
 
     public void UpdateCertificates(IEnumerable<Certificate> certificates)
     {
