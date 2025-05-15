@@ -52,7 +52,7 @@ jobs:
           echo "    environment:" >> ./backend/docker-compose.yml
           echo "      POSTGRES_USER: postgres" >> ./backend/docker-compose.yml
           echo "      POSTGRES_PASSWORD: 345890" >> ./backend/docker-compose.yml
-          echo "      POSTGRES_DB: testdb" >> ./backend/docker-compose.yml
+          echo "      POSTGRES_DB: animalAllies" >> ./backend/docker-compose.yml
           echo "    ports:" >> ./backend/docker-compose.yml
           echo "      - \"5434:5432\"" >> ./backend/docker-compose.yml
           echo "    healthcheck:" >> ./backend/docker-compose.yml
