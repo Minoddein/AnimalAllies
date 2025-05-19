@@ -230,7 +230,8 @@ public class AccountController: ApplicationController
             request.FirstName,
             request.SecondName,
             request.Patronymic,
-            request.Phone);
+            request.Phone,
+            request.Experience);
 
         var result = await handler.Handle(command, cancellationToken);
         if (result.IsFailure)

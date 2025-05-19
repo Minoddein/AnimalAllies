@@ -7,4 +7,5 @@ public record UpdateInfoCommand(
     string? FirstName,
     string? SecondName,
     string? Patronymic,
-    string? Phone) : ICommand;
+    string? Phone,
+    int? Experience) : ICommand;

@@ -86,6 +86,11 @@ public class UpdateInfoHandler : ICommandHandler<UpdateInfoCommand>
                 
                 user.VolunteerAccount.Phone = newPhone.Value;
             }
+
+            if (command.Experience is not null)
+            {
+                user.VolunteerAccount.Experience = command.Experience.Value;
+            }
             
             var @event = new UserInfoUpdatedDomainEvent(user.Id);
 
