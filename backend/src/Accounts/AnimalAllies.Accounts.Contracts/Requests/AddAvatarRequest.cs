@@ -7,4 +7,4 @@ public record UploadFileRequest(
     string FileName, 
     string ContentType);
 
-public record AddAvatarRequest(Guid UserId, UploadFileRequest UploadFileDto);
+public record AddAvatarRequest(UploadFileRequest UploadFileDto);

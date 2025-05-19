@@ -1,11 +1,13 @@
 using System.Transactions;
 using AnimalAllies.Accounts.Domain;
+using AnimalAllies.Accounts.Domain.DomainEvents;
 using AnimalAllies.Core.Abstractions;
 using AnimalAllies.Core.Database;
 using AnimalAllies.SharedKernel.Constraints;
 using AnimalAllies.SharedKernel.Shared;
 using AnimalAllies.SharedKernel.Shared.Errors;
 using AnimalAllies.SharedKernel.Shared.ValueObjects;
+using MediatR;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -18,16 +20,19 @@ public class UpdateInfoHandler : ICommandHandler<UpdateInfoCommand>
     private readonly IUnitOfWork _unitOfWork;
     private readonly UserManager<User> _userManager;
     private readonly ILogger<UpdateInfoHandler> _logger;
+    private readonly IPublisher _publisher;
 
     public UpdateInfoHandler(
         [FromKeyedServices(Constraints.Context.Accounts)]
         IUnitOfWork unitOfWork,
         UserManager<User> userManager,
-        ILogger<UpdateInfoHandler> logger)
+        ILogger<UpdateInfoHandler> logger,
+        IPublisher publisher)
     {
         _unitOfWork = unitOfWork;
         _userManager = userManager;
         _logger = logger;
+        _publisher = publisher;
     }
 
     public async Task<Result> Handle(
@@ -82,9 +87,9 @@ public class UpdateInfoHandler : ICommandHandler<UpdateInfoCommand>
                 user.VolunteerAccount.Phone = newPhone.Value;
             }
             
-            //var @event = new UserAddedSocialNetworkDomainEvent(user.Id);
+            var @event = new UserInfoUpdatedDomainEvent(user.Id);
 
-            //await _publisher.Publish(@event, cancellationToken);
+            await _publisher.Publish(@event, cancellationToken);
 
             await _unitOfWork.SaveChanges(cancellationToken);
 

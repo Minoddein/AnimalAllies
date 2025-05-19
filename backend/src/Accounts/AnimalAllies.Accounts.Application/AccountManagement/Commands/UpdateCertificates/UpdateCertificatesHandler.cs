@@ -1,5 +1,6 @@
 using System.Transactions;
 using AnimalAllies.Accounts.Domain;
+using AnimalAllies.Accounts.Domain.DomainEvents;
 using AnimalAllies.Core.Abstractions;
 using AnimalAllies.Core.Database;
 using AnimalAllies.Core.Extension;
@@ -68,9 +69,9 @@ public class UpdateCertificatesHandler: ICommandHandler<UpdateCertificatesComman
 
             user.VolunteerAccount.UpdateCertificates(certificates);
 
-            //var @event = new UserAddedSocialNetworkDomainEvent(user.Id);
+            var @event = new UserInfoUpdatedDomainEvent(user.Id);
 
-            //await _publisher.Publish(@event, cancellationToken);
+            await _publisher.Publish(@event, cancellationToken);
 
             await _unitOfWork.SaveChanges(cancellationToken);
 
