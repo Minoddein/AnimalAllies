@@ -102,6 +102,7 @@ public class AccountController: ApplicationController
     }
 
     [HttpPost("refreshing")]
+    [AllowAnonymous]
     public async Task<IActionResult> Refresh(
         [FromServices] RefreshTokensHandler handler,
         CancellationToken cancellationToken = default)

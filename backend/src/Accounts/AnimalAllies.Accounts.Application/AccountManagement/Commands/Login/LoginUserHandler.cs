@@ -56,6 +56,11 @@ public class LoginUserHandler : ICommandHandler<LoginUserCommand,LoginResponse>
             return Errors.User.InvalidCredentials();
         }
 
+        if (!user.EmailConfirmed)
+        {
+            return Errors.User.InvalidCredentials();
+        }
+        
         var accessToken = await _tokenProvider.GenerateAccessToken(user, cancellationToken);
         var refreshToken = await _tokenProvider.GenerateRefreshToken(user, accessToken.Jti,cancellationToken);
 

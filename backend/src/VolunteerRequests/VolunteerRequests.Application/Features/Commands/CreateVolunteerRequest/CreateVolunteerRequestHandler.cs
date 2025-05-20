@@ -42,7 +42,7 @@ public class CreateVolunteerRequestHandler: ICommandHandler<CreateVolunteerReque
         _publisher = publisher;
         _dateTimeProvider = dateTimeProvider;
     }
-
+    //TODO: Возможно удалить social networks при подачи заявлений
     public async Task<Result<VolunteerRequestId>> Handle(
         CreateVolunteerRequestCommand command, CancellationToken cancellationToken = default)
     {
@@ -107,8 +107,6 @@ public class CreateVolunteerRequestHandler: ICommandHandler<CreateVolunteerReque
         var phoneNumber = PhoneNumber.Create(command.PhoneNumber).Value;
         var workExperience = WorkExperience.Create(command.WorkExperience).Value;
         var volunteerDescription = VolunteerDescription.Create(command.VolunteerDescription).Value;
-        var socialNetworks = command
-            .SocialNetworkDtos.Select(s => SocialNetwork.Create(s.Title, s.Url).Value);
 
         var volunteerInfo = new VolunteerInfo(
             fullName,
@@ -116,7 +114,7 @@ public class CreateVolunteerRequestHandler: ICommandHandler<CreateVolunteerReque
             phoneNumber,
             workExperience,
             volunteerDescription,
-            socialNetworks);
+            []);
 
         var createdAt = CreatedAt.Create(_dateTimeProvider.UtcNow).Value;
         var volunteerRequestId = VolunteerRequestId.NewGuid();

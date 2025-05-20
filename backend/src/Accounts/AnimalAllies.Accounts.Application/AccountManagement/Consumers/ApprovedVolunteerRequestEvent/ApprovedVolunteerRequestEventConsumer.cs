@@ -103,16 +103,3 @@ public class ApprovedVolunteerRequestEventConsumer:
         
     }
 }
-
-public class ApprovedVolunteerRequestEventConsumerDefinition : ConsumerDefinition<ApprovedVolunteerRequestEventConsumer>
-{
-    protected override void ConfigureConsumer(
-        IReceiveEndpointConfigurator endpointConfigurator,
-        IConsumerConfigurator<ApprovedVolunteerRequestEventConsumer> consumerConfigurator)
-    {
-        endpointConfigurator.UseMessageRetry(c =>
-        {
-            c.Incremental(3, TimeSpan.FromSeconds(5), TimeSpan.FromSeconds(10));
-        });
-    }
-}

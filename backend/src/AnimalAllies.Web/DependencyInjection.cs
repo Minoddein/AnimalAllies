@@ -1,5 +1,4 @@
 ﻿using AnimalAllies.Accounts.Application;
-using AnimalAllies.Accounts.Application.AccountManagement.Consumers;
 using AnimalAllies.Accounts.Application.AccountManagement.Consumers.ApprovedVolunteerRequestEvent;
 using AnimalAllies.Accounts.Application.AccountManagement.Consumers.SendUserDataForAuthorizationEvent;
 using AnimalAllies.Accounts.Infrastructure;
@@ -70,10 +69,8 @@ public static class DependencyInjection
             configure.SetKebabCaseEndpointNameFormatter();
 
 
-            configure.AddConsumer<ApprovedVolunteerRequestEventConsumer,
-                ApprovedVolunteerRequestEventConsumerDefinition>();
-            configure.AddConsumer<SendUserDataForAuthorizationEventConsumer,
-                SendUserDataForAuthorizationEventConsumerDefinition>();
+            configure.AddConsumer<ApprovedVolunteerRequestEventConsumer>();
+            configure.AddConsumer<SendUserDataForAuthorizationEventConsumer>();
             
             configure.UsingRabbitMq((context, cfg) =>
             {

@@ -6,11 +6,14 @@ using AnimalAllies.SharedKernel.Shared;
 using AnimalAllies.SharedKernel.Shared.Errors;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 namespace AnimalAllies.Accounts.Infrastructure.IdentityManagers;
 
-public class RefreshSessionManager(AccountsDbContext accountsDbContext,
-    [FromKeyedServices(Constraints.Context.Accounts)] IUnitOfWork unitOfWork) : IRefreshSessionManager
+public class RefreshSessionManager(
+    AccountsDbContext accountsDbContext,
+    [FromKeyedServices(Constraints.Context.Accounts)] IUnitOfWork unitOfWork,
+    ILogger<RefreshSessionManager> logger) : IRefreshSessionManager
 {
 
     public async Task<Result<RefreshSession>> GetByRefreshToken(
@@ -35,7 +38,20 @@ public class RefreshSessionManager(AccountsDbContext accountsDbContext,
     
     public async Task Delete(RefreshSession refreshSession, CancellationToken cancellationToken = default)
     {
-        accountsDbContext.RefreshSessions.Remove(refreshSession);
-        await unitOfWork.SaveChanges(cancellationToken);
+        try
+        {
+            var existingSession = await accountsDbContext.RefreshSessions
+                .FirstOrDefaultAsync(r => r.RefreshToken == refreshSession.RefreshToken, cancellationToken);
+            
+            if (existingSession != null)
+            {
+                accountsDbContext.RefreshSessions.Remove(existingSession);
+                await unitOfWork.SaveChanges(cancellationToken);
+            }
+        }
+        catch (DbUpdateConcurrencyException ex)
+        {
+            logger.LogError("RefreshSession already deleted or modified: " + ex.Message);
+        }
     }
 }

@@ -8,8 +8,7 @@ public record CreateVolunteerRequestRequest(
     string Email,
     string PhoneNumber,
     int WorkExperience,
-    string VolunteerDescription,
-    IEnumerable<SocialNetworkRequest> SocialNetworks);
+    string VolunteerDescription);
 
 public class SocialNetworkRequest
 {

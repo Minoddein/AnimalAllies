@@ -50,22 +50,3 @@ public class SendUserDataForAuthorizationEventConsumer:
         _logger.LogInformation("User {email} authorized by telegram", user.Email);
     }
 }
-
-public class SendUserDataForAuthorizationEventConsumerDefinition :
-    ConsumerDefinition<SendUserDataForAuthorizationEventConsumer>
-{
-    public SendUserDataForAuthorizationEventConsumerDefinition()
-    {
-        
-    }
-
-    protected override void ConfigureConsumer(
-        IReceiveEndpointConfigurator endpointConfigurator,
-        IConsumerConfigurator<SendUserDataForAuthorizationEventConsumer> consumerConfigurator)
-    {
-        endpointConfigurator.UseMessageRetry(c =>
-        {
-            c.Incremental(3, TimeSpan.FromSeconds(5), TimeSpan.FromSeconds(10));
-        });
-    }
-}

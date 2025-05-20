@@ -32,6 +32,17 @@ builder.Services.AddHangfire(configuration => configuration
     .UsePostgreSqlStorage(c =>
         c.UseNpgsqlConnection(builder.Configuration.GetConnectionString("DefaultConnection"))));
 
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("CorsPolicy", policy =>
+    {
+        policy.WithOrigins("http://localhost:3000")
+            .AllowAnyHeader()
+            .AllowAnyMethod()
+            .AllowCredentials();
+    });
+});
+
 var app = builder.Build();
 
 var seeding = app.Services.GetRequiredService<Seeding>();
@@ -47,6 +58,8 @@ if (app.Environment.IsDevelopment() || app.Environment.EnvironmentName == "Docke
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+
+app.UseCors("CorsPolicy");
 
 app.UseHangfireServer();
 app.UseHangfireDashboard();

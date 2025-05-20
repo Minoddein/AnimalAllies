@@ -12,6 +12,7 @@ public class MinioProvider : IFileProvider
 {
     private const int MAX_DEGREE_OF_PARALLELISM = 50;
     private const int EXPIRATION_URL = 1;
+    private const int EXPIRATION_FOR_DOWNLOAD_URL = 30;
     private readonly IAmazonS3 _client;
     private readonly ILogger<MinioProvider> _logger;
 
@@ -167,7 +168,7 @@ public class MinioProvider : IFileProvider
                 BucketName = fileMetadata.BucketName,
                 Key = fileMetadata.Key,
                 Verb = HttpVerb.GET,
-                Expires = DateTime.UtcNow.AddDays(EXPIRATION_URL),
+                Expires = DateTime.UtcNow.AddDays(EXPIRATION_FOR_DOWNLOAD_URL),
                 Protocol = Protocol.HTTP,
             };
 
