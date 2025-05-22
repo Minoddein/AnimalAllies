@@ -56,19 +56,24 @@ public class GetFilteredVolunteerRequestsByAdminIdWithPaginationHandler:
             Expiration = TimeSpan.FromMinutes(3),
             LocalCacheExpiration = TimeSpan.FromMinutes(1)
         };
+        var connection = _sqlConnectionFactory.Create();
+        var parameters = new DynamicParameters();
+        parameters.Add("@AdminId", query.AdminId);
+        
+        var totalCount = await connection
+            .ExecuteScalarAsync<int>(
+                "select count(id) from volunteer_requests.volunteer_requests " +
+                "where admin_id = @AdminId",
+                param: parameters);
         
         var result = await _hybridCache.GetOrCreateAsync(
             key:cacheKey,
             factory:async _ =>
             {
-                var connection = _sqlConnectionFactory.Create();
-                var parameters = new DynamicParameters();
-                parameters.Add("@AdminId", query.AdminId);
-                
                 var sql = new StringBuilder("""
                     SELECT 
-                        id, first_name, second_name, patronymic,
-                        description, email, phone_number, work_experience,
+                        id, first_name, second_name, patronymic, created_at,
+                        description as volunteer_description, email, phone_number, work_experience,
                         admin_id, user_id, discussion_id, request_status,
                         rejection_comment, social_networks
                     FROM volunteer_requests.volunteer_requests 
@@ -111,7 +116,7 @@ public class GetFilteredVolunteerRequestsByAdminIdWithPaginationHandler:
             Items = result,
             PageSize = query.PageSize,
             Page = query.Page,
-            TotalCount = result.Count
+            TotalCount = totalCount
         };
     }
 }
