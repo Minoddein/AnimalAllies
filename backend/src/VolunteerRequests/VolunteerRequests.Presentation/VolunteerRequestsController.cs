@@ -120,7 +120,7 @@ public class VolunteerRequestsController: ApplicationController
         return Ok(result);
     }
     
-    //[Permission("volunteerRequests.read")]
+    [Permission("volunteerRequests.read")]
     [HttpGet("volunteer-requests-in-waiting-with-pagination")]
     public async Task<ActionResult> GetVolunteerRequestsInWaiting(
         [FromQuery] GetVolunteerRequestsInWaitingWithPaginationRequest request,
