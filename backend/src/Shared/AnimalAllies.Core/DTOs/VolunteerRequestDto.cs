@@ -18,5 +18,6 @@ public class VolunteerRequestDto
     public Guid UserId { get; set; }
     public Guid DiscussionId { get; set; }
     public string RejectionComment { get; set; } = string.Empty;
+    public DateTime CreatedAt { get; set; }
     public SocialNetworkDto[] SocialNetworks { get; set; } = [];
 }

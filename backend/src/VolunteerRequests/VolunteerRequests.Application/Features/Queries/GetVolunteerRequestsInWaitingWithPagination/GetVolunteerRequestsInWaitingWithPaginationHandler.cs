@@ -50,22 +50,26 @@ public class GetVolunteerRequestsInWaitingWithPaginationHandler:
             LocalCacheExpiration = TimeSpan.FromMinutes(1)
         };
         
+        var connection = _sqlConnectionFactory.Create();
+        var parameters = new DynamicParameters();
+        parameters.Add("@RequestStatus", RequestStatus.Waiting.Value);
+        var totalCount = await connection
+            .ExecuteScalarAsync<int>(
+                "select count(id) from volunteer_requests.volunteer_requests " +
+                "where request_status = @RequestStatus",
+                param: parameters);
+        
         var cachedVolunteerRequests = await _hybridCache.GetOrCreateAsync(
             key: $"{TagsConstants.VOLUNTEER_REQUESTS}_{query.Page}_{query.PageSize}_{query.SortBy}_{query.SortDirection}",
             factory: async _ =>
             {
-                var connection = _sqlConnectionFactory.Create();
-
-                var parameters = new DynamicParameters();
-                parameters.Add("@RequestStatus", RequestStatus.Waiting.Value);
-        
                 var sql = new StringBuilder("""
                                             select 
                                                 id,
                                                 first_name,
                                                 second_name,
                                                 patronymic,
-                                                description,
+                                                description as volunteer_description,
                                                 email,
                                                 phone_number,
                                                 work_experience,
@@ -73,6 +77,7 @@ public class GetVolunteerRequestsInWaitingWithPaginationHandler:
                                                 user_id,
                                                 discussion_id,
                                                 request_status,
+                                                created_at,
                                                 rejection_comment,
                                                 social_networks
                                                 from volunteer_requests.volunteer_requests 
@@ -110,7 +115,7 @@ public class GetVolunteerRequestsInWaitingWithPaginationHandler:
             Items = volunteerRequestDtos,
             PageSize = query.PageSize,
             Page = query.Page,
-            TotalCount = volunteerRequestDtos.Count
+            TotalCount = totalCount
         };
     }
 }
