@@ -1,4 +1,3 @@
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Outbox.Abstractions;
 using Outbox.Outbox;
@@ -8,25 +7,31 @@ namespace Outbox;
 
 public static class DependencyInjection
 {
-    public static IServiceCollection AddOutboxCore(
-        this IServiceCollection services,
-        IConfiguration configuration)
+    /// <summary>
+    /// Publisher
+    /// </summary>
+    /// <param name="services"></param>
+    /// <returns></returns>
+    public static IServiceCollection AddOutboxPublisher(
+        this IServiceCollection services)
     {
         services.AddScoped<OutboxContext>();
-        services.AddOutbox();
+        services.AddScoped<IOutboxRepository, OutboxRepository<OutboxContext>>();
         services.AddScoped<IUnitOfWorkOutbox, UnitOfWorkOutbox>();
-        services.AddQuartzService();
         
         return services;
     }
 
-    
-    private static IServiceCollection AddOutbox(
+    /// <summary>
+    /// Processor 
+    /// </summary>
+    /// <param name="services"></param>
+    /// <returns></returns>
+    public static IServiceCollection AddOutboxProcessor(
         this IServiceCollection services)
     {
-        services.AddScoped<IOutboxRepository, OutboxRepository<OutboxContext>>();
-        
         services.AddScoped<ProcessOutboxMessageService>();
+        services.AddQuartzService();
         
         return services;
     }

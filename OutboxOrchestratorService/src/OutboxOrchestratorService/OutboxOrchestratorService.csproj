@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk.Worker">
+
+    <PropertyGroup>
+        <TargetFramework>net9.0</TargetFramework>
+        <Nullable>enable</Nullable>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <UserSecretsId>dotnet-OutboxOrchestratorService-b26c5106-6ea8-46c0-b813-83cba5be632e</UserSecretsId>
+        <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="AnimalAllies.Accounts.Contracts" Version="1.0.5" />
+        <PackageReference Include="Microsoft.Extensions.Hosting" Version="9.0.5" />
+        <PackageReference Include="NotificationService.Contracts" Version="1.0.4" />
+        <PackageReference Include="Outbox" Version="1.0.6" />
+        <PackageReference Include="Outbox.Abstractions" Version="1.0.0" />
+        <PackageReference Include="TelegramBotService.Contracts" Version="1.0.1" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Content Include="..\..\.dockerignore">
+        <Link>.dockerignore</Link>
+      </Content>
+    </ItemGroup>
+</Project>

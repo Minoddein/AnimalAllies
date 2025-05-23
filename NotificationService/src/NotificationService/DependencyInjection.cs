@@ -25,7 +25,7 @@ public static class DependencyInjection
             .AddTelegramConfiguration()
             .AddInfrastructure()
             .AddMessageBus(configuration)
-            .AddOutboxCore(configuration);
+            .AddOutboxPublisher();
         
         return services;
     }

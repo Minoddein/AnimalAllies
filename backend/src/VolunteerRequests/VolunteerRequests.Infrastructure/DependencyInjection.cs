@@ -25,7 +25,7 @@ public static class DependencyInjection
 
     private static IServiceCollection AddOutbox(this IServiceCollection services, IConfiguration configuration)
     {
-        services.AddOutboxCore(configuration);
+        services.AddOutboxPublisher();
         
         return services;
     }
