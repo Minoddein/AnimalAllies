@@ -85,7 +85,7 @@ public class CreateVolunteerRequestHandler: ICommandHandler<CreateVolunteerReque
         {
             _logger.LogError($"User was prohibited for creating request with id {command.UserId}");
             
-            return Error.Failure("access.denied", 
+            return Error.Failure("access.denied.request.prohibited", 
                 $"User was prohibited for creating request with id {command.UserId}");
         }
         catch (Exception)
