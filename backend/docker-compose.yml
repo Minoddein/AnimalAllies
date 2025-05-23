@@ -38,6 +38,11 @@
     build:
       context: ../CacheInvalidatorService
       dockerfile: src/CacheInvalidatorService/Dockerfile
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Docker
+      - DOTNET_ENVIRONMENT=Docker
+    networks:
+      - backend-network
   
   telegram-bot-service:
     image: telegram-bot-service
