@@ -37,10 +37,20 @@ jobs:
           dotnet-version: '9.0.x'
 
       - name: Restore dependencies
-        run: dotnet restore
+        run: |
+            dotnet restore ./TelegramBotService/TelegramBotService.sln
+            dotnet restore ./NotificationService/NotificationService.sln
+            dotnet restore ./FileService/FileService.sln
+            dotnet restore ./CacheInvalidatorService/CacheInvalidatorService.sln
+            dotnet restore ./backend/backend.sln
 
-      - name: Build
-        run: dotnet build --configuration Release
+      - name: Build solutions
+        run: |
+          dotnet build ./TelegramBotService/TelegramBotService.sln --configuration Release --no-restore
+          dotnet build ./NotificationService/NotificationService.sln --configuration Release --no-restore
+          dotnet build ./FileService/FileService.sln --configuration Release --no-restore
+          dotnet build ./CacheInvalidatorService/CacheInvalidatorService.sln --configuration Release --no-restore
+          dotnet build ./backend/backend.sln --configuration Release --no-restore
 
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v3
