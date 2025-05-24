@@ -1,5 +1,4 @@
 using System.Security.Authentication;
-using AnimalAllies.Accounts.Application.AccountManagement.Consumers.ApprovedVolunteerRequestEvent;
 using AnimalAllies.Accounts.Application.Managers;
 using AnimalAllies.Accounts.Domain;
 using AnimalAllies.SharedKernel.Shared.Errors;

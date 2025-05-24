@@ -12,4 +12,7 @@ public interface IAccountManager
 
     Task<Result> CreateVolunteerAccount(
         VolunteerAccount volunteerAccount, CancellationToken cancellationToken = default);
+    
+    Task<VolunteerAccount?> GetVolunteerAccount(
+        Guid userId, CancellationToken cancellationToken = default);
 }

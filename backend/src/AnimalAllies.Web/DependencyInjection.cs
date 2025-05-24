@@ -1,5 +1,4 @@
 ﻿using AnimalAllies.Accounts.Application;
-using AnimalAllies.Accounts.Application.AccountManagement.Consumers.ApprovedVolunteerRequestEvent;
 using AnimalAllies.Accounts.Application.AccountManagement.Consumers.SendUserDataForAuthorizationEvent;
 using AnimalAllies.Accounts.Infrastructure;
 using AnimalAllies.Accounts.Presentation;
@@ -67,9 +66,7 @@ public static class DependencyInjection
         services.AddMassTransit(configure =>
         {
             configure.SetKebabCaseEndpointNameFormatter();
-
-
-            configure.AddConsumer<ApprovedVolunteerRequestEventConsumer>();
+            
             configure.AddConsumer<SendUserDataForAuthorizationEventConsumer>();
             
             configure.UsingRabbitMq((context, cfg) =>

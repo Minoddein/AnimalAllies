@@ -43,17 +43,6 @@
       - DOTNET_ENVIRONMENT=Docker
     networks:
       - backend-network
-    
-  outbox-orchestrator-service:
-    image: outbox-orchestrator-service
-    build:
-      context: ../OutboxOrchestratorService
-      dockerfile: src/OutboxOrchestratorService/Dockerfile
-    environment:
-      - DOTNET_ENVIRONMENT=Docker
-    networks:
-      - backend-network
-      - bot-network
   
   telegram-bot-service:
     image: telegram-bot-service

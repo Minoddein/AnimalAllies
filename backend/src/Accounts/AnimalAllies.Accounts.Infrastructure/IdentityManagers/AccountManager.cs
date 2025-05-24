@@ -4,6 +4,7 @@ using AnimalAllies.Core.Database;
 using AnimalAllies.Core.DTOs.Accounts;
 using AnimalAllies.SharedKernel.Constraints;
 using AnimalAllies.SharedKernel.Shared;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace AnimalAllies.Accounts.Infrastructure.IdentityManagers;
@@ -34,5 +35,14 @@ public class AccountManager(
         await unitOfWork.SaveChanges(cancellationToken);
         
         return Result.Success();
+    }
+
+    public async Task<VolunteerAccount?> GetVolunteerAccount(Guid userId, CancellationToken cancellationToken = default)
+    {
+        var result =
+            await accountsDbContext.VolunteerAccounts.FirstOrDefaultAsync(v =>
+                v.UserId == userId, cancellationToken);
+        
+        return result;
     }
 }

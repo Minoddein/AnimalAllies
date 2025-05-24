@@ -25,6 +25,7 @@
       <PackageReference Include="Microsoft.Extensions.Logging" Version="9.0.3" />
       <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="9.0.3" />
       <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="9.0.4" />
+      <PackageReference Include="Outbox" Version="1.0.8" />
       <PackageReference Include="Scrutor" Version="6.0.1" />
     </ItemGroup>
 

@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Caching.Hybrid;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Outbox;
 using StackExchange.Redis;
 
 namespace AnimalAllies.Core;
@@ -11,6 +12,7 @@ public static class DependencyInjection
     public static IServiceCollection AddCore(this IServiceCollection services, IConfiguration configuration)
     {
         services.AddRedisCache(configuration);
+        services.AddOutboxProcessor();
 
         return services;
     }

@@ -1,4 +1,5 @@
-﻿using AnimalAllies.Accounts.Contracts.Events;
+﻿using AnimalAllies.Accounts.Contracts;
+using AnimalAllies.Accounts.Contracts.Events;
 using AnimalAllies.SharedKernel.CachingConstants;
 using MediatR;
 using Microsoft.Extensions.Logging;
@@ -14,32 +15,23 @@ public class ApprovedVolunteerRequest : INotificationHandler<ApprovedVolunteerRe
     private readonly ILogger<ApprovedVolunteerRequest> _logger;
     private readonly IOutboxRepository _outboxRepository;
     private readonly IUnitOfWorkOutbox _unitOfWork;
+    private readonly IAccountContract _accountContract;
 
     public ApprovedVolunteerRequest(
         ILogger<ApprovedVolunteerRequest> logger,
         IOutboxRepository outboxRepository,
-        IUnitOfWorkOutbox unitOfWork)
+        IUnitOfWorkOutbox unitOfWork,
+        IAccountContract accountContract)
     {
         _logger = logger;
         _outboxRepository = outboxRepository;
         _unitOfWork = unitOfWork;
+        _accountContract = accountContract;
     }
 
 
     public async Task Handle(ApprovedVolunteerRequestDomainEvent notification, CancellationToken cancellationToken)
     {
-        var approvedIntegrationEvent = new ApprovedVolunteerRequestEvent(
-            notification.UserId,
-            notification.FirstName,
-            notification.SecondName,
-            notification.Patronymic,
-            notification.WorkExperience,
-            notification.Description,
-            notification.Email,
-            notification.Phone);
-
-        await _outboxRepository.AddAsync(approvedIntegrationEvent, cancellationToken);
-
         var notificationIntegrationEvent = new SendNotificationApproveVolunteerRequestEvent(
             notification.UserId,
             notification.Email);
@@ -53,7 +45,14 @@ public class ApprovedVolunteerRequest : INotificationHandler<ApprovedVolunteerRe
                            TagsConstants.VolunteerRequests.BY_ADMIN + "_" + notification.AdminId)
             ]);
 
-        await _outboxRepository.AddAsync(approvedIntegrationEvent, cancellationToken);
+        await _accountContract.ApproveVolunteerRequest(notification.UserId,
+            notification.FirstName,
+            notification.SecondName,
+            notification.Patronymic,
+            notification.WorkExperience,
+            notification.Description,
+            notification.Email,
+            notification.Phone, cancellationToken);
 
         await _outboxRepository.AddAsync(notificationIntegrationEvent, cancellationToken);
         
