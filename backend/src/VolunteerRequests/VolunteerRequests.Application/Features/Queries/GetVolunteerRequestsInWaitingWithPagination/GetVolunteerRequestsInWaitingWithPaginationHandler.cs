@@ -78,8 +78,7 @@ public class GetVolunteerRequestsInWaitingWithPaginationHandler:
                                                 discussion_id,
                                                 request_status,
                                                 created_at,
-                                                rejection_comment,
-                                                social_networks
+                                                rejection_comment
                                                 from volunteer_requests.volunteer_requests 
                                                 where request_status = @RequestStatus
                                             """);
@@ -89,14 +88,8 @@ public class GetVolunteerRequestsInWaitingWithPaginationHandler:
                 sql.ApplyPagination(query.Page,query.PageSize);
                 
                 var result = await connection
-                    .QueryAsync<VolunteerRequestDto, SocialNetworkDto[], VolunteerRequestDto>(
+                    .QueryAsync<VolunteerRequestDto>(
                     sql.ToString(),
-                    (volunteerRequest, socialNetworks) =>
-                    {
-                        volunteerRequest.SocialNetworks = socialNetworks;
-                        return volunteerRequest;
-                    },
-                    splitOn:"social_networks",
                     param: parameters);
 
                 return result;

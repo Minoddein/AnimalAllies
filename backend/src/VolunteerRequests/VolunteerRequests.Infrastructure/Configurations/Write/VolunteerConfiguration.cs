@@ -42,9 +42,9 @@ public class VolunteerConfiguration: IEntityTypeConfiguration<VolunteerRequest>
                 .IsRequired(false);
         });
 
-        builder.OwnsOne(v => v.VolunteerInfo, vb =>
+        builder.ComplexProperty(v => v.VolunteerInfo, vb =>
         {
-            vb.OwnsOne(v => v.FullName, f =>
+            vb.ComplexProperty(v => v.FullName, f =>
             {
                 f.Property(x => x.FirstName)
                     .HasColumnName("first_name")
@@ -59,14 +59,14 @@ public class VolunteerConfiguration: IEntityTypeConfiguration<VolunteerRequest>
                     .IsRequired(false);
             });
 
-            vb.OwnsOne(v => v.Email, e =>
+            vb.ComplexProperty(v => v.Email, e =>
             {
                 e.Property(x => x.Value)
                     .HasColumnName("email")
                     .IsRequired();
             });
 
-            vb.OwnsOne(v => v.PhoneNumber, p =>
+            vb.ComplexProperty(v => v.PhoneNumber, p =>
             {
                 p.Property(x => x.Number)
                     .HasColumnName("phone_number")
@@ -74,26 +74,19 @@ public class VolunteerConfiguration: IEntityTypeConfiguration<VolunteerRequest>
                     .IsRequired();
             });
 
-            vb.OwnsOne(v => v.WorkExperience, w =>
+            vb.ComplexProperty(v => v.WorkExperience, w =>
             {
                 w.Property(x => x.Value)
                     .HasColumnName("work_experience")
                     .IsRequired();
             });
 
-            vb.OwnsOne(v => v.VolunteerDescription, vd =>
+            vb.ComplexProperty(v => v.VolunteerDescription, vd =>
             {
                 vd.Property(x => x.Value)
                     .HasMaxLength(Constraints.MAX_DESCRIPTION_LENGTH)
                     .HasColumnName("description");
             });
-            
-            vb.Property(v => v.SocialNetworks)
-                .ValueObjectJsonConverter(
-                    s => new SocialNetworkDto {Title = s.Title, Url = s.Url},
-                    dto => SocialNetwork.Create(dto.Title, dto.Url).Value)
-                .HasColumnName("social_networks");
-
         });
 
 

@@ -6,9 +6,8 @@ namespace VolunteerRequests.Application.Features.Commands.UpdateVolunteerRequest
 public record UpdateVolunteerRequestCommand(
     Guid UserId,
     Guid VolunteerRequestId,
-    FullNameDto FullNameDto,
-    string Email,
-    string PhoneNumber,
-    int WorkExperience,
-    string VolunteerDescription,
-    IEnumerable<SocialNetworkDto> SocialNetworkDtos) : ICommand;
+    FullNameDto? FullNameDto,
+    string? Email,
+    string? PhoneNumber,
+    int? WorkExperience,
+    string? VolunteerDescription) : ICommand;

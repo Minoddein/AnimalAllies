@@ -3,7 +3,6 @@ using AnimalAllies.SharedKernel.Shared.Errors;
 using AnimalAllies.SharedKernel.Shared.Ids;
 using AnimalAllies.SharedKernel.Shared.Objects;
 using AnimalAllies.SharedKernel.Shared.ValueObjects;
-using VolunteerRequests.Contracts.Messaging;
 using VolunteerRequests.Domain.Events;
 using VolunteerRequests.Domain.ValueObjects;
 
@@ -58,7 +57,12 @@ public class VolunteerRequest: DomainEntity<VolunteerRequestId>
             return Error.Failure("update.error",
                 "Cannot update request that is not in revision required status");
         
-        VolunteerInfo = volunteerInfo;
+        VolunteerInfo = new VolunteerInfo(
+            volunteerInfo.FullName,
+            volunteerInfo.Email,
+            volunteerInfo.PhoneNumber,
+            volunteerInfo.WorkExperience,
+            volunteerInfo.VolunteerDescription);
 
         var @event = new UpdatedVolunteerRequestDomainEvent(AdminId, UserId);
         

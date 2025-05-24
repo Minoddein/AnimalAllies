@@ -12,6 +12,7 @@ using MediatR;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using VolunteerRequests.Application.Repository;
+using VolunteerRequests.Domain.Aggregates;
 
 namespace VolunteerRequests.Application.Features.Commands.UpdateVolunteerRequest;
 
@@ -56,9 +57,11 @@ public class UpdateVolunteerRequestHandler : ICommandHandler<UpdateVolunteerRequ
             if (volunteerRequest.IsFailure || volunteerRequest.Value.UserId != command.UserId)
                 return volunteerRequest.Errors;
 
-            var volunteerInfo = InitVolunteerInfo(command).Value;
+            var volunteerInfo = InitVolunteerInfo(command, volunteerRequest.Value);
+            if(volunteerInfo.IsFailure)
+                return volunteerInfo.Errors;
 
-            var result = volunteerRequest.Value.UpdateVolunteerRequest(volunteerInfo);
+            var result = volunteerRequest.Value.UpdateVolunteerRequest(volunteerInfo.Value);
             if (result.IsFailure)
                 return result.Errors;
 
@@ -82,23 +85,56 @@ public class UpdateVolunteerRequestHandler : ICommandHandler<UpdateVolunteerRequ
     }
 
     private Result<VolunteerInfo> InitVolunteerInfo(
-        UpdateVolunteerRequestCommand command)
-    {
-        var fullName = FullName.Create(
-            command.FullNameDto.FirstName,
-            command.FullNameDto.SecondName,
-            command.FullNameDto.Patronymic).Value;
+    UpdateVolunteerRequestCommand command, 
+    VolunteerRequest existingRequest)
+{
+    var currentInfo = existingRequest.VolunteerInfo;
+    
+    var fullNameResult = command.FullNameDto != null
+        ? FullName.Create(
+            command.FullNameDto.FirstName ?? currentInfo.FullName.FirstName,
+            command.FullNameDto.SecondName ?? currentInfo.FullName.SecondName,
+            command.FullNameDto.Patronymic ?? currentInfo.FullName.Patronymic)
+        : Result<FullName>.Success(currentInfo.FullName);
 
-        var email = Email.Create(command.Email).Value;
-        var phoneNumber = PhoneNumber.Create(command.PhoneNumber).Value;
-        var workExperience = WorkExperience.Create(command.WorkExperience).Value;
-        var volunteerDescription = VolunteerDescription.Create(command.VolunteerDescription).Value;
-        var socialNetworks = command.SocialNetworkDtos
-            .Select(s => SocialNetwork.Create(s.Title, s.Url).Value);
+    if (fullNameResult.IsFailure)
+        return fullNameResult.Errors;
+    
+    var emailResult = command.Email != null 
+        ? Email.Create(command.Email)
+        : Result<Email>.Success(currentInfo.Email);
 
-        var volunteerInfo = new VolunteerInfo(
-            fullName, email, phoneNumber, workExperience, volunteerDescription, socialNetworks);
-        
-        return volunteerInfo;
-    }
+    if (emailResult.IsFailure)
+        return emailResult.Errors;
+    
+    var phoneNumberResult = command.PhoneNumber != null 
+        ? PhoneNumber.Create(command.PhoneNumber)
+        : Result<PhoneNumber>.Success(currentInfo.PhoneNumber);
+
+    if (phoneNumberResult.IsFailure)
+        return phoneNumberResult.Errors;
+    
+    var workExperienceResult = command.WorkExperience.HasValue 
+        ? WorkExperience.Create(command.WorkExperience.Value)
+        : Result<WorkExperience>.Success(currentInfo.WorkExperience);
+
+    if (workExperienceResult.IsFailure)
+        return workExperienceResult.Errors;
+    
+    var volunteerDescriptionResult = command.VolunteerDescription != null 
+        ? VolunteerDescription.Create(command.VolunteerDescription)
+        : Result<VolunteerDescription>.Success(currentInfo.VolunteerDescription);
+
+    if (volunteerDescriptionResult.IsFailure)
+        return volunteerDescriptionResult.Errors;
+
+    var volunteerInfo = new VolunteerInfo(
+        fullNameResult.Value,
+        emailResult.Value,
+        phoneNumberResult.Value,
+        workExperienceResult.Value,
+        volunteerDescriptionResult.Value);
+
+    return Result<VolunteerInfo>.Success(volunteerInfo);
+}
 }

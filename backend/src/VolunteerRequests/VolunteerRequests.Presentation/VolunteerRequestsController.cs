@@ -204,9 +204,7 @@ public class VolunteerRequestsController: ApplicationController
             request.Email,
             request.PhoneNumber,
             request.WorkExperience,
-            request.VolunteerDescription,
-            request.SocialNetworks.Select(s =>
-                new SocialNetworkDto{Title = s.Title,Url = s.Url}));
+            request.VolunteerDescription);
 
         var result = await handler.Handle(command, cancellationToken);
 

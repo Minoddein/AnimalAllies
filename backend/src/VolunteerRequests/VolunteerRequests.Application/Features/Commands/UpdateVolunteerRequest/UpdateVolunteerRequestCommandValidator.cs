@@ -17,23 +17,5 @@ public class UpdateVolunteerRequestCommandValidator: AbstractValidator<UpdateVol
         RuleFor(v => v.VolunteerRequestId)
             .NotEmpty()
             .WithError(Errors.General.Null("volunteer request id"));
-        
-        RuleFor(v => v.FullNameDto)
-            .MustBeValueObject(f => FullName.Create(f.FirstName, f.SecondName, f.Patronymic));
-
-        RuleFor(v => v.Email)
-            .MustBeValueObject(Email.Create);
-
-        RuleFor(v => v.PhoneNumber)
-            .MustBeValueObject(PhoneNumber.Create);
-
-        RuleFor(v => v.WorkExperience)
-            .MustBeValueObject(WorkExperience.Create);
-
-        RuleFor(v => v.VolunteerDescription)
-            .MustBeValueObject(VolunteerDescription.Create);
-
-        RuleForEach(v => v.SocialNetworkDtos)
-            .MustBeValueObject(s => SocialNetwork.Create(s.Title, s.Url));
     }
 }

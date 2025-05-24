@@ -75,7 +75,7 @@ public class GetFilteredVolunteerRequestsByAdminIdWithPaginationHandler:
                         id, first_name, second_name, patronymic, created_at,
                         description as volunteer_description, email, phone_number, work_experience,
                         admin_id, user_id, discussion_id, request_status,
-                        rejection_comment, social_networks
+                        rejection_comment
                     FROM volunteer_requests.volunteer_requests 
                     WHERE admin_id = @AdminId
                     """);
@@ -87,14 +87,8 @@ public class GetFilteredVolunteerRequestsByAdminIdWithPaginationHandler:
                 sql.ApplySorting(query.SortBy, query.SortDirection);
                 sql.ApplyPagination(query.Page, query.PageSize);
 
-                var requests = await connection.QueryAsync<VolunteerRequestDto, SocialNetworkDto[], VolunteerRequestDto>(
+                var requests = await connection.QueryAsync<VolunteerRequestDto>(
                     sql.ToString(),
-                    (volunteerRequest, socialNetworks) =>
-                    {
-                        volunteerRequest.SocialNetworks = socialNetworks;
-                        return volunteerRequest;
-                    },
-                    splitOn: "social_networks",
                     param: parameters);
 
                 var list = requests.ToList();

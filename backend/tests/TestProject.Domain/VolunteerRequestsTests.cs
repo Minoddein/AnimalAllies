@@ -83,8 +83,7 @@ public class VolunteerRequestsTests
             Email.Create("test@gmail.com").Value,
             PhoneNumber.Create("+12345678910").Value,
             WorkExperience.Create(10).Value,
-            VolunteerDescription.Create("test").Value,
-            new List<SocialNetwork>());
+            VolunteerDescription.Create("test").Value);
 
         var userId = Guid.NewGuid();
         

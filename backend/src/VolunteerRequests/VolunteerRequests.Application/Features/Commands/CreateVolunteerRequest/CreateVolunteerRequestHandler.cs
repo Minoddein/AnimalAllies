@@ -113,8 +113,7 @@ public class CreateVolunteerRequestHandler: ICommandHandler<CreateVolunteerReque
             email,
             phoneNumber,
             workExperience,
-            volunteerDescription,
-            []);
+            volunteerDescription);
 
         var createdAt = CreatedAt.Create(_dateTimeProvider.UtcNow).Value;
         var volunteerRequestId = VolunteerRequestId.NewGuid();

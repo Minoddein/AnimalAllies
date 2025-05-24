@@ -53,23 +53,29 @@ public class GetFilteredVolunteerRequestsByUserIdWithPaginationHandler:
             Expiration = TimeSpan.FromMinutes(3),
             LocalCacheExpiration = TimeSpan.FromMinutes(1)
         };
-
+        
+        var connection = _sqlConnectionFactory.Create();
+        var parameters = new DynamicParameters();
+        parameters.Add("@UserId", query.UserId);
+        
+        var totalCount = await connection
+            .ExecuteScalarAsync<int>(
+                "select count(id) from volunteer_requests.volunteer_requests " +
+                "where user_id = @UserId",
+                param: parameters);
         
         var cachedVolunteerRequests = await _hybridCache.GetOrCreateAsync(
             key: cacheKey,
             factory: async _ =>
             {
-                var connection = _sqlConnectionFactory.Create();
-                var parameters = new DynamicParameters();
-                parameters.Add("@UserId", query.UserId);
-
                 var sql = new StringBuilder("""
                     select 
                         id,
                         first_name,
                         second_name,
                         patronymic,
-                        description,
+                        description as volunteer_description,
+                        created_at,
                         email,
                         phone_number,
                         work_experience,
@@ -77,8 +83,7 @@ public class GetFilteredVolunteerRequestsByUserIdWithPaginationHandler:
                         user_id,
                         discussion_id,
                         request_status,
-                        rejection_comment,
-                        social_networks
+                        rejection_comment
                     from volunteer_requests.volunteer_requests 
                     where user_id = @UserId
                     """);
@@ -94,14 +99,8 @@ public class GetFilteredVolunteerRequestsByUserIdWithPaginationHandler:
                 sql.ApplySorting(query.SortBy, query.SortDirection);
                 sql.ApplyPagination(query.Page, query.PageSize);
 
-                var result = await connection.QueryAsync<VolunteerRequestDto, SocialNetworkDto[], VolunteerRequestDto>(
+                var result = await connection.QueryAsync<VolunteerRequestDto>(
                     sql.ToString(),
-                    (volunteerRequest, socialNetworks) =>
-                    {
-                        volunteerRequest.SocialNetworks = socialNetworks;
-                        return volunteerRequest;
-                    },
-                    splitOn: "social_networks",
                     param: parameters);
 
                 return result.ToList();
@@ -121,7 +120,7 @@ public class GetFilteredVolunteerRequestsByUserIdWithPaginationHandler:
             Items = volunteerRequestDtos,
             PageSize = query.PageSize,
             Page = query.Page,
-            TotalCount = volunteerRequestDtos.Count
+            TotalCount = totalCount
         };
     }
 }

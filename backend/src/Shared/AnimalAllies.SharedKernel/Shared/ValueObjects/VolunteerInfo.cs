@@ -9,7 +9,6 @@ public class VolunteerInfo : ValueObject
     public PhoneNumber PhoneNumber { get; }
     public WorkExperience WorkExperience { get; }
     public VolunteerDescription VolunteerDescription { get; }
-    public IReadOnlyList<SocialNetwork> SocialNetworks { get; }
     
     private VolunteerInfo(){}
 
@@ -18,15 +17,13 @@ public class VolunteerInfo : ValueObject
         Email email, 
         PhoneNumber phoneNumber,
         WorkExperience workExperience,
-        VolunteerDescription volunteerDescription,
-        IEnumerable<SocialNetwork> socialNetworks)
+        VolunteerDescription volunteerDescription)
     {
         FullName = fullName;
         Email = email;
         PhoneNumber = phoneNumber;
         WorkExperience = workExperience;
         VolunteerDescription = volunteerDescription;
-        SocialNetworks = socialNetworks.ToList();
     }
     
     protected override IEnumerable<object> GetEqualityComponents()
@@ -36,6 +33,5 @@ public class VolunteerInfo : ValueObject
         yield return PhoneNumber;
         yield return WorkExperience;
         yield return VolunteerDescription;
-        yield return SocialNetworks;
     }
 }
