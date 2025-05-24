@@ -10,11 +10,13 @@
 
     <ItemGroup>
         <PackageReference Include="AnimalAllies.Accounts.Contracts" Version="1.0.5" />
+        <PackageReference Include="Discussion.Contracts" Version="1.0.0" />
         <PackageReference Include="Microsoft.Extensions.Hosting" Version="9.0.5" />
         <PackageReference Include="NotificationService.Contracts" Version="1.0.4" />
         <PackageReference Include="Outbox" Version="1.0.6" />
         <PackageReference Include="Outbox.Abstractions" Version="1.0.0" />
         <PackageReference Include="TelegramBotService.Contracts" Version="1.0.1" />
+        <PackageReference Include="VolunteerRequests.Contracts" Version="1.0.0" />
     </ItemGroup>
 
     <ItemGroup>
