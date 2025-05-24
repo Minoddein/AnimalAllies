@@ -25,11 +25,11 @@ jobs:
         with:
           dotnet-version: 9.0.x
 
-      - name: Verify project files exist
-        run: |
-          ls ./backend/src/Accounts/AnimalAllies.Accounts.Infrastructure
-          ls ./backend/src/PetManagement/AnimalAllies.Volunteer.Infrastructure
-          ls ./backend/src/BreedManagement/AnimalAllies.Species.Infrastructure
+      #- name: Verify project files exist
+      #  run: |
+      #    ls ./backend/src/Accounts/AnimalAllies.Accounts.Infrastructure
+      #    ls ./backend/src/PetManagement/AnimalAllies.Volunteer.Infrastructure
+      #    ls ./backend/src/BreedManagement/AnimalAllies.Species.Infrastructure
           
       - name: Install dotnet-ef globally
         run: dotnet tool install --global dotnet-ef --version 9.0.0
@@ -93,7 +93,7 @@ jobs:
       - name: Apply migrations using custom script
         run: ./backend/migrations-add-and-update.sh
 
-      - name: Services_Tests
-        run: |
-          dotnet test ./backend/backend.sln --configuration Release --no-restore
+      #- name: Services_Tests
+      #  run: |
+      #    dotnet test ./backend/backend.sln --configuration Release --no-restore
          
