@@ -11,6 +11,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Configuration.AddEnvironmentVariables();
 
 builder.Services.AddLogger(builder.Configuration);
+builder.Services.AddAppMetrics();
 
 builder.Services.AddHttpLogging(o =>
 {
@@ -54,7 +55,7 @@ if (app.Environment.IsDevelopment() | app.Environment.EnvironmentName == "Docker
 {
     app.UseSwagger();
     app.UseSwaggerUI();
-
+    app.UseOpenTelemetryPrometheusScrapingEndpoint();
     //await app.ApplyMigrations();
 }
 
