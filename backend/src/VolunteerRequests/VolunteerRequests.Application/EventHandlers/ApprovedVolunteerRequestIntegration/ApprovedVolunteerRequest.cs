@@ -36,6 +36,18 @@ public class ApprovedVolunteerRequest : INotificationHandler<ApprovedVolunteerRe
             notification.UserId,
             notification.Email);
 
+        var approvedIntegrationEvent = new ApprovedVolunteerRequestEvent(
+            notification.UserId,
+            notification.FirstName,
+            notification.SecondName,
+            notification.Patronymic,
+            notification.WorkExperience,
+            notification.Description,
+            notification.Email,
+            notification.Phone);
+
+        await _outboxRepository.AddAsync(approvedIntegrationEvent, cancellationToken);
+        
         var invalidationIntegrationEvent = new CacheInvalidateIntegrationEvent(
             null,
             [
@@ -45,15 +57,15 @@ public class ApprovedVolunteerRequest : INotificationHandler<ApprovedVolunteerRe
                            TagsConstants.VolunteerRequests.BY_ADMIN + "_" + notification.AdminId)
             ]);
 
-        await _accountContract.ApproveVolunteerRequest(notification.UserId,
+        /*await _accountContract.ApproveVolunteerRequest(notification.UserId,
             notification.FirstName,
             notification.SecondName,
             notification.Patronymic,
             notification.WorkExperience,
             notification.Description,
             notification.Email,
-            notification.Phone, cancellationToken);
-
+            notification.Phone, cancellationToken);*/
+        
         await _outboxRepository.AddAsync(notificationIntegrationEvent, cancellationToken);
         
         await _outboxRepository.AddAsync(invalidationIntegrationEvent, cancellationToken);
