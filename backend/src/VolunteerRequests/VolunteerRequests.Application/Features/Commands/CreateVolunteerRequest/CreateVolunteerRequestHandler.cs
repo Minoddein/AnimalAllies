@@ -15,6 +15,7 @@ using Microsoft.Extensions.Logging;
 using VolunteerRequests.Application.Repository;
 using VolunteerRequests.Domain.Aggregates;
 using VolunteerRequests.Domain.Events;
+using VolunteerRequests.Domain.ValueObjects;
 
 namespace VolunteerRequests.Application.Features.Commands.CreateVolunteerRequest;
 
@@ -42,7 +43,7 @@ public class CreateVolunteerRequestHandler: ICommandHandler<CreateVolunteerReque
         _publisher = publisher;
         _dateTimeProvider = dateTimeProvider;
     }
-    //TODO: Возможно удалить social networks при подачи заявлений
+
     public async Task<Result<VolunteerRequestId>> Handle(
         CreateVolunteerRequestCommand command, CancellationToken cancellationToken = default)
     {
@@ -61,6 +62,19 @@ public class CreateVolunteerRequestHandler: ICommandHandler<CreateVolunteerReque
             await _publisher.PublishDomainEvent(
                 new ProhibitionOnVolunteerRequestCheckedEvent(command.UserId), cancellationToken);
 
+            var isExistingVolunteerRequest = await _repository.GetByUserId(
+                command.UserId, cancellationToken);
+
+            if (isExistingVolunteerRequest.IsFailure)
+                return isExistingVolunteerRequest.Errors;
+
+            if (isExistingVolunteerRequest.Value.Any(vr =>
+                    vr.RequestStatus != RequestStatus.Approved && vr.RequestStatus != RequestStatus.Rejected))
+            {
+                return Error.Failure("already.exist.request.in.process",
+                    "You already give the request that`s in process");
+            }
+            
             var volunteerRequestResult = InitVolunteerRequest(command);
             if (volunteerRequestResult.IsFailure)
                 return volunteerRequestResult.Errors;
