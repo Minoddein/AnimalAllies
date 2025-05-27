@@ -41,11 +41,7 @@ public class Discussion: DomainEntity<DiscussionId>
     public Result SetLastMessageToDiscussion()
     {
         var lastMessage = _messages.LastOrDefault();
-        if (lastMessage == null)
-        {
-            return Result.Success();
-        }
-
+        
         LastMessage = lastMessage;
         
         return Result.Success();
