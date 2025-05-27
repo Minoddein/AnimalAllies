@@ -1,4 +1,4 @@
-# AnimalAllies
+![image](https://github.com/user-attachments/assets/eb6fb268-3e1a-4ba8-b59a-91ec74f7b25d)# AnimalAllies
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 <div>
   
@@ -18,7 +18,34 @@
 AnimalAllies - платформа волонтёрской помощи животным, где оказывается ряд услуг: материальная помощь нуждающимся животным, поиск пропавших питомцев, оставление животного на временное на попечительство в виду отъезда и т.д.
 
 <details><summary><h2>Скриншоты</h2></summary>
-Будут добавлены, когда будет готова фронтенд часть платформы
+
+![image](https://github.com/user-attachments/assets/517dc5fa-8f68-410d-9155-43b63697d234)
+
+![image](https://github.com/user-attachments/assets/ca51fda0-9fa7-4a8f-ae91-981f526b9350)
+
+![image](https://github.com/user-attachments/assets/5ee36c67-8db5-4406-83e4-5aa7f48fb8a0)
+
+![image](https://github.com/user-attachments/assets/1fe252b1-e2a4-4b30-883b-07061f19c22f)
+
+![image](https://github.com/user-attachments/assets/88a2db3b-06ee-461f-bcd9-63334e0957ad)
+
+![image](https://github.com/user-attachments/assets/1369517c-d0f5-4d8f-9d38-7a6636dd974e)
+
+![image](https://github.com/user-attachments/assets/11f0daa0-4466-44af-9739-78167638ab6c)
+
+![image](https://github.com/user-attachments/assets/d7dcac89-95a0-4060-bf98-f9e1b70f7430)
+
+![image](https://github.com/user-attachments/assets/b2291a59-a81f-4cba-b8c3-d8191b88826d)
+
+![image](https://github.com/user-attachments/assets/c9e180aa-c114-45ba-8965-535bba521c27)
+
+![image](https://github.com/user-attachments/assets/f1cda81c-96f4-4d54-966d-d99e33ae9a9b)
+
+![image](https://github.com/user-attachments/assets/8e0346a5-bd09-481f-868b-9d6e4bb0bfc6)
+
+![image](https://github.com/user-attachments/assets/a27b226b-8091-4ed2-acf3-5b13263e8683)
+
+Скриншоты будут добавляться по мере развития фронтенд части
 </details>
 
 ## Возможности backend`а:
