@@ -9,6 +9,7 @@ using Discussion.Application.Features.Commands.PostMessage;
 using Discussion.Application.Features.Commands.UpdateMessage;
 using Discussion.Application.Features.Queries;
 using Discussion.Application.Features.Queries.GetDiscussionByRelationId;
+using Discussion.Application.Features.Queries.GetDiscussionsByUserId;
 using Discussion.Contracts.Requests;
 using Microsoft.AspNetCore.Mvc;
 
@@ -97,6 +98,23 @@ public class DiscussionController: ApplicationController
         CancellationToken cancellationToken = default)
     {
         var query = new GetDiscussionByRelationIdQuery(request.RelationId, request.PageSize);
+
+        var result = await handler.Handle(query, cancellationToken);
+
+        if (result.IsFailure)
+            result.Errors.ToResponse();
+
+        return Ok(result);
+    }
+    
+    [Permission("discussion.read")]
+    [HttpGet("discussions-by-user-id")]
+    public async Task<IActionResult> GetDiscussionsByUserId(
+        [FromServices] UserScopedData userScopedData,
+        [FromServices] GetDiscussionsByUserIdHandler handler,
+        CancellationToken cancellationToken = default)
+    {
+        var query = new GetDiscussionsByUserIdQuery(userScopedData.UserId);
 
         var result = await handler.Handle(query, cancellationToken);
 
