@@ -5,6 +5,7 @@ using AnimalAllies.Framework.Models;
 using AnimalAllies.SharedKernel.Shared;
 using Discussion.Application.Features.Commands.CloseDiscussion;
 using Discussion.Application.Features.Commands.DeleteMessage;
+using Discussion.Application.Features.Commands.MarkMessagesAsRead;
 using Discussion.Application.Features.Commands.PostMessage;
 using Discussion.Application.Features.Commands.UpdateMessage;
 using Discussion.Application.Features.Queries;
@@ -98,6 +99,24 @@ public class DiscussionController: ApplicationController
         CancellationToken cancellationToken = default)
     {
         var query = new GetDiscussionByRelationIdQuery(request.RelationId);
+
+        var result = await handler.Handle(query, cancellationToken);
+
+        if (result.IsFailure)
+            result.Errors.ToResponse();
+
+        return Ok(result);
+    }
+    
+    [Permission("discussion.read")]
+    [HttpPost("mark-as-read")]
+    public async Task<IActionResult> MarkAsReadMessages(
+        [FromBody] MarkAsReadRequest request,
+        [FromServices] UserScopedData  userScopedData,
+        [FromServices] MarkMessagesAsReadHandler handler,
+        CancellationToken cancellationToken = default)
+    {
+        var query = new MarkMessagesAsReadCommand(userScopedData.UserId,request.DiscussionId);
 
         var result = await handler.Handle(query, cancellationToken);
 

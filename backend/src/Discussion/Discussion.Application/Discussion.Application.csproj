@@ -15,10 +15,6 @@
     </ItemGroup>
 
     <ItemGroup>
-      <Folder Include="Features\Commands\MarkMessagesAsRead\" />
-    </ItemGroup>
-
-    <ItemGroup>
       <PackageReference Include="Outbox.Abstractions" Version="1.0.0" />
     </ItemGroup>
 
