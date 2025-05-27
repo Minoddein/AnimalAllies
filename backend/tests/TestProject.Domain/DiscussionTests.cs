@@ -53,6 +53,7 @@ public class DiscussionTests
             Text.Create("test").Value,
             createdAt.Value,
             new IsEdited(false),
+            new IsRead(false),
             userId).Value;
 
         // act
@@ -76,6 +77,7 @@ public class DiscussionTests
             Text.Create("test").Value,
             createdAt.Value,
             new IsEdited(false),
+            new IsRead(false),
             userId).Value;
 
         // act
@@ -173,6 +175,7 @@ public class DiscussionTests
             Text.Create("test").Value,
             createdAt.Value,
             new IsEdited(false),
+            new IsRead(false),
             discussion.Users.FirstMember).Value;
         discussion.SendComment(message);
         

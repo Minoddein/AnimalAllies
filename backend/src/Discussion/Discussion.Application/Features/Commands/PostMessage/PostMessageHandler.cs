@@ -66,8 +66,9 @@ public class PostMessageHandler: ICommandHandler<PostMessageCommand, MessageId>
             var text = Text.Create(command.Text).Value;
             var createdAt = CreatedAt.Create(_dateTimeProvider.UtcNow).Value;
             var isEdited = new IsEdited(false);
-
-            var message = Message.Create(messageId, text, createdAt, isEdited, command.UserId);
+            var isRead = new IsRead(false);
+            
+            var message = Message.Create(messageId, text, createdAt, isEdited, isRead, command.UserId);
             if (message.IsFailure)
                 return message.Errors;
 
