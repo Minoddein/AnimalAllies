@@ -13,16 +13,17 @@ using Microsoft.Extensions.Logging;
 
 namespace Discussion.Application.Features.Queries.GetDiscussionsByUserId;
 
-public class GetDiscussionsByUserIdHandler: IQueryHandler<List<DiscussionDto>,GetDiscussionsByUserIdQuery>
+public class GetDiscussionsByUserIdHandler : IQueryHandler<List<DiscussionDto>, GetDiscussionsByUserIdQuery>
 {
     private readonly ILogger<GetDiscussionsByUserIdHandler> _logger;
     private readonly IValidator<GetDiscussionsByUserIdQuery> _validator;
     private readonly ISqlConnectionFactory _sqlConnectionFactory;
 
     public GetDiscussionsByUserIdHandler(
-        ILogger<GetDiscussionsByUserIdHandler> logger, 
+        ILogger<GetDiscussionsByUserIdHandler> logger,
         IValidator<GetDiscussionsByUserIdQuery> validator,
-        [FromKeyedServices(Constraints.Context.Discussion)]ISqlConnectionFactory sqlConnectionFactory)
+        [FromKeyedServices(Constraints.Context.Discussion)]
+        ISqlConnectionFactory sqlConnectionFactory)
     {
         _logger = logger;
         _validator = validator;
@@ -30,7 +31,7 @@ public class GetDiscussionsByUserIdHandler: IQueryHandler<List<DiscussionDto>,Ge
     }
 
     public async Task<Result<List<DiscussionDto>>> Handle(
-        GetDiscussionsByUserIdQuery query, 
+        GetDiscussionsByUserIdQuery query,
         CancellationToken cancellationToken = default)
     {
         var validationResult = await _validator.ValidateAsync(query, cancellationToken);
@@ -38,13 +39,13 @@ public class GetDiscussionsByUserIdHandler: IQueryHandler<List<DiscussionDto>,Ge
         {
             return validationResult.ToErrorList();
         }
-        
+
         var connection = _sqlConnectionFactory.Create();
-        
+
         var parameters = new DynamicParameters();
-        
-        parameters.Add("@UserId",query.UserId);
-        
+
+        parameters.Add("@UserId", query.UserId);
+
         var sql = new StringBuilder("""
                                     select
                                         d.id,
@@ -54,6 +55,13 @@ public class GetDiscussionsByUserIdHandler: IQueryHandler<List<DiscussionDto>,Ge
                                         m.created_at,
                                         m.is_edited,
                                         m.user_id,
+                                        (
+                                            select count(*) 
+                                            from discussions.messages msg 
+                                            where msg.discussion_id = d.id 
+                                            and msg.user_id != @UserId 
+                                            and msg.is_read = false
+                                        ) as unread_messages_count,
                                         u.id as user_id,
                                         p.id as participant_id,
                                         p.first_name,
@@ -65,26 +73,27 @@ public class GetDiscussionsByUserIdHandler: IQueryHandler<List<DiscussionDto>,Ge
                                     where d.first_member = @UserId or d.second_member = @UserId
                                     order by m.id
                                     """);
-        
-        var result = await connection.QueryAsync<DiscussionDto,MessageDto, UserDto?, ParticipantAccountDto?, DiscussionDto>(
-            sql.ToString(),
-            (discussion, message, user, participant) =>
-            {
-                if (participant != null)
+
+        var result =
+            await connection.QueryAsync<DiscussionDto, MessageDto, UserDto?, ParticipantAccountDto?, DiscussionDto>(
+                sql.ToString(),
+                (discussion, message, user, participant) =>
                 {
-                    discussion.FirstMember = participant.ParticipantId;
-                    discussion.SecondMemberName = participant.FirstName;
-                    discussion.SecondMemberSurname = participant.SecondName;
-                }
-                
-                
-                discussion.LastMessage = message.Text;
-                    
-                return discussion;
-            },
-            splitOn:"message_id,user_id,participant_id",
-            param: parameters);
-        
+                    if (participant != null)
+                    {
+                        discussion.FirstMember = participant.ParticipantId;
+                        discussion.SecondMemberName = participant.FirstName;
+                        discussion.SecondMemberSurname = participant.SecondName;
+                    }
+
+
+                    discussion.LastMessage = message.Text;
+
+                    return discussion;
+                },
+                splitOn: "message_id,user_id,participant_id",
+                param: parameters);
+
         _logger.LogInformation("Got discussions of user with id {id}", query.UserId);
 
         return result.ToList();
