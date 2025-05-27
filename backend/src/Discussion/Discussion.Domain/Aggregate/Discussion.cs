@@ -37,6 +37,17 @@ public class Discussion: DomainEntity<DiscussionId>
         return new Discussion(id, users, relationId);
     }
 
+    public Result MarkMessageAsRead(Guid userId)
+    {
+        var unreadMessages = _messages.Where(m =>
+            m.UserId != userId && m.IsRead == false)
+            .ToList();
+        
+        unreadMessages.ForEach(m => m.MarkAsRead());
+        
+        return Result.Success();
+    }
+
     public Result SendComment(Message message)
     {
         if (Users.FirstMember != message.UserId && Users.SecondMember != message.UserId)
