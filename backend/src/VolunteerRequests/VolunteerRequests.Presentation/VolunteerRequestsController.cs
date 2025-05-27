@@ -12,6 +12,7 @@ using VolunteerRequests.Application.Features.Commands.TakeRequestForSubmit;
 using VolunteerRequests.Application.Features.Commands.UpdateVolunteerRequest;
 using VolunteerRequests.Application.Features.Queries.GetFilteredVolunteerRequestsByAdminIdWithPagination;
 using VolunteerRequests.Application.Features.Queries.GetFilteredVolunteerRequestsByUserIdWithPagination;
+using VolunteerRequests.Application.Features.Queries.GetVolunteerRequestByRelationUser;
 using VolunteerRequests.Application.Features.Queries.GetVolunteerRequestsInWaitingWithPagination;
 using VolunteerRequests.Contracts.Requests;
 
@@ -129,6 +130,23 @@ public class VolunteerRequestsController: ApplicationController
             request.SortDirection,
             request.Page, 
             request.PageSize);
+
+        var result = await handler.Handle(query, cancellationToken);
+
+        if (result.IsFailure)
+            result.Errors.ToResponse();
+
+        return Ok(result);
+    }
+    
+    [Permission("volunteerRequests.readOwn")]
+    [HttpGet("volunteer-requests-by-relation-user")]
+    public async Task<ActionResult> GetVolunteerRequestByRelationUser(
+        [FromServices] UserScopedData userScopedData,
+        [FromServices] GetVolunteerRequestByRelationUserHandler handler,
+        CancellationToken cancellationToken = default)
+    {
+        var query = new GetVolunteerRequestByRelationUserQuery(userScopedData.UserId);
 
         var result = await handler.Handle(query, cancellationToken);
 

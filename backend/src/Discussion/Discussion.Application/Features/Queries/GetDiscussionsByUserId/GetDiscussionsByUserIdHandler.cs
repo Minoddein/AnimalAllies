@@ -56,14 +56,6 @@ public class GetDiscussionsByUserIdHandler : IQueryHandler<List<DiscussionDto>, 
                                         m.created_at,
                                         m.is_edited,
                                         m.user_id,
-                                        -- Количество непрочитанных сообщений
-                                        (
-                                            SELECT COUNT(*) 
-                                            FROM discussions.messages msg 
-                                            WHERE msg.discussion_id = d.id 
-                                            AND msg.user_id != @UserId 
-                                            AND msg.is_read = false
-                                        ) as unread_messages_count,
                                         -- Информация о пользователе (second_member)
                                         u.id as user_id,
                                         p.id as participant_id,
@@ -74,7 +66,15 @@ public class GetDiscussionsByUserIdHandler : IQueryHandler<List<DiscussionDto>, 
                                         admin_user.id as admin_id,
                                         admin_profile.user_id as admin_user_id,
                                         admin_profile.first_name as admin_first_name,
-                                        admin_profile.second_name as admin_second_name
+                                        admin_profile.second_name as admin_second_name,
+                                        -- Количество непрочитанных сообщений
+                                        (
+                                            SELECT COUNT(*) 
+                                            FROM discussions.messages msg 
+                                            WHERE msg.discussion_id = d.id 
+                                            AND msg.user_id != @UserId 
+                                            AND msg.is_read = false
+                                        ) as unread_messages_count
                                     FROM discussions.discussions d
                                     -- Соединение для последнего сообщения
                                     LEFT JOIN discussions.messages m ON m.id = d.last_message_id
@@ -90,9 +90,9 @@ public class GetDiscussionsByUserIdHandler : IQueryHandler<List<DiscussionDto>, 
 
         var result =
             await connection.QueryAsync
-            <DiscussionDto, MessageDto, UserDto?, ParticipantAccountDto?, AdminProfileDto?, DiscussionDto>(
+            <DiscussionDto, MessageDto?, UserDto?, ParticipantAccountDto?, AdminProfileDto?, long,  DiscussionDto>(
                 sql.ToString(),
-                (discussion, message, user, participant, admin) =>
+                (discussion, message, user, participant, admin, unreadMessagesCount) =>
                 {
                     if (participant != null)
                     {
@@ -108,11 +108,17 @@ public class GetDiscussionsByUserIdHandler : IQueryHandler<List<DiscussionDto>, 
                         discussion.FirstMemberSurname = admin.AdminSecondName;
                     }
                     
-                    discussion.LastMessage = message.Text;
+                    discussion.UnreadMessagesCount = (int)unreadMessagesCount;
+
+                    if (message != null)
+                    {
+                        discussion.LastMessage = message.Text;
+                        discussion.LastMessageDate = message.CreatedAt;
+                    }
 
                     return discussion;
                 },
-                splitOn: "message_id,user_id,participant_id, admin_id",
+                splitOn: "message_id,user_id,participant_id, admin_id, unread_messages_count",
                 param: parameters);
 
         _logger.LogInformation("Got discussions of user with id {id}", query.UserId);
