@@ -166,19 +166,22 @@ public class DiscussionTests
         return discussion;
     }
 
-    private static Discussion.Domain.Aggregate.Discussion InitDiscussionWithComments()
+    private static Discussion.Domain.Aggregate.Discussion InitDiscussionWithComments(int messageCount = 1)
     {
-        var createdAt = CreatedAt.Create(DateTime.UtcNow);
         var discussion = InitDiscussion();
-        var message = Message.Create(
-            MessageId.NewGuid(),
-            Text.Create("test").Value,
-            createdAt.Value,
-            new IsEdited(false),
-            new IsRead(false),
-            discussion.Users.FirstMember).Value;
-        discussion.SendComment(message);
-
+    
+        for (int i = 0; i < messageCount; i++)
+        {
+            var message = Message.Create(
+                MessageId.NewGuid(),
+                Text.Create($"Test message {i}").Value,
+                CreatedAt.Create(DateTime.UtcNow).Value,
+                new IsEdited(false),
+                new IsRead(false),
+                discussion.Users.FirstMember).Value;
+            discussion.SendComment(message);
+        }
+    
         return discussion;
     }
 
@@ -253,7 +256,7 @@ public class DiscussionTests
     {
         // Arrange
         var discussion = InitDiscussionWithComments();
-        var invalidUserId = Guid.NewGuid(); 
+        var invalidUserId = Guid.NewGuid();
 
         // Act
         var result = discussion.GetUnreadMessagesCount(invalidUserId);
@@ -302,5 +305,115 @@ public class DiscussionTests
         // Assert
         result.IsSuccess.Should().BeTrue();
         ownMessagesBefore.Should().Be(ownMessagesAfter);
+    }
+
+    [Fact]
+    public void SetLastMessageToDiscussion_WhenNoMessages_ReturnsSuccessAndNullLastMessage()
+    {
+        // Arrange
+        var discussion = InitDiscussion();
+
+        // Act
+        var result = discussion.SetLastMessageToDiscussion();
+
+        // Assert
+        result.IsSuccess.Should().BeTrue();
+        discussion.LastMessage.Should().BeNull();
+    }
+
+    [Fact]
+    public void SetLastMessageToDiscussion_WithSingleMessage_SetsCorrectLastMessage()
+    {
+        // Arrange
+        var discussion = InitDiscussionWithComments(1);
+        var expectedMessage = discussion.Messages.First();
+
+        // Act
+        var result = discussion.SetLastMessageToDiscussion();
+
+        // Assert
+        result.IsSuccess.Should().BeTrue();
+        discussion.LastMessage.Should().Be(expectedMessage);
+    }
+
+    [Fact]
+    public void SetLastMessageToDiscussion_WithMultipleMessages_SetsMostRecentMessage()
+    {
+        // Arrange
+        var discussion = InitDiscussionWithComments(3);
+        var expectedMessage = discussion.Messages.Last();
+
+        // Act
+        var result = discussion.SetLastMessageToDiscussion();
+
+        // Assert
+        result.IsSuccess.Should().BeTrue();
+        discussion.LastMessage.Should().Be(expectedMessage);
+    }
+
+    [Fact]
+    public void SetLastMessageToDiscussion_AfterAddingNewMessage_UpdatesLastMessage()
+    {
+        // Arrange
+        var discussion = InitDiscussionWithComments(2);
+        discussion.SetLastMessageToDiscussion();
+        var initialLastMessage = discussion.LastMessage;
+
+        var newMessage = Message.Create(
+            MessageId.NewGuid(),
+            Text.Create("New message").Value,
+            CreatedAt.Create(DateTime.UtcNow).Value,
+            new IsEdited(false),
+            new IsRead(false),
+            discussion.Users.FirstMember).Value;
+
+        discussion.SendComment(newMessage);
+
+        // Act
+        var result = discussion.SetLastMessageToDiscussion();
+
+        // Assert
+        result.IsSuccess.Should().BeTrue();
+        discussion.LastMessage.Should().NotBe(initialLastMessage);
+        discussion.LastMessage.Should().Be(newMessage);
+    }
+
+    [Fact]
+    public void SetLastMessageToDiscussion_AfterDeletingLastMessage_UpdatesToPreviousMessage()
+    {
+        // Arrange
+        var discussion = InitDiscussionWithComments(3);
+        discussion.SetLastMessageToDiscussion();
+        var initialLastMessage = discussion.LastMessage;
+        var previousMessage = discussion.Messages[^2];
+
+        discussion.DeleteComment(discussion.Users.FirstMember, initialLastMessage.Id);
+
+        // Act
+        var result = discussion.SetLastMessageToDiscussion();
+
+        // Assert
+        result.IsSuccess.Should().BeTrue();
+        discussion.LastMessage.Should().Be(previousMessage);
+    }
+
+    [Fact]
+    public void SetLastMessageToDiscussion_AfterDeletingAllMessages_SetsNull()
+    {
+        // Arrange
+        var discussion = InitDiscussionWithComments(2);
+        discussion.SetLastMessageToDiscussion();
+
+        foreach (var message in discussion.Messages.ToList())
+        {
+            discussion.DeleteComment(discussion.Users.FirstMember, message.Id);
+        }
+
+        // Act
+        var result = discussion.SetLastMessageToDiscussion();
+
+        // Assert
+        result.IsSuccess.Should().BeTrue();
+        discussion.LastMessage.Should().BeNull();
     }
 }
