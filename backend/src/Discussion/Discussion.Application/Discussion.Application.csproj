@@ -15,7 +15,7 @@
     </ItemGroup>
 
     <ItemGroup>
-      <Folder Include="Features\Commands\" />
+      <Folder Include="Features\Commands\MarkMessagesAsRead\" />
     </ItemGroup>
 
     <ItemGroup>

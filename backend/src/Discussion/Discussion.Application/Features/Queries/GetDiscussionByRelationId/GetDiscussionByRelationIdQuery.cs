@@ -2,6 +2,4 @@
 
 namespace Discussion.Application.Features.Queries.GetDiscussionByRelationId;
 
-public record GetDiscussionByRelationIdQuery(
-    Guid RelationId,
-    int PageSize) : IQuery;
+public record GetDiscussionByRelationIdQuery(Guid RelationId) : IQuery;

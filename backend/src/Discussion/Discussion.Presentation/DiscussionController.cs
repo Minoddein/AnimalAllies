@@ -97,7 +97,7 @@ public class DiscussionController: ApplicationController
         [FromServices] GetDiscussionByRelationIdHandler handler,
         CancellationToken cancellationToken = default)
     {
-        var query = new GetDiscussionByRelationIdQuery(request.RelationId, request.PageSize);
+        var query = new GetDiscussionByRelationIdQuery(request.RelationId);
 
         var result = await handler.Handle(query, cancellationToken);
 
