@@ -54,7 +54,7 @@ public class Discussion: DomainEntity<DiscussionId>
         return Result.Success();
     }
 
-    public Result<int> GetUnreadMessages(Guid userId)
+    public Result<int> GetUnreadMessagesCount(Guid userId)
     {
         if (!Users.IsOneOf(userId))
         {
