@@ -25,6 +25,7 @@ public class Discussion: DomainEntity<DiscussionId>
     }
     
     public DiscussionStatus DiscussionStatus { get; private set; }
+    public Message? LastMessage { get; private set; }
     public Users Users { get; private set; }
     public Guid RelationId { get; private set; }
     public IReadOnlyList<Message> Messages => _messages;
@@ -37,6 +38,19 @@ public class Discussion: DomainEntity<DiscussionId>
         return new Discussion(id, users, relationId);
     }
 
+    public Result SetLastMessageToDiscussion()
+    {
+        var lastMessage = _messages.LastOrDefault();
+        if (lastMessage == null)
+        {
+            return Result.Success();
+        }
+
+        LastMessage = lastMessage;
+        
+        return Result.Success();
+    }
+    
     public Result MarkMessageAsRead(Guid userId)
     {
         if (!Users.IsOneOf(userId))
