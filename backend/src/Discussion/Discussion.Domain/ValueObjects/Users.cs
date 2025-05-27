@@ -17,6 +17,11 @@ public class Users: ValueObject
         SecondMember = secondMember;
     }
 
+    public bool IsOneOf(Guid userId)
+    {
+        return FirstMember == userId || SecondMember == userId;
+    }
+
     public static Result<Users> Create(Guid firstMember, Guid secondMember)
     {
         if (firstMember == Guid.Empty || secondMember == Guid.Empty)

@@ -39,6 +39,12 @@ public class Discussion: DomainEntity<DiscussionId>
 
     public Result MarkMessageAsRead(Guid userId)
     {
+        if (!Users.IsOneOf(userId))
+        {
+            return Error.Failure("not.correct.user",
+                "User with this id is not member of this discussion");
+        }
+
         var unreadMessages = _messages.Where(m =>
             m.UserId != userId && m.IsRead == false)
             .ToList();
@@ -46,6 +52,19 @@ public class Discussion: DomainEntity<DiscussionId>
         unreadMessages.ForEach(m => m.MarkAsRead());
         
         return Result.Success();
+    }
+
+    public Result<int> GetUnreadMessages(Guid userId)
+    {
+        if (!Users.IsOneOf(userId))
+        {
+            return Error.Failure("not.correct.user",
+                "User with this id is not member of this discussion");
+        }
+        
+        var unreadMessagesCount = _messages.Count(m => m.UserId != userId && m.IsRead == false);
+
+        return unreadMessagesCount;
     }
 
     public Result SendComment(Message message)
