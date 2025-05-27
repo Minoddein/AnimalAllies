@@ -25,6 +25,12 @@ public class DiscussionConfiguration: IEntityTypeConfiguration<Domain.Aggregate.
                 .HasMaxLength(Constraints.MAX_VALUE_LENGTH);
         });
         
+        builder.HasOne(d => d.LastMessage)
+            .WithMany()
+            .HasForeignKey("last_message_id")
+            .IsRequired(false)
+            .OnDelete(DeleteBehavior.Restrict);
+        
         builder.ComplexProperty(d => d.Users, u =>
         {
             u.IsRequired();

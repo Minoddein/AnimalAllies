@@ -25,6 +25,13 @@ public class MessageConfiguration:  IEntityTypeConfiguration<Message>
                 .HasColumnName("created_at");
         });
         
+        builder.ComplexProperty(m => m.IsRead, c =>
+        {
+            c.IsRequired();
+            c.Property(x => x.Value)
+                .HasColumnName("is_read");
+        });
+        
         builder.ComplexProperty(m => m.Text, t =>
         {
             t.IsRequired();
