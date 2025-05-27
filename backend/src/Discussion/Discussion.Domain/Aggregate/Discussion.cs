@@ -93,6 +93,8 @@ public class Discussion: DomainEntity<DiscussionId>
         
         AddDomainEvent(@event);
 
+        SetLastMessageToDiscussion();
+        
         return Result.Success();
     }
 
@@ -112,6 +114,8 @@ public class Discussion: DomainEntity<DiscussionId>
         
         AddDomainEvent(@event);
 
+        SetLastMessageToDiscussion();
+
         return Result.Success();
     }
     
@@ -130,6 +134,8 @@ public class Discussion: DomainEntity<DiscussionId>
         var @event = new UpdatedMessageDomainEvent(RelationId);
         
         AddDomainEvent(@event);
+
+        SetLastMessageToDiscussion();
 
         return Result.Success();
     }
