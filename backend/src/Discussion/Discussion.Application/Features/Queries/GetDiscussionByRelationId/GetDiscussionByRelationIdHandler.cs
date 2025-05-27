@@ -56,6 +56,7 @@ public class GetDiscussionByRelationIdHandler: IQueryHandler<List<MessageDto>, G
                                                 m.text,
                                                 m.created_at,
                                                 m.is_edited,
+                                                m.is_read,
                                                 m.user_id,
                                                 u.id as user_id,
                                                 p.id as participant_id,

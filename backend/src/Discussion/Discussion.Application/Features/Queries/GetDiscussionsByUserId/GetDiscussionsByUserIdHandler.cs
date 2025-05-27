@@ -59,9 +59,9 @@ public class GetDiscussionsByUserIdHandler: IQueryHandler<List<DiscussionDto>,Ge
                                         p.first_name,
                                         p.second_name
                                     from discussions.discussions d
-                                             left join discussions.messages m on m.discussion_id = d.id
                                              left join accounts.users u on d.second_member = u.id
                                              left join accounts.participant_accounts p on u.participant_account_id = p.id
+                                             left join discussions.messages m on m.id = d.last_message_id
                                     where d.first_member = @UserId or d.second_member = @UserId
                                     order by m.id
                                     """);
@@ -77,7 +77,7 @@ public class GetDiscussionsByUserIdHandler: IQueryHandler<List<DiscussionDto>,Ge
                     discussion.SecondMemberSurname = participant.SecondName;
                 }
                 
-                discussion.Messages = [message];
+                discussion.LastMessage = message.Text;
                     
                 return discussion;
             },
