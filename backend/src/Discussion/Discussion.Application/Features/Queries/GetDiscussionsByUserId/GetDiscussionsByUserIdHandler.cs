@@ -77,6 +77,7 @@ public class GetDiscussionsByUserIdHandler: IQueryHandler<List<DiscussionDto>,Ge
                     discussion.SecondMemberSurname = participant.SecondName;
                 }
                 
+                
                 discussion.LastMessage = message.Text;
                     
                 return discussion;
