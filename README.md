@@ -1,8 +1,15 @@
 # AnimalAllies
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+<div>
+  
 [![Build/Restore/Docker/Tests](https://github.com/Minoddein/AnimalAllies/actions/workflows/dotnet.yml/badge.svg?branch=main)](https://github.com/Minoddein/AnimalAllies/actions/workflows/dotnet.yml)
+[![Code Style Validation](https://github.com/Minoddein/AnimalAllies/actions/workflows/code-style.yml/badge.svg)](https://github.com/Minoddein/AnimalAllies/actions/workflows/code-style.yml)
+[![.NET Unit Tests](https://github.com/Minoddein/AnimalAllies/actions/workflows/unit-testing.yml/badge.svg)](https://github.com/Minoddein/AnimalAllies/actions/workflows/unit-testing.yml)
 [![Dependabot Updates](https://github.com/Minoddein/AnimalAllies/actions/workflows/dependabot/dependabot-updates/badge.svg)](https://github.com/Minoddein/AnimalAllies/actions/workflows/dependabot/dependabot-updates)
 [![CodeQL (C#, GH Actions)](https://github.com/Minoddein/AnimalAllies/actions/workflows/codeql.yaml/badge.svg)](https://github.com/Minoddein/AnimalAllies/actions/workflows/codeql.yaml)
+
+</div>
+
 [![.NET](https://img.shields.io/badge/.NET-9.0-blue.svg)](https://dotnet.microsoft.com/)
 [![ASP.NET Core](https://img.shields.io/badge/ASP.NET%20Core-9.0-orange.svg)](https://dotnet.microsoft.com/apps/aspnet)
 [![RabbitMQ](https://img.shields.io/badge/RabbitMQ-8.3.6-green.svg)](https://www.rabbitmq.com/)
@@ -41,11 +48,11 @@ AnimalAllies - платформа волонтёрской помощи живо
   - [x] Реализована функциональность, которая позволяет обновлять пользователям свои сообщения в дискуссии
 - [x] Реализованы разного вида запросы с пагинацией, фильтрацией и сортировкой. Для повышения производительности был использован CQRS. Для команд - ef core, для запросов - dapper 
 - [x] Написаны юнит-тесты для всей бизнес-логики 
-- [ ] Добавленно кэширование через Redis для повышения производительности запрос и улучшения пользовательского опыта
+- [x] Добавленно кэширование через Redis для повышения производительности запрос и улучшения пользовательского опыта
 - [x] Проект переведен на .NET 9
 - [x] Внедрен transactional outbox паттерн для обеспечения атомарности в распределенных транзакциях, а также вынесен в nuget пакет
-- [ ] Добавлены метрики через ElasticSearch, Kibana, Grafana
-- [ ] Настроен CI/CD
+- [x] Добавлены метрики через ElasticSearch, Kibana, Grafana
+- [x] Настроен CI/CD
 - [ ] Написаны интеграционные тесты
 - [x] Покрытие юнит-тестами >= 70%
 - [ ] Покрытие интеграционными-тестами >= 70%
@@ -77,13 +84,10 @@ AnimalAllies - платформа волонтёрской помощи живо
 - [x] Связь с бэкендом по RabbitMQ
 - [x] Слой Contracts добавлен в nu-get
 
-## Функционал Платежного сервиса:
-- [ ] *В разработке*
-- [ ] *В разработке*
-
-## Функционал Сервиса событий:
-- [ ] *В разработке*
-- [ ] *В разработке*
+## Функционал Сервиса инвалидации кэша:
+- [x] Инвалидация кэша L1 и L2 Redis
+- [x] Инвалидация кэша по тегу
+- [x] Инвалидация кэша по ключу
 
 ## Функционал Телеграм бота:
 - [x] Реализована своя FSM, используя паттерн Command и State
@@ -92,6 +96,14 @@ AnimalAllies - платформа волонтёрской помощи живо
 - [x] Уведомление о статусе заявки
 - [x] Вспомогательные команды: /help, /info
 - [ ] Получение информации о своих животных (для волонтёра)
+
+## Функционал Платежного сервиса:
+- [ ] *В разработке*
+- [ ] *В разработке*
+
+## Функционал Сервиса событий:
+- [ ] *В разработке*
+- [ ] *В разработке*
 
 ## Функционал CV-сервиса:
 - [ ] *В разработке*
