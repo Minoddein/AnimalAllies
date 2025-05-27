@@ -1,4 +1,4 @@
-![image](https://github.com/user-attachments/assets/eb6fb268-3e1a-4ba8-b59a-91ec74f7b25d)# AnimalAllies
+# AnimalAllies
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 <div>
   
