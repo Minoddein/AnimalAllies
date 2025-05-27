@@ -13,4 +13,6 @@ public class UserDto
     public Guid? VolunteerAccountId { get; set; }
     public ParticipantAccountDto? ParticipantAccount { get; set; }
     public Guid? ParticipantAccountId { get; set; }
+    public AdminProfileDto AdminProfile { get; set; }
+    public Guid AdminProfileId { get; set; }
 }

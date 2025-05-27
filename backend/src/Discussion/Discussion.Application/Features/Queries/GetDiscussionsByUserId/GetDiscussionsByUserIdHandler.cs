@@ -47,51 +47,72 @@ public class GetDiscussionsByUserIdHandler : IQueryHandler<List<DiscussionDto>, 
         parameters.Add("@UserId", query.UserId);
 
         var sql = new StringBuilder("""
-                                    select
+                                    SELECT
                                         d.id,
-                                        relation_id,
+                                        d.relation_id,
+                                        -- Информация о последнем сообщении
                                         m.id as message_id,
                                         m.text,
                                         m.created_at,
                                         m.is_edited,
                                         m.user_id,
+                                        -- Количество непрочитанных сообщений
                                         (
-                                            select count(*) 
-                                            from discussions.messages msg 
-                                            where msg.discussion_id = d.id 
-                                            and msg.user_id != @UserId 
-                                            and msg.is_read = false
+                                            SELECT COUNT(*) 
+                                            FROM discussions.messages msg 
+                                            WHERE msg.discussion_id = d.id 
+                                            AND msg.user_id != @UserId 
+                                            AND msg.is_read = false
                                         ) as unread_messages_count,
+                                        -- Информация о пользователе (second_member)
                                         u.id as user_id,
                                         p.id as participant_id,
-                                        p.first_name,
-                                        p.second_name
-                                    from discussions.discussions d
-                                             left join accounts.users u on d.second_member = u.id
-                                             left join accounts.participant_accounts p on u.participant_account_id = p.id
-                                             left join discussions.messages m on m.id = d.last_message_id
-                                    where d.first_member = @UserId or d.second_member = @UserId
-                                    order by m.id
+                                        p.user_id as participant_user_id,
+                                        p.first_name as first_name,
+                                        p.second_name as second_name,
+                                        -- Информация об админе (first_member)
+                                        admin_user.id as admin_id,
+                                        admin_profile.user_id as admin_user_id,
+                                        admin_profile.first_name as admin_first_name,
+                                        admin_profile.second_name as admin_second_name
+                                    FROM discussions.discussions d
+                                    -- Соединение для последнего сообщения
+                                    LEFT JOIN discussions.messages m ON m.id = d.last_message_id
+                                    -- Соединения для пользователя (second_member)
+                                    LEFT JOIN accounts.users u ON d.second_member = u.id
+                                    LEFT JOIN accounts.participant_accounts p ON u.participant_account_id = p.id
+                                    -- Соединения для админа (first_member)
+                                    LEFT JOIN accounts.users admin_user ON d.first_member = admin_user.id
+                                    LEFT JOIN accounts.admin_profiles admin_profile ON admin_user.id = admin_profile.user_id
+                                    WHERE d.first_member = @UserId OR d.second_member = @UserId
+                                    ORDER BY m.created_at DESC
                                     """);
 
         var result =
-            await connection.QueryAsync<DiscussionDto, MessageDto, UserDto?, ParticipantAccountDto?, DiscussionDto>(
+            await connection.QueryAsync
+            <DiscussionDto, MessageDto, UserDto?, ParticipantAccountDto?, AdminProfileDto?, DiscussionDto>(
                 sql.ToString(),
-                (discussion, message, user, participant) =>
+                (discussion, message, user, participant, admin) =>
                 {
                     if (participant != null)
                     {
-                        discussion.FirstMember = participant.ParticipantId;
+                        discussion.SecondMember = participant.ParticipantUserId;
                         discussion.SecondMemberName = participant.FirstName;
                         discussion.SecondMemberSurname = participant.SecondName;
                     }
 
-
+                    if (admin != null)
+                    {
+                        discussion.FirstMember = admin.AdminUserId;
+                        discussion.FirstMemberName = admin.AdminFirstName;
+                        discussion.FirstMemberSurname = admin.AdminSecondName;
+                    }
+                    
                     discussion.LastMessage = message.Text;
 
                     return discussion;
                 },
-                splitOn: "message_id,user_id,participant_id",
+                splitOn: "message_id,user_id,participant_id, admin_id",
                 param: parameters);
 
         _logger.LogInformation("Got discussions of user with id {id}", query.UserId);
