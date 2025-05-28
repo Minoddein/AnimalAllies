@@ -51,6 +51,7 @@ public class GetDiscussionByRelationIdHandler : IQueryHandler<DiscussionDto?, Ge
                 var sql = new StringBuilder("""
                                             select
                                                 d.id,
+                                                d.discussion_status,
                                                 relation_id,
                                                 m.id as message_id,
                                                 m.text,

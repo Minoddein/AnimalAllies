@@ -12,6 +12,7 @@ public class DiscussionDto
     public string SecondMemberSurname { get; set; }
     public string LastMessage { get; set; }
     public DateTime LastMessageDate { get; set; }
+    public string DiscussionStatus { get; set; }
     public int UnreadMessagesCount { get; set; }
     public MessageDto[] Messages { get; set; } = [];
 }
