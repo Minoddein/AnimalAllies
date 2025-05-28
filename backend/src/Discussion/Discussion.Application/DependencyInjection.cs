@@ -11,7 +11,9 @@ public static class DependencyInjection
         services
             .AddCommands()
             .AddQueries()
-            .AddValidatorsFromAssembly(typeof(DependencyInjection).Assembly);;
+            .AddValidatorsFromAssembly(typeof(DependencyInjection).Assembly)
+            .AddMediatR(cfg =>
+                cfg.RegisterServicesFromAssembly(typeof(DependencyInjection).Assembly));
         return services;
     }
 
