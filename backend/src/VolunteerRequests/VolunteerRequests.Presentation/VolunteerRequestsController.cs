@@ -13,6 +13,7 @@ using VolunteerRequests.Application.Features.Commands.UpdateVolunteerRequest;
 using VolunteerRequests.Application.Features.Queries.GetFilteredVolunteerRequestsByAdminIdWithPagination;
 using VolunteerRequests.Application.Features.Queries.GetFilteredVolunteerRequestsByUserIdWithPagination;
 using VolunteerRequests.Application.Features.Queries.GetVolunteerRequestByRelationUser;
+using VolunteerRequests.Application.Features.Queries.GetVolunteerRequestInWaitingCount;
 using VolunteerRequests.Application.Features.Queries.GetVolunteerRequestsInWaitingWithPagination;
 using VolunteerRequests.Contracts.Requests;
 
@@ -195,6 +196,22 @@ public class VolunteerRequestsController: ApplicationController
             request.SortDirection,
             request.Page, 
             request.PageSize);
+
+        var result = await handler.Handle(query, cancellationToken);
+
+        if (result.IsFailure)
+            result.Errors.ToResponse();
+
+        return Ok(result);
+    }
+    
+    [Permission("volunteerRequests.read")]
+    [HttpGet("request-count")]
+    public async Task<ActionResult> GetVolunteerRequestsInWaitingCount(
+        [FromServices] GetVolunteerRequestInWaitingCountHandler handler,
+        CancellationToken cancellationToken = default)
+    {
+        var query = new GetVolunteerRequestInWaitingCountQuery();
 
         var result = await handler.Handle(query, cancellationToken);
 
