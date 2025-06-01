@@ -15,7 +15,7 @@ public class SpeciesConfiguration: IEntityTypeConfiguration<Domain.Species>
         builder.Property(x => x.Id)
             .HasConversion(
                 id => id.Id,
-                Id => SpeciesId.Create(Id));
+                id => SpeciesId.Create(id));
 
         builder.ComplexProperty(x => x.Name, b =>
         {
@@ -25,13 +25,12 @@ public class SpeciesConfiguration: IEntityTypeConfiguration<Domain.Species>
                 .HasColumnName("name");
         });
         
-        builder.Property<bool>("IsDeleted")
-            .UsePropertyAccessMode(PropertyAccessMode.Field)
-            .HasColumnName("is_deleted");
         
         builder.HasMany(x => x.Breeds)
             .WithOne()
-            .OnDelete(DeleteBehavior.Cascade);
+            .HasForeignKey("species_id")
+            .OnDelete(DeleteBehavior.Cascade)
+            .IsRequired();
         
     }
 }

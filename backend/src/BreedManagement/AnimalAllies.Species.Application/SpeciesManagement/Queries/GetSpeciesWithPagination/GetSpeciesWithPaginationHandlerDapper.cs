@@ -81,7 +81,7 @@ public class GetSpeciesWithPaginationHandlerDapper : IQueryHandler<PagedList<Spe
                                     b.name as breed_name,
                                     b.species_id as species_id
                                 FROM species.breeds b
-                                WHERE b.species_id = ANY(@SpeciesIds) AND b.is_deleted = false
+                                WHERE b.species_id = ANY(@SpeciesIds)
                                 """;
 
                 var breeds = await connection.QueryAsync<BreedDto>(breedsSql, new { SpeciesIds = speciesIds });
