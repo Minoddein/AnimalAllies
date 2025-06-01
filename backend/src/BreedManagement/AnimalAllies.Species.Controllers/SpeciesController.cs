@@ -4,10 +4,10 @@ using AnimalAllies.Species.Application.SpeciesManagement.Commands.CreateBreed;
 using AnimalAllies.Species.Application.SpeciesManagement.Commands.CreateSpecies;
 using AnimalAllies.Species.Application.SpeciesManagement.Commands.DeleteBreed;
 using AnimalAllies.Species.Application.SpeciesManagement.Commands.DeleteSpecies;
+using AnimalAllies.Species.Application.SpeciesManagement.Queries.GetAllSpeciesWithBreeds;
 using AnimalAllies.Species.Application.SpeciesManagement.Queries.GetBreedsBySpeciesId;
 using AnimalAllies.Species.Application.SpeciesManagement.Queries.GetSpeciesWithPagination;
 using AnimalAllies.Species.Presentation.Requests;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace AnimalAllies.Species.Presentation;
@@ -22,17 +22,17 @@ public class SpeciesController : ApplicationController
         CancellationToken cancellationToken = default)
     {
         var command = request.ToCommand();
-        
+
         var result = await handler.Handle(command, cancellationToken);
-        
+
         if (result.IsFailure)
         {
             return result.Errors.ToResponse();
         }
-        
+
         return Ok(result.Value);
     }
-    
+
     [Permission("species.create")]
     [HttpPost("{speciesId:guid}")]
     public async Task<IActionResult> CreateBreed(
@@ -42,17 +42,17 @@ public class SpeciesController : ApplicationController
         CancellationToken cancellationToken = default)
     {
         var command = request.ToCommand(speciesId);
-        
+
         var result = await handler.Handle(command, cancellationToken);
-        
+
         if (result.IsFailure)
         {
             return result.Errors.ToResponse();
         }
-        
+
         return Ok(result.Value);
     }
-    
+
     [Permission("species.delete")]
     [HttpDelete("{speciesId:guid}")]
     public async Task<IActionResult> DeleteSpecies(
@@ -61,17 +61,35 @@ public class SpeciesController : ApplicationController
         CancellationToken cancellationToken = default)
     {
         var command = new DeleteSpeciesCommand(speciesId);
-        
+
         var result = await handler.Handle(command, cancellationToken);
-        
+
         if (result.IsFailure)
         {
             return result.Errors.ToResponse();
         }
-        
+
         return Ok(result.Value);
     }
-    
+
+    [Permission("species.read")]
+    [HttpGet("all-species-with-breeds")]
+    public async Task<IActionResult> GetSpeciesWithBreeds(
+        [FromServices] GetAllSpeciesWithBreedsHandler handler,
+        CancellationToken cancellationToken = default)
+    {
+        var query = new GetAllSpeciesWithBreedsQuery();
+
+        var result = await handler.Handle(query, cancellationToken);
+
+        if (result.IsFailure)
+        {
+            return result.Errors.ToResponse();
+        }
+
+        return Ok(result);
+    }
+
     [Permission("species.delete")]
     [HttpDelete("{speciesId:guid}/{breedId:guid}")]
     public async Task<IActionResult> DeleteBreed(
@@ -81,17 +99,17 @@ public class SpeciesController : ApplicationController
         CancellationToken cancellationToken = default)
     {
         var command = new DeleteBreedCommand(speciesId, breedId);
-        
+
         var result = await handler.Handle(command, cancellationToken);
-        
+
         if (result.IsFailure)
         {
             return result.Errors.ToResponse();
         }
-        
+
         return Ok(result.Value);
     }
-    
+
     [Permission("species.read")]
     [HttpGet]
     public async Task<IActionResult> GetSpecies(
@@ -99,19 +117,18 @@ public class SpeciesController : ApplicationController
         [FromQuery] GetSpeciesWithPaginationRequest request,
         CancellationToken cancellationToken = default)
     {
-
         var query = request.ToQuery();
-        
+
         var result = await handler.Handle(query, cancellationToken);
-        
+
         if (result.IsFailure)
         {
             return result.Errors.ToResponse();
         }
-        
+
         return Ok(result);
     }
-    
+
     [Permission("species.read")]
     [HttpGet("{speciesId:guid}")]
     public async Task<IActionResult> GetBreeds(
@@ -121,14 +138,14 @@ public class SpeciesController : ApplicationController
         CancellationToken cancellationToken = default)
     {
         var query = request.ToQuery(speciesId);
-        
+
         var result = await handler.Handle(query, cancellationToken);
-        
+
         if (result.IsFailure)
         {
             return result.Errors.ToResponse();
         }
-        
+
         return Ok(result);
     }
 }
