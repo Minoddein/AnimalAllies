@@ -9,6 +9,6 @@ public class BreedDtoConfiguration: IEntityTypeConfiguration<BreedDto>
     public void Configure(EntityTypeBuilder<BreedDto> builder)
     {
         builder.ToTable("breeds");
-        builder.HasKey(x => x.Id);
+        builder.HasKey(x => x.BreedId);
     }
 }

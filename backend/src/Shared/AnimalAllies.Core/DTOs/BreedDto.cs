@@ -2,6 +2,7 @@
 
 public class BreedDto
 {
-    public Guid Id { get; init; }
-    public string Name { get; init; } = string.Empty;
+    public Guid BreedId { get; init; }
+    public Guid SpeciesId { get; init; }
+    public string BreedName { get; init; } = string.Empty;
 }

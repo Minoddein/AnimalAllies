@@ -105,21 +105,21 @@ public class IntegrationTestsWebFactory: WebApplicationFactory<Program>,IAsyncLi
     {
         var speciesDto = new SpeciesDto
         {
-            Id = speciesId,
-            Name = "Dog"
+            SpeciesId = speciesId,
+            SpeciesName = "Dog"
         };
         
         var breedDto = new BreedDto
         {
-            Id = breedId,
-            Name = "Labrador",
+            BreedId = breedId,
+            BreedName = "Labrador",
         };
         
         _speciesContractMock.GetSpecies(Arg.Any<CancellationToken>())
-            .Returns([speciesDto.Id]);
+            .Returns([speciesDto.SpeciesId]);
         
         _speciesContractMock.GetBreedsBySpeciesId(Arg.Any<Guid>(),Arg.Any<CancellationToken>())
-            .Returns([breedDto.Id]);
+            .Returns([breedDto.BreedId]);
     }
     
     public new async Task DisposeAsync()

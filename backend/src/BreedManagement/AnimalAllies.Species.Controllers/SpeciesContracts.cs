@@ -25,7 +25,7 @@ public class SpeciesContracts: ISpeciesContracts
         if (species.IsFailure)
             throw new ArgumentNullException("Species not found");
 
-        return species.Value.Select(s => s.Id).ToList();
+        return species.Value.Select(s => s.SpeciesId).ToList();
     }
 
     public async Task<List<Guid>> GetBreedsBySpeciesId(
@@ -37,6 +37,6 @@ public class SpeciesContracts: ISpeciesContracts
         if (breeds.IsFailure)
             throw new ArgumentNullException("Species not found");
         
-        return breeds.Value.Select(b => b.Id).ToList();
+        return breeds.Value.Select(b => b.BreedId).ToList();
     }
 }

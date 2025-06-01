@@ -25,7 +25,7 @@ public class SpeciesCreatedEventHandler: INotificationHandler<SpeciesCreatedDoma
 
     public async Task Handle(SpeciesCreatedDomainEvent notification, CancellationToken cancellationToken)
     {
-        var integrationEvent = new CacheInvalidateIntegrationEvent(TagsConstants.SPECIES, null);
+        var integrationEvent = new CacheInvalidateIntegrationEvent(null ,[TagsConstants.SPECIES]);
 
         await _outboxRepository.AddAsync(integrationEvent, cancellationToken);
 

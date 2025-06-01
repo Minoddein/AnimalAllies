@@ -9,6 +9,6 @@ public class SpeciesDtoConfiguration: IEntityTypeConfiguration<SpeciesDto>
     public void Configure(EntityTypeBuilder<SpeciesDto> builder)
     {
         builder.ToTable("species");
-        builder.HasKey(x => x.Id);
+        builder.HasKey(x => x.SpeciesId);
     }
 }

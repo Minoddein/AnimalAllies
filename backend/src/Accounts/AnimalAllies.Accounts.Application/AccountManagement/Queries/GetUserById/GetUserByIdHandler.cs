@@ -120,7 +120,7 @@ public class GetUserByIdHandler: IQueryHandler<UserDto?, GetUserByIdQuery>
                         user.ParticipantAccountId = participant.ParticipantId;
                     }
 
-                    user.Roles = new[] { role };
+                    user.Roles = [role];
             
                     return user;
                 },
