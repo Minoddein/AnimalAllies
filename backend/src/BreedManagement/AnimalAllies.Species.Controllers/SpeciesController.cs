@@ -7,6 +7,7 @@ using AnimalAllies.Species.Application.SpeciesManagement.Commands.DeleteSpecies;
 using AnimalAllies.Species.Application.SpeciesManagement.Queries.GetAllSpeciesWithBreeds;
 using AnimalAllies.Species.Application.SpeciesManagement.Queries.GetBreedsBySpeciesId;
 using AnimalAllies.Species.Application.SpeciesManagement.Queries.GetSpeciesWithPagination;
+using AnimalAllies.Species.Application.SpeciesManagement.Queries.GetSpeciesWithPaginationBySearchTerm;
 using AnimalAllies.Species.Presentation.Requests;
 using Microsoft.AspNetCore.Mvc;
 
@@ -115,6 +116,25 @@ public class SpeciesController : ApplicationController
     public async Task<IActionResult> GetSpecies(
         [FromServices] GetSpeciesWithPaginationHandlerDapper handler,
         [FromQuery] GetSpeciesWithPaginationRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        var query = request.ToQuery();
+
+        var result = await handler.Handle(query, cancellationToken);
+
+        if (result.IsFailure)
+        {
+            return result.Errors.ToResponse();
+        }
+
+        return Ok(result);
+    }
+
+    [Permission("species.read")]
+    [HttpGet("by-search-term")]
+    public async Task<IActionResult> GetSpeciesBySearchTerm(
+        [FromServices] GetSpeciesWithPaginationBySearchTermQueryHandler handler,
+        [FromQuery] GetSpeciesWithPaginationBySearchTermRequest request,
         CancellationToken cancellationToken = default)
     {
         var query = request.ToQuery();

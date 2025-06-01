@@ -45,7 +45,7 @@ public class GetSpeciesWithPaginationHandlerDapper : IQueryHandler<PagedList<Spe
 
         var connection = _sqlConnectionFactory.Create();
         var cacheKey =
-            $"{TagsConstants.SPECIES}_{query.SortBy}_{query.SortDirection}_{query.SearchTerm}_{query.Page}_{query.PageSize}";
+            $"{TagsConstants.SPECIES}_{query.SortBy}_{query.SortDirection}_{query.Page}_{query.PageSize}";
 
         var options = new HybridCacheEntryOptions
         {
@@ -71,7 +71,6 @@ public class GetSpeciesWithPaginationHandlerDapper : IQueryHandler<PagedList<Spe
         };
     }
 
-
     private async Task<List<SpeciesDto>> LoadAllSpecies(IDbConnection connection, GetSpeciesWithPaginationQuery query)
     {
         var parameters = new DynamicParameters();
@@ -85,16 +84,8 @@ public class GetSpeciesWithPaginationHandlerDapper : IQueryHandler<PagedList<Spe
                           LEFT JOIN species.breeds b ON b.species_id = s.id
                           """);
 
-        if (!string.IsNullOrWhiteSpace(query.SearchTerm))
-        {
-            sqlBuilder.Append("""
-                              WHERE s.name ILIKE @SearchTerm OR b.name ILIKE @SearchTerm
-                              """);
-            parameters.Add("SearchTerm", $"%{query.SearchTerm}%");
-        }
-
-        sqlBuilder.ApplySorting(query.SortBy, query.SortDirection, "s.name"); // fallback sort
-        sqlBuilder.Append(" LIMIT @Limit OFFSET @Offset");
+        sqlBuilder.ApplySorting(query.SortBy, query.SortDirection, "s.name"); 
+        sqlBuilder.ApplyPagination(query.Page, query.PageSize);
         parameters.Add("Limit", query.PageSize);
         parameters.Add("Offset", (query.Page - 1) * query.PageSize);
 
@@ -116,23 +107,13 @@ public class GetSpeciesWithPaginationHandlerDapper : IQueryHandler<PagedList<Spe
 
     private async Task<int> CountFilteredSpecies(IDbConnection connection, GetSpeciesWithPaginationQuery query)
     {
-        var countSql = new StringBuilder("""
-                                         SELECT COUNT(DISTINCT s.id)
-                                         FROM species.species s
-                                         LEFT JOIN species.breeds b ON b.species_id = s.id
-                                         """);
+        const string countSql = """
+                                SELECT COUNT(DISTINCT s.id)
+                                FROM species.species s
+                                LEFT JOIN species.breeds b ON b.species_id = s.id
+                                """;
 
-        var parameters = new DynamicParameters();
-
-        if (!string.IsNullOrWhiteSpace(query.SearchTerm))
-        {
-            countSql.Append("""
-                            WHERE s.name ILIKE @SearchTerm OR b.name ILIKE @SearchTerm
-                            """);
-            parameters.Add("SearchTerm", $"%{query.SearchTerm}%");
-        }
-
-        return await connection.ExecuteScalarAsync<int>(countSql.ToString(), parameters);
+        return await connection.ExecuteScalarAsync<int>(countSql);
     }
 
     private async Task<List<BreedDto>> GetBreedsForSpecies(IDbConnection connection, List<Guid> speciesIds)
@@ -154,7 +135,6 @@ public class GetSpeciesWithPaginationHandlerDapper : IQueryHandler<PagedList<Spe
     {
         var connection = _sqlConnectionFactory.Create();
 
-
         var sql = new StringBuilder("""
                                     select 
                                         id,
@@ -162,11 +142,9 @@ public class GetSpeciesWithPaginationHandlerDapper : IQueryHandler<PagedList<Spe
                                         from species.species
                                     """);
 
-
         var species = await connection.QueryAsync<SpeciesDto>(sql.ToString());
 
         _logger.LogInformation("Get species with pagination Page");
-
 
         return species.ToList();
     }
