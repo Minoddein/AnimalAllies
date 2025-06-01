@@ -8,6 +8,7 @@ using AnimalAllies.Species.Application.SpeciesManagement.Queries.GetAllSpeciesWi
 using AnimalAllies.Species.Application.SpeciesManagement.Queries.GetBreedsBySpeciesId;
 using AnimalAllies.Species.Application.SpeciesManagement.Queries.GetSpeciesWithPagination;
 using AnimalAllies.Species.Application.SpeciesManagement.Queries.GetSpeciesWithPaginationBySearchTerm;
+using AnimalAllies.Species.Application.SpeciesManagement.Queries.GetTotalCountSpeciesAndBreeds;
 using AnimalAllies.Species.Presentation.Requests;
 using Microsoft.AspNetCore.Mvc;
 
@@ -138,6 +139,24 @@ public class SpeciesController : ApplicationController
         CancellationToken cancellationToken = default)
     {
         var query = request.ToQuery();
+
+        var result = await handler.Handle(query, cancellationToken);
+
+        if (result.IsFailure)
+        {
+            return result.Errors.ToResponse();
+        }
+
+        return Ok(result);
+    }
+
+    [Permission("species.read")]
+    [HttpGet("total-count")]
+    public async Task<IActionResult> GetSpeciesAndBreedsCount(
+        [FromServices] GetTotalCountSpeciesAndBreedsHandler handler,
+        CancellationToken cancellationToken = default)
+    {
+        var query = new GetTotalCountSpeciesAndBreedsQuery();
 
         var result = await handler.Handle(query, cancellationToken);
 
