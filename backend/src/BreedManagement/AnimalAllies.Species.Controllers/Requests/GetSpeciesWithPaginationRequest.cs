@@ -3,11 +3,12 @@
 namespace AnimalAllies.Species.Presentation.Requests;
 
 public record GetSpeciesWithPaginationRequest(
+    string? SearchTerm,
     string? SortBy,
     string? SortDirection,
     int Page,
     int PageSize)
 {
     public GetSpeciesWithPaginationQuery ToQuery()
-        => new(SortBy, SortDirection, Page, PageSize);
+        => new(SearchTerm, SortBy, SortDirection, Page, PageSize);
 }

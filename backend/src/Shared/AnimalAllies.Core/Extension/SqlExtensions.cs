@@ -106,4 +106,32 @@ public static class SqlExtensions
         }
     }
     
+    public static void ApplySearhByEqualsValue<TValue>(
+        this StringBuilder sqlBuilder,
+        ref bool hasWhereClause,
+        string? propertyName,
+        TValue? valueTo)
+    {
+        if (!string.IsNullOrWhiteSpace(propertyName) && valueTo != null)
+        {
+            sqlBuilder.Append(hasWhereClause ? " AND " : " WHERE ");
+            sqlBuilder.Append($"{propertyName} ILIKE %{valueTo}%");
+            hasWhereClause = true;
+        }
+    }
+    
+    public static void ApplySearchByContainsValue(
+        this StringBuilder sqlBuilder,
+        ref bool hasWhereClause,
+        string columnName,
+        string? searchTerm)
+    {
+        if (!string.IsNullOrWhiteSpace(searchTerm))
+        {
+            sqlBuilder.Append(hasWhereClause ? " AND " : " WHERE ");
+            sqlBuilder.Append($"{columnName} ILIKE @SearchTerm");
+            hasWhereClause = true;
+        }
+    }
+    
 }

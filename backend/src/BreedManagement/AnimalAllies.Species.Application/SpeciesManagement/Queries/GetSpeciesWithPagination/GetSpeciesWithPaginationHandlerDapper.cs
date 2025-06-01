@@ -1,4 +1,5 @@
-﻿using System.Text;
+﻿using System.Data;
+using System.Text;
 using AnimalAllies.Core.Abstractions;
 using AnimalAllies.Core.Database;
 using AnimalAllies.Core.DTOs;
@@ -42,76 +43,111 @@ public class GetSpeciesWithPaginationHandlerDapper : IQueryHandler<PagedList<Spe
         if (!validatorResult.IsValid)
             return validatorResult.ToErrorList();
 
+        var connection = _sqlConnectionFactory.Create();
+        var cacheKey =
+            $"{TagsConstants.SPECIES}_{query.SortBy}_{query.SortDirection}_{query.SearchTerm}_{query.Page}_{query.PageSize}";
+
         var options = new HybridCacheEntryOptions
         {
             Expiration = TimeSpan.FromHours(3),
             LocalCacheExpiration = TimeSpan.FromMinutes(60)
         };
 
-        //TODO:Сделать рефакторинг: добавить запрос на получение общего числа записей и добавлять его в TotalCount,
-        //сделать это для всех запросов
+        var pagedSpecies = await _hybridCache.GetOrCreateAsync(
+            cacheKey,
+            async _ => await LoadAllSpecies(connection, query),
+            options,
+            [TagsConstants.SPECIES],
+            cancellationToken);
 
-        var cachedSpecies = await _hybridCache.GetOrCreateAsync(
-            key: $"{TagsConstants.SPECIES}_{query.Page}_{query.PageSize}_{query.SortBy}_{query.SortDirection}",
-            factory: async _ =>
-            {
-                var connection = _sqlConnectionFactory.Create();
-                var parameters = new DynamicParameters();
-                
-                var speciesSql = new StringBuilder("""
-                                                   SELECT 
-                                                       s.id as species_id,
-                                                       s.name as species_name
-                                                   FROM species.species s
-                                                   """);
-
-                speciesSql.ApplySorting(query.SortBy, query.SortDirection);
-                speciesSql.ApplyPagination(query.Page, query.PageSize);
-
-                var pagedSpecies = (await connection.QueryAsync<SpeciesDto>(speciesSql.ToString())).ToList();
-
-                if (!pagedSpecies.Any())
-                    return [];
-                
-                var speciesIds = pagedSpecies.Select(s => s.SpeciesId).ToList();
-
-                var breedsSql = """
-                                SELECT 
-                                    b.id as breed_id,
-                                    b.name as breed_name,
-                                    b.species_id as species_id
-                                FROM species.breeds b
-                                WHERE b.species_id = ANY(@SpeciesIds)
-                                """;
-
-                var breeds = await connection.QueryAsync<BreedDto>(breedsSql, new { SpeciesIds = speciesIds });
-                
-                var breedsLookup = breeds.GroupBy(b => b.SpeciesId)
-                    .ToDictionary(g => g.Key, g => g.ToArray());
-
-                return pagedSpecies.Select(s =>
-                {
-                    s.Breeds = breedsLookup.TryGetValue(s.SpeciesId, out var speciesBreeds) ? speciesBreeds : [];
-                    return s;
-                });
-            },
-            options: options,
-            tags: [TagsConstants.SPECIES],
-            cancellationToken: cancellationToken);
-
-
-        _logger.LogInformation("Get species with pagination Page: {Page}, PageSize: {PageSize}",
-            query.Page, query.PageSize);
-
-        var speciesDtos = cachedSpecies.ToList();
+        var totalCount = await CountFilteredSpecies(connection, query);
 
         return new PagedList<SpeciesDto>
         {
-            Items = speciesDtos.ToList(),
+            Items = pagedSpecies,
             PageSize = query.PageSize,
             Page = query.Page,
-            TotalCount = speciesDtos.Count
+            TotalCount = totalCount
         };
+    }
+
+
+    private async Task<List<SpeciesDto>> LoadAllSpecies(IDbConnection connection, GetSpeciesWithPaginationQuery query)
+    {
+        var parameters = new DynamicParameters();
+        var sqlBuilder = new StringBuilder();
+
+        sqlBuilder.Append("""
+                          SELECT DISTINCT ON (s.id)
+                              s.id as species_id,
+                              s.name as species_name
+                          FROM species.species s
+                          LEFT JOIN species.breeds b ON b.species_id = s.id
+                          """);
+
+        if (!string.IsNullOrWhiteSpace(query.SearchTerm))
+        {
+            sqlBuilder.Append("""
+                              WHERE s.name ILIKE @SearchTerm OR b.name ILIKE @SearchTerm
+                              """);
+            parameters.Add("SearchTerm", $"%{query.SearchTerm}%");
+        }
+
+        sqlBuilder.ApplySorting(query.SortBy, query.SortDirection, "s.name"); // fallback sort
+        sqlBuilder.Append(" LIMIT @Limit OFFSET @Offset");
+        parameters.Add("Limit", query.PageSize);
+        parameters.Add("Offset", (query.Page - 1) * query.PageSize);
+
+        var species = (await connection.QueryAsync<SpeciesDto>(sqlBuilder.ToString(), parameters)).ToList();
+
+        if (!species.Any())
+            return [];
+
+        var breeds = await GetBreedsForSpecies(connection, species.Select(s => s.SpeciesId).ToList());
+        var breedsLookup = breeds.ToLookup(b => b.SpeciesId);
+
+        return species.Select(s => new SpeciesDto
+        {
+            SpeciesId = s.SpeciesId,
+            SpeciesName = s.SpeciesName,
+            Breeds = breedsLookup[s.SpeciesId].ToArray()
+        }).ToList();
+    }
+
+    private async Task<int> CountFilteredSpecies(IDbConnection connection, GetSpeciesWithPaginationQuery query)
+    {
+        var countSql = new StringBuilder("""
+                                         SELECT COUNT(DISTINCT s.id)
+                                         FROM species.species s
+                                         LEFT JOIN species.breeds b ON b.species_id = s.id
+                                         """);
+
+        var parameters = new DynamicParameters();
+
+        if (!string.IsNullOrWhiteSpace(query.SearchTerm))
+        {
+            countSql.Append("""
+                            WHERE s.name ILIKE @SearchTerm OR b.name ILIKE @SearchTerm
+                            """);
+            parameters.Add("SearchTerm", $"%{query.SearchTerm}%");
+        }
+
+        return await connection.ExecuteScalarAsync<int>(countSql.ToString(), parameters);
+    }
+
+    private async Task<List<BreedDto>> GetBreedsForSpecies(IDbConnection connection, List<Guid> speciesIds)
+    {
+        const string sql = """
+                           SELECT 
+                               id as breed_id,
+                               name as breed_name,
+                               species_id
+                           FROM species.breeds
+                           WHERE species_id = ANY(@SpeciesIds)
+                           """;
+
+        return (await connection.QueryAsync<BreedDto>(sql, new { SpeciesIds = speciesIds }))
+            .ToList();
     }
 
     public async Task<Result<List<SpeciesDto>>> Handle(CancellationToken cancellationToken = default)
