@@ -10,6 +10,7 @@
       "volunteer.update",
       "volunteer.delete",
       "volunteer.restore",
+      "volunteerRequests.readOwn",
       "volunteerRequests.read",
       "volunteerRequests.review",
       "volunteerRequests.delete",

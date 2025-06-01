@@ -10,10 +10,12 @@ using AnimalAllies.Accounts.Application.AccountManagement.Commands.UpdateInfo;
 using AnimalAllies.Accounts.Application.AccountManagement.Commands.UpdateRequisites;
 using AnimalAllies.Accounts.Application.AccountManagement.Commands.UpdateSocialNetworks;
 using AnimalAllies.Accounts.Application.AccountManagement.Queries.GetUserById;
+using AnimalAllies.Accounts.Application.AccountManagement.Queries.GetUsersCount;
 using AnimalAllies.Accounts.Application.DTOs;
 using AnimalAllies.Accounts.Contracts.Requests;
 using AnimalAllies.Core.DTOs.ValueObjects;
 using AnimalAllies.Framework;
+using AnimalAllies.Framework.Authorization;
 using AnimalAllies.Framework.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -270,6 +272,22 @@ public class AccountController: ApplicationController
         CancellationToken cancellationToken = default)
     {
         var query = new GetUserByIdQuery(userId);
+
+        var result = await handler.Handle(query, cancellationToken);
+
+        if (result.IsFailure)
+            result.Errors.ToResponse();
+
+        return Ok(result);
+    }
+    
+    [Authorize]
+    [HttpGet]
+    public async Task<ActionResult> GetUsersCount(
+        [FromServices] GetUsersCountHandler handler,
+        CancellationToken cancellationToken = default)
+    {
+        var query = new GetUsersCountQuery();
 
         var result = await handler.Handle(query, cancellationToken);
 
