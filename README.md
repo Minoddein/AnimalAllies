@@ -3,7 +3,6 @@
 <div>
   
 [![Build/Restore/Docker/Tests](https://github.com/Minoddein/AnimalAllies/actions/workflows/dotnet.yml/badge.svg?branch=main)](https://github.com/Minoddein/AnimalAllies/actions/workflows/dotnet.yml)
-[![Code Style Validation](https://github.com/Minoddein/AnimalAllies/actions/workflows/code-style.yml/badge.svg)](https://github.com/Minoddein/AnimalAllies/actions/workflows/code-style.yml)
 [![.NET Unit Tests](https://github.com/Minoddein/AnimalAllies/actions/workflows/unit-testing.yml/badge.svg)](https://github.com/Minoddein/AnimalAllies/actions/workflows/unit-testing.yml)
 [![Dependabot Updates](https://github.com/Minoddein/AnimalAllies/actions/workflows/dependabot/dependabot-updates/badge.svg)](https://github.com/Minoddein/AnimalAllies/actions/workflows/dependabot/dependabot-updates)
 [![CodeQL (C#, GH Actions)](https://github.com/Minoddein/AnimalAllies/actions/workflows/codeql.yaml/badge.svg)](https://github.com/Minoddein/AnimalAllies/actions/workflows/codeql.yaml)
