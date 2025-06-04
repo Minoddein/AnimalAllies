@@ -11,6 +11,7 @@ using AnimalAllies.Accounts.Application.AccountManagement.Commands.UpdateRequisi
 using AnimalAllies.Accounts.Application.AccountManagement.Commands.UpdateSocialNetworks;
 using AnimalAllies.Accounts.Application.AccountManagement.Queries.GetUserById;
 using AnimalAllies.Accounts.Application.AccountManagement.Queries.GetUsersCount;
+using AnimalAllies.Accounts.Application.AccountManagement.Queries.GetUsersWithPagination;
 using AnimalAllies.Accounts.Application.DTOs;
 using AnimalAllies.Accounts.Contracts.Requests;
 using AnimalAllies.Core.DTOs.ValueObjects;
@@ -25,11 +26,11 @@ using UploadFileDto = AnimalAllies.Core.DTOs.FileService.UploadFileDto;
 
 namespace AnimalAllies.Accounts.Presentation;
 
-public class AccountController: ApplicationController
+public class AccountController : ApplicationController
 {
     [HttpPost("registration")]
     public async Task<IActionResult> Register(
-        [FromBody] RegisterUserRequest request, 
+        [FromBody] RegisterUserRequest request,
         [FromServices] RegisterUserHandler handler,
         CancellationToken cancellationToken = default)
     {
@@ -42,7 +43,7 @@ public class AccountController: ApplicationController
         var result = await handler.Handle(command, cancellationToken);
         if (result.IsFailure)
             return result.Errors.ToResponse();
-        
+
         return Ok(result.IsSuccess);
     }
 
@@ -61,13 +62,14 @@ public class AccountController: ApplicationController
         var result = await handler.Handle(request, cancellationToken);
         if (result.IsFailure)
             return result.Errors.ToResponse();
-
-        return Ok(result);
+        
+        //TODO: в опции
+        return Redirect("http://localhost:3000");
     }
-    
+
     [HttpPost("authentication")]
     public async Task<IActionResult> Login(
-        [FromBody] LoginUserRequest request, 
+        [FromBody] LoginUserRequest request,
         [FromServices] LoginUserHandler handler,
         CancellationToken cancellationToken = default)
     {
@@ -76,12 +78,12 @@ public class AccountController: ApplicationController
         var result = await handler.Handle(command, cancellationToken);
         if (result.IsFailure)
             return result.Errors.ToResponse();
-        
+
         HttpContext.Response.Cookies.Append("refreshToken", result.Value.RefreshToken.ToString());
-        
+
         return Ok(result.Value);
     }
-    
+
     [HttpPost("logout")]
     public async Task<IActionResult> Delete(
         [FromServices] DeleteRefreshTokenHandler handler,
@@ -91,11 +93,11 @@ public class AccountController: ApplicationController
         {
             return Unauthorized();
         }
-        
+
         var command = new DeleteRefreshTokenCommand(Guid.Parse(refreshToken));
 
         HttpContext.Response.Cookies.Delete("refreshToken");
-        
+
         var result = await handler.Handle(command, cancellationToken);
         if (result.IsFailure)
             return result.Errors.ToResponse();
@@ -109,7 +111,7 @@ public class AccountController: ApplicationController
         [FromServices] RefreshTokensHandler handler,
         CancellationToken cancellationToken = default)
     {
-        if(!HttpContext.Request.Cookies.TryGetValue("refreshToken", out var refreshToken))
+        if (!HttpContext.Request.Cookies.TryGetValue("refreshToken", out var refreshToken))
         {
             return Unauthorized();
         }
@@ -117,12 +119,12 @@ public class AccountController: ApplicationController
         var result = await handler.Handle(
             new RefreshTokensCommand(Guid.Parse(refreshToken)),
             cancellationToken);
-        
+
         if (result.IsFailure)
             return result.Errors.ToResponse();
 
         HttpContext.Response.Cookies.Append("refreshToken", result.Value.RefreshToken.ToString());
-        
+
         return Ok(result.Value);
     }
 
@@ -139,14 +141,14 @@ public class AccountController: ApplicationController
             request.EmailNotifications,
             request.TelegramNotifications,
             request.WebNotifications);
-        
+
         var result = await handler.Handle(command, cancellationToken);
         if (result.IsFailure)
             return result.Errors.ToResponse();
 
         return Ok(result.IsSuccess);
     }
-    
+
     [Authorize]
     [HttpPost("social-networks-to-user")]
     public async Task<IActionResult> AddSocialNetworksToUser(
@@ -158,11 +160,11 @@ public class AccountController: ApplicationController
         var command = new UpdateSocialNetworkCommand(
             userScopedData.UserId,
             request.SocialNetworkRequests
-            .Select(s => new SocialNetworkDto
-        {
-            Title = s.Title,
-            Url = s.Url,
-        }));
+                .Select(s => new SocialNetworkDto
+                {
+                    Title = s.Title,
+                    Url = s.Url,
+                }));
 
         var result = await handler.Handle(command, cancellationToken);
         if (result.IsFailure)
@@ -170,7 +172,7 @@ public class AccountController: ApplicationController
 
         return Ok(result.IsSuccess);
     }
-    
+
     [Authorize]
     [HttpPost("certificates-to-user")]
     public async Task<IActionResult> AddCertificatesToUser(
@@ -179,15 +181,15 @@ public class AccountController: ApplicationController
         [FromServices] UpdateCertificatesHandler handler,
         CancellationToken cancellationToken = default)
     {
-        var command = new UpdateCertificatesCommand(userScopedData.UserId, 
+        var command = new UpdateCertificatesCommand(userScopedData.UserId,
             request.Certificates
-            .Select(c => 
-                new CertificateDto(
-                    c.Title,
-                    c.IssuingOrganization,
-                    c.IssueDate,
-                    c.ExpirationDate,
-                    c.Description)));
+                .Select(c =>
+                    new CertificateDto(
+                        c.Title,
+                        c.IssuingOrganization,
+                        c.IssueDate,
+                        c.ExpirationDate,
+                        c.Description)));
 
         var result = await handler.Handle(command, cancellationToken);
         if (result.IsFailure)
@@ -195,7 +197,7 @@ public class AccountController: ApplicationController
 
         return Ok(result.IsSuccess);
     }
-    
+
     [Authorize]
     [HttpPost("requisite-to-user")]
     public async Task<IActionResult> UpdateRequisiteToUser(
@@ -204,9 +206,9 @@ public class AccountController: ApplicationController
         [FromServices] UpdateRequisitesHandler handler,
         CancellationToken cancellationToken = default)
     {
-        var command = new UpdateRequisitesCommand(userScopedData.UserId, 
+        var command = new UpdateRequisitesCommand(userScopedData.UserId,
             request.Requisites
-                .Select(c => 
+                .Select(c =>
                     new RequisiteDto
                     {
                         Title = c.Title,
@@ -219,7 +221,7 @@ public class AccountController: ApplicationController
 
         return Ok(result.IsSuccess);
     }
-    
+
     [Authorize]
     [HttpPost("updating-info")]
     public async Task<IActionResult> UpdateInfoOfUser(
@@ -229,7 +231,7 @@ public class AccountController: ApplicationController
         CancellationToken cancellationToken = default)
     {
         var command = new UpdateInfoCommand(
-            userScopedData.UserId, 
+            userScopedData.UserId,
             request.FirstName,
             request.SecondName,
             request.Patronymic,
@@ -242,7 +244,7 @@ public class AccountController: ApplicationController
 
         return Ok(result.IsSuccess);
     }
-    
+
     [Authorize]
     [HttpPost("avatar")]
     public async Task<IActionResult> AddAvatarToUser(
@@ -263,7 +265,7 @@ public class AccountController: ApplicationController
 
         return Ok(result);
     }
-    
+
     [Authorize]
     [HttpGet("{userId:guid}")]
     public async Task<ActionResult> Get(
@@ -280,7 +282,24 @@ public class AccountController: ApplicationController
 
         return Ok(result);
     }
-    
+
+    [Authorize]
+    [HttpGet("all-users-by-page")]
+    public async Task<ActionResult> GetUsersWithPagination(
+        [FromQuery] GetUsersWithPaginationRequest request,
+        [FromServices] GetUsersWithPaginationHandler handler,
+        CancellationToken cancellationToken = default)
+    {
+        var query = new GetUsersWithPaginationQuery(request.Page, request.PageSize);
+
+        var result = await handler.Handle(query, cancellationToken);
+
+        if (result.IsFailure)
+            result.Errors.ToResponse();
+
+        return Ok(result);
+    }
+
     [Authorize]
     [HttpGet]
     public async Task<ActionResult> GetUsersCount(
@@ -296,5 +315,4 @@ public class AccountController: ApplicationController
 
         return Ok(result);
     }
-    
 }

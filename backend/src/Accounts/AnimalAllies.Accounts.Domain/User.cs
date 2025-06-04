@@ -26,8 +26,20 @@ public class User:IdentityUser<Guid>
     
     public Guid? VolunteerAccountId { get; set; }
     public VolunteerAccount? VolunteerAccount { get; set; }
+
+    public bool IsBanned { get; private set; }
     
     public void AddRole(Role role) => _roles.Add(role);
+
+    public void BanUser()
+    {
+        IsBanned = true;
+    }
+
+    public void UnbanUser()
+    {
+        IsBanned = false;
+    }
     
     public static User CreateAdmin(string userName, string email, Role role)
     {

@@ -50,6 +50,11 @@ public class LoginUserHandler : ICommandHandler<LoginUserCommand,LoginResponse>
         if (user is null)
             return Errors.General.NotFound();
 
+        if (user.IsBanned)
+        {
+            return Error.Failure("user.is.banned","user is banned");
+        }
+        
         var passwordConfirmed = await _userManager.CheckPasswordAsync(user, command.Password);
         if (!passwordConfirmed)
         {
@@ -112,6 +117,7 @@ public class LoginUserHandler : ICommandHandler<LoginUserCommand,LoginResponse>
                 : string.Empty,
             roles!,
             permissions,
+            user.IsBanned,
             socialNetworks,
             user.VolunteerAccount is not null 
                 ? new VolunteerAccountResponse(

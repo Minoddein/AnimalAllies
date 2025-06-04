@@ -59,6 +59,11 @@ public class RefreshTokensHandler : ICommandHandler<RefreshTokensCommand, LoginR
             if (refreshSession.Value.ExpiresIn < _dateTimeProvider.UtcNow)
                 return Errors.Tokens.ExpiredToken();
 
+            if (refreshSession.Value.User.IsBanned)
+            {
+                return Error.Failure("user.is.banned", "user is banned");
+            }
+
             await _refreshSessionManager.Delete(refreshSession.Value, cancellationToken);
             await _unitOfWork.SaveChanges(cancellationToken);
 
@@ -126,6 +131,7 @@ public class RefreshTokensHandler : ICommandHandler<RefreshTokensCommand, LoginR
                 : string.Empty,
             roles!,
             permissions,
+            user.IsBanned,
             socialNetworks,
             user.VolunteerAccount is not null 
                 ? new VolunteerAccountResponse(

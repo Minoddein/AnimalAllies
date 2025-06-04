@@ -11,6 +11,7 @@ public record LoginResponse(
     string? Patronymic,
     string[] Roles,
     string[] Permissions,
+    bool IsBanned,
     IEnumerable<SocialNetworkResponse> SocialNetworks,
     VolunteerAccountResponse? VolunteerAccount);
     
