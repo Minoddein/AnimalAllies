@@ -1,4 +1,5 @@
 ﻿using AnimalAllies.Accounts.Application.AccountManagement.Commands.AddAvatar;
+using AnimalAllies.Accounts.Application.AccountManagement.Commands.BanUser;
 using AnimalAllies.Accounts.Application.AccountManagement.Commands.ConfirmEmail;
 using AnimalAllies.Accounts.Application.AccountManagement.Commands.DeleteRefreshSession;
 using AnimalAllies.Accounts.Application.AccountManagement.Commands.Login;
@@ -14,6 +15,7 @@ using AnimalAllies.Accounts.Application.AccountManagement.Queries.GetUsersCount;
 using AnimalAllies.Accounts.Application.AccountManagement.Queries.GetUsersWithPagination;
 using AnimalAllies.Accounts.Application.DTOs;
 using AnimalAllies.Accounts.Contracts.Requests;
+using AnimalAllies.Accounts.Presentation.Requests;
 using AnimalAllies.Core.DTOs.ValueObjects;
 using AnimalAllies.Framework;
 using AnimalAllies.Framework.Authorization;
@@ -62,7 +64,7 @@ public class AccountController : ApplicationController
         var result = await handler.Handle(request, cancellationToken);
         if (result.IsFailure)
             return result.Errors.ToResponse();
-        
+
         //TODO: в опции
         return Redirect("http://localhost:3000");
     }
@@ -301,6 +303,22 @@ public class AccountController : ApplicationController
     }
 
     [Authorize]
+    [HttpPost("ban-user")]
+    public async Task<ActionResult> BanUser(
+        [FromBody] BanUserRequest request,
+        [FromServices] BanUserHandler handler,
+        CancellationToken cancellationToken = default)
+    {
+        var command = new BanUserCommand(request.UserId);
+
+        var result = await handler.Handle(command, cancellationToken);
+
+        if (result.IsFailure)
+            result.Errors.ToResponse();
+
+        return Ok(result);
+    }
+
     [HttpGet]
     public async Task<ActionResult> GetUsersCount(
         [FromServices] GetUsersCountHandler handler,

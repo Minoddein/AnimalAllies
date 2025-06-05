@@ -1,6 +1,7 @@
 using System.Collections.Concurrent;
 using System.Reflection;
 using System.Text.Json;
+using AnimalAllies.Accounts.Contracts;
 using MassTransit;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -26,7 +27,11 @@ public class ProcessOutboxMessageService
             .Select(Assembly.LoadFrom)
             .ToArray();
 
-        _contractAssemblies = contractAssemblies;
+        var accountAssembly = AssemblyReference.Assembly;
+        
+        var allAssemblies = contractAssemblies.Concat([accountAssembly]);
+        
+        _contractAssemblies = allAssemblies.ToArray();
     }
     
     public ProcessOutboxMessageService(

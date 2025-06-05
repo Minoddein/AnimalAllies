@@ -53,6 +53,8 @@ public class GetUsersWithPaginationHandler : IQueryHandler<PagedList<UserDto>, G
                                         u.id ,
                                         u.user_name,
                                         u.photo,
+                                        u.is_banned,
+                                        u.email,
                                         r.id as role_id,
                                         r.name as name,
                                         va.id as volunteer_id,

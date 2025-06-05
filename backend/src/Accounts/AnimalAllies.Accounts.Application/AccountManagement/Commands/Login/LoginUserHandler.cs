@@ -71,7 +71,9 @@ public class LoginUserHandler : ICommandHandler<LoginUserCommand,LoginResponse>
 
         _logger.LogInformation("Successfully logged in");
         
-        return InitLoginResponse(accessToken, refreshToken, user);
+        var result = InitLoginResponse(accessToken, refreshToken, user);
+
+        return result;
     }
 
     private LoginResponse InitLoginResponse(

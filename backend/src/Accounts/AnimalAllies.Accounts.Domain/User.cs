@@ -33,12 +33,7 @@ public class User:IdentityUser<Guid>
 
     public void BanUser()
     {
-        IsBanned = true;
-    }
-
-    public void UnbanUser()
-    {
-        IsBanned = false;
+        IsBanned = !IsBanned;
     }
     
     public static User CreateAdmin(string userName, string email, Role role)
