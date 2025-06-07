@@ -10,29 +10,29 @@ namespace TestProject.Domain;
 
 public class VolunteerTests
 {
-     [Fact]
-     public void Add_Pet_With_Empty_Pets_Return_Success_Result()
-     {
-         // arrange
-         var birthDate = DateOnly.FromDateTime(DateTime.Now);
-         var creationTime = DateTime.Now;
-         
-         var volunteer = InitVolunteer();
-         
-         var pet = InitPet(birthDate, creationTime);
-         
-    
-         // act
-         var result = volunteer.AddPet(pet);
-    
-         // assert
-         var addedPetResult = volunteer.GetPetById(pet.Id);
-    
-         result.IsSuccess.Should().BeTrue();
-         addedPetResult.IsSuccess.Should().BeTrue();
-         addedPetResult.Value.Id.Should().Be(pet.Id);
-         addedPetResult.Value.Position.Should().Be(Position.First);
-     }
+    [Fact]
+    public void Add_Pet_With_Empty_Pets_Return_Success_Result()
+    {
+        // arrange
+        var birthDate = DateOnly.FromDateTime(DateTime.Now);
+        var creationTime = DateTime.Now;
+
+        var volunteer = InitVolunteer();
+
+        var pet = InitPet(birthDate, creationTime);
+
+
+        // act
+        var result = volunteer.AddPet(pet);
+
+        // assert
+        var addedPetResult = volunteer.GetPetById(pet.Id);
+
+        result.IsSuccess.Should().BeTrue();
+        addedPetResult.IsSuccess.Should().BeTrue();
+        addedPetResult.Value.Id.Should().Be(pet.Id);
+        addedPetResult.Value.Position.Should().Be(Position.First);
+    }
 
     private static Pet InitPet(DateOnly birthDate, DateTime creationTime)
     {
@@ -83,7 +83,7 @@ public class VolunteerTests
     private static Volunteer InitVolunteer()
     {
         var volunteerId = VolunteerId.NewGuid();
-        var fullName = FullName.Create("Test","Test","Test").Value;
+        var fullName = FullName.Create("Test", "Test", "Test").Value;
         var email = Email.Create("test@gmail.com").Value;
         var volunteerDescription = VolunteerDescription.Create("Test").Value;
         var workExperience = WorkExperience.Create(20).Value;
@@ -111,23 +111,23 @@ public class VolunteerTests
         const int petCount = 5;
 
         var volunteer = InitVolunteer();
-    
+
         var pets = Enumerable.Range(1, petCount).Select(_ =>
-            InitPet(birthDate,creationTime));
+            InitPet(birthDate, creationTime));
 
         var petToAdd = InitPet(birthDate, creationTime);
-    
+
         foreach (var pet in pets)
             volunteer.AddPet(pet);
-        
-         // act
+
+        // act
         var result = volunteer.AddPet(petToAdd);
-    
+
         // assert
         var addedPetResult = volunteer.GetPetById(petToAdd.Id);
-    
+
         var position = Position.Create(petCount + 1).Value;
-    
+
         result.IsSuccess.Should().BeTrue();
         addedPetResult.IsSuccess.Should().BeTrue();
         addedPetResult.Value.Id.Should().Be(petToAdd.Id);
@@ -141,7 +141,7 @@ public class VolunteerTests
         var birthDate = DateOnly.FromDateTime(DateTime.Now);
         var creationTime = DateTime.Now;
         int petsCount = 5;
-        
+
         var volunteer = InitVolunteer();
         volunteer = AddPetsInVolunteer(volunteer, petsCount, birthDate, creationTime);
 
@@ -153,12 +153,10 @@ public class VolunteerTests
         var fourthPet = volunteer.Pets[3];
         var fifthPet = volunteer.Pets[4];
 
-        
+
         //act
         var result = volunteer.MovePet(secondPet, secondPosition);
-        
-        
-        
+
 
         //assert
         result.IsSuccess.Should().BeTrue();
@@ -168,9 +166,8 @@ public class VolunteerTests
         thirdPet.Position.Value.Should().Be(3);
         fourthPet.Position.Value.Should().Be(4);
         fifthPet.Position.Value.Should().Be(5);
-
     }
-    
+
     [Fact]
     public void Move_Pet_Should_Move_Other_Pet_Forward_When_New_Position_Is_Lower()
     {
@@ -178,7 +175,7 @@ public class VolunteerTests
         var birthDate = DateOnly.FromDateTime(DateTime.Now);
         var creationTime = DateTime.Now;
         int petsCount = 5;
-        
+
         var volunteer = InitVolunteer();
         volunteer = AddPetsInVolunteer(volunteer, petsCount, birthDate, creationTime);
 
@@ -190,12 +187,10 @@ public class VolunteerTests
         var fourthPet = volunteer.Pets[3];
         var fifthPet = volunteer.Pets[4];
 
-        
+
         //act
         var result = volunteer.MovePet(fourthPet, secondPosition);
-        
-        
-        
+
 
         //assert
         result.IsSuccess.Should().BeTrue();
@@ -205,9 +200,8 @@ public class VolunteerTests
         thirdPet.Position.Value.Should().Be(4);
         fourthPet.Position.Value.Should().Be(2);
         fifthPet.Position.Value.Should().Be(5);
-
     }
-    
+
     [Fact]
     public void Move_Pet_Should__Move_Other_Pet_Back_When_New_Position_Is_Grater()
     {
@@ -215,7 +209,7 @@ public class VolunteerTests
         var birthDate = DateOnly.FromDateTime(DateTime.Now);
         var creationTime = DateTime.Now;
         int petsCount = 5;
-        
+
         var volunteer = InitVolunteer();
         volunteer = AddPetsInVolunteer(volunteer, petsCount, birthDate, creationTime);
 
@@ -227,12 +221,10 @@ public class VolunteerTests
         var fourthPet = volunteer.Pets[3];
         var fifthPet = volunteer.Pets[4];
 
-        
+
         //act
         var result = volunteer.MovePet(secondPet, fourth);
-        
-        
-        
+
 
         //assert
         result.IsSuccess.Should().BeTrue();
@@ -242,9 +234,8 @@ public class VolunteerTests
         thirdPet.Position.Value.Should().Be(2);
         fourthPet.Position.Value.Should().Be(3);
         fifthPet.Position.Value.Should().Be(5);
-
     }
-    
+
     [Fact]
     public void Move_Pet_Should__Move_Other_Pet_Forward_When_New_Position_Is_First()
     {
@@ -252,7 +243,7 @@ public class VolunteerTests
         var birthDate = DateOnly.FromDateTime(DateTime.Now);
         var creationTime = DateTime.Now;
         int petsCount = 5;
-        
+
         var volunteer = InitVolunteer();
         volunteer = AddPetsInVolunteer(volunteer, petsCount, birthDate, creationTime);
 
@@ -264,12 +255,10 @@ public class VolunteerTests
         var fourthPet = volunteer.Pets[3];
         var fifthPet = volunteer.Pets[4];
 
-        
+
         //act
         var result = volunteer.MovePet(fourthPet, first);
-        
-        
-        
+
 
         //assert
         result.IsSuccess.Should().BeTrue();
@@ -279,9 +268,8 @@ public class VolunteerTests
         thirdPet.Position.Value.Should().Be(4);
         fourthPet.Position.Value.Should().Be(1);
         fifthPet.Position.Value.Should().Be(5);
-
     }
-    
+
     [Fact]
     public void Move_Pet_Should__Move_Other_Pet_Back_When_New_Position_Is_Last()
     {
@@ -289,7 +277,7 @@ public class VolunteerTests
         var birthDate = DateOnly.FromDateTime(DateTime.Now);
         var creationTime = DateTime.Now;
         int petsCount = 5;
-        
+
         var volunteer = InitVolunteer();
         volunteer = AddPetsInVolunteer(volunteer, petsCount, birthDate, creationTime);
 
@@ -301,12 +289,10 @@ public class VolunteerTests
         var fourthPet = volunteer.Pets[3];
         var fifthPet = volunteer.Pets[4];
 
-        
+
         //act
         var result = volunteer.MovePet(secondPet, fifth);
-        
-        
-        
+
 
         //assert
         result.IsSuccess.Should().BeTrue();
@@ -316,9 +302,8 @@ public class VolunteerTests
         thirdPet.Position.Value.Should().Be(2);
         fourthPet.Position.Value.Should().Be(3);
         fifthPet.Position.Value.Should().Be(4);
-
     }
-    
+
     [Fact]
     public void Move_Pet_Move_Out_Of_Range_Grater_Should_Be_Error()
     {
@@ -326,7 +311,7 @@ public class VolunteerTests
         var birthDate = DateOnly.FromDateTime(DateTime.Now);
         var creationTime = DateTime.Now;
         int petsCount = 5;
-        
+
         var volunteer = InitVolunteer();
         volunteer = AddPetsInVolunteer(volunteer, petsCount, birthDate, creationTime);
 
@@ -338,13 +323,12 @@ public class VolunteerTests
         var fourthPet = volunteer.Pets[3];
         var fifthPet = volunteer.Pets[4];
 
-        
+
         //act
         var result = volunteer.MovePet(secondPet, sixth);
-        
-        
+
+
         //assert
         result.IsSuccess.Should().BeFalse();
     }
-    
 }

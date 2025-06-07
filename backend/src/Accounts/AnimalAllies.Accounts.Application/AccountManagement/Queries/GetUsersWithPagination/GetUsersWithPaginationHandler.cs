@@ -80,42 +80,58 @@ public class GetUsersWithPaginationHandler : IQueryHandler<PagedList<UserDto>, G
 
         sql.ApplyPagination(query.Page, query.PageSize);
 
+        var usersDict = new Dictionary<Guid, UserDto>();
+
         var users = await connection
             .QueryAsync<UserDto, RoleDto, VolunteerAccountDto?, ParticipantAccountDto?, AdminProfileDto?, UserDto>(
                 sql.ToString(),
                 (user, role, volunteer, participant, admin) =>
                 {
-                    if (admin is not null)
+                    if (!usersDict.TryGetValue(user.Id, out var existingUser))
                     {
-                        user.AdminProfile = admin;
-                        user.AdminProfileId = admin.AdminUserId;
+                        existingUser = user;
+                        existingUser.Roles = []; 
+                        usersDict.Add(user.Id, existingUser);
+                        
+                        if (admin is not null)
+                        {
+                            existingUser.AdminProfile = admin;
+                            existingUser.AdminProfileId = admin.AdminUserId;
+                        }
+
+                        if (volunteer is not null)
+                        {
+                            existingUser.VolunteerAccount = volunteer;
+                            existingUser.VolunteerAccountId = volunteer.VolunteerId;
+                        }
+
+                        if (participant is not null)
+                        {
+                            existingUser.ParticipantAccount = participant;
+                            existingUser.ParticipantAccountId = participant.ParticipantId;
+                        }
                     }
                     
-                    if (volunteer is not null)
+                    if (role != null && existingUser.Roles.All(r => r.RoleId != role.RoleId))
                     {
-                        user.VolunteerAccount = volunteer;
-                        user.VolunteerAccountId = volunteer.VolunteerId;
+                        existingUser.Roles = existingUser.Roles
+                            .Concat(new[] { role })
+                            .ToArray();
                     }
 
-                    if (participant is not null)
-                    {
-                        user.ParticipantAccount = participant;
-                        user.ParticipantAccountId = participant.ParticipantId;
-                    }
-
-                    user.Roles = [role];
-
-                    return user;
+                    return existingUser;
                 },
                 param: parameters,
                 splitOn: "role_id, volunteer_id, participant_id, admin_id"
             );
+        
+        var distinctUsers = usersDict.Values.ToList();
 
         _logger.LogInformation("Successfully retrieved users");
 
         return new PagedList<UserDto>
         {
-            Items = users.ToList(),
+            Items = distinctUsers,
             Page = query.Page,
             PageSize = query.PageSize,
             TotalCount = connection.ExecuteScalar<int>("SELECT COUNT(*) FROM accounts.users")

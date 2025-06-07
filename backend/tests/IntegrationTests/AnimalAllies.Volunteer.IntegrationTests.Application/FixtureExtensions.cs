@@ -1,5 +1,4 @@
 ﻿using AnimalAllies.Core.DTOs.ValueObjects;
-using AnimalAllies.SharedKernel.Shared.ValueObjects;
 using AnimalAllies.Volunteer.Application.VolunteerManagement.Commands.CreateVolunteer;
 using AutoFixture;
 
