@@ -48,17 +48,20 @@ public class GetVolunteerByIdHandler : IQueryHandler<VolunteerDto, GetVolunteerB
 
         var sql = new StringBuilder("""
                                     select 
-                                    id,
+                                    v.id,
+                                    relation_id,
+                                    u.photo as avatar_url,
                                     first_name,
                                     second_name,
                                     patronymic,
                                     description,
-                                    email,
-                                    phone_number,
+                                    v.email,
+                                    v.phone_number,
                                     work_experience,
                                     requisites
-                                    from volunteers.volunteers
-                                    where id = @VolunteerId
+                                    from volunteers.volunteers v
+                                    inner join accounts.users u on u.id = v.relation_id
+                                    where v.id = @VolunteerId or relation_id = @VolunteerId
                                     limit 1
                                     """);
 
