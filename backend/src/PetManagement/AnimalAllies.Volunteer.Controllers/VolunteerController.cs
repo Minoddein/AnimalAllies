@@ -27,7 +27,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace AnimalAllies.Volunteer.Presentation;
 
-public class VolunteerController: ApplicationController
+public class VolunteerController : ApplicationController
 {
     [Permission("volunteer.read")]
     [HttpGet]
@@ -45,7 +45,7 @@ public class VolunteerController: ApplicationController
 
         return Ok(result);
     }
-    
+
     [Permission("volunteer.read")]
     [HttpGet("{volunteerId:guid}")]
     public async Task<ActionResult> GetById(
@@ -62,7 +62,7 @@ public class VolunteerController: ApplicationController
 
         return Ok(result);
     }
-    
+
     [Permission("volunteer.read")]
     [HttpGet("dapper")]
     public async Task<ActionResult> GetDapper(
@@ -79,7 +79,7 @@ public class VolunteerController: ApplicationController
 
         return Ok(result);
     }
-    
+
     [Permission("volunteer.read")]
     [HttpGet("{volunteerId:guid}/pet-dapper")]
     public async Task<ActionResult> GetPetsDapper(
@@ -97,7 +97,7 @@ public class VolunteerController: ApplicationController
 
         return Ok(result);
     }
-    
+
     [Permission("volunteer.read")]
     [HttpGet("{speciesId:guid}/pet-by-species-id")]
     public async Task<ActionResult> GetPetsBySpeciesIdDapper(
@@ -114,7 +114,7 @@ public class VolunteerController: ApplicationController
 
         return Ok(result);
     }
-    
+
     [Permission("volunteer.read")]
     [HttpGet("pet-by-breed-id")]
     public async Task<ActionResult> GetPetsByBreedIdDapper(
@@ -131,7 +131,7 @@ public class VolunteerController: ApplicationController
 
         return Ok(result);
     }
-    
+
     [Permission("volunteer.read")]
     [HttpGet("{petId:guid}/pet-by-id-dapper")]
     public async Task<ActionResult> GetPetByIdDapper(
@@ -148,7 +148,7 @@ public class VolunteerController: ApplicationController
 
         return Ok(result);
     }
-    
+
     [Permission("volunteer.create")]
     [HttpPost]
     public async Task<IActionResult> Create(
@@ -156,19 +156,18 @@ public class VolunteerController: ApplicationController
         [FromBody] CreateVolunteerRequest request,
         CancellationToken cancellationToken = default)
     {
-
         var command = request.ToCommand();
-        
+
         var result = await handler.Handle(command, cancellationToken);
-        
+
         if (result.IsFailure)
         {
             return result.Errors.ToResponse();
         }
-        
+
         return Ok(result.Value);
     }
-    
+
     [Permission("volunteer.update")]
     [HttpPut("{id:guid}/main-info")]
     public async Task<IActionResult> UpdateVolunteer(
@@ -178,17 +177,17 @@ public class VolunteerController: ApplicationController
         CancellationToken cancellationToken = default)
     {
         var command = request.ToCommand(id);
-        
+
         var response = await handler.Handle(command, cancellationToken);
-        
+
         if (response.IsFailure)
         {
             return response.Errors.ToResponse();
         }
-        
+
         return Ok(response.Value);
     }
-    
+
     [Permission("volunteer.update")]
     [HttpPut("{id:guid}/requisites")]
     public async Task<IActionResult> CreateRequisitesToVolunteer(
@@ -198,17 +197,17 @@ public class VolunteerController: ApplicationController
         CancellationToken cancellationToken = default)
     {
         var command = request.ToCommand(id);
-        
+
         var response = await handler.Handle(command, cancellationToken);
-        
+
         if (response.IsFailure)
         {
             return response.Errors.ToResponse();
         }
-        
+
         return Ok(response.Value);
     }
-    
+
     [Permission("volunteer.delete")]
     [HttpDelete("{id:guid}")]
     public async Task<IActionResult> DeleteVolunteer(
@@ -217,17 +216,17 @@ public class VolunteerController: ApplicationController
         CancellationToken cancellationToken = default)
     {
         var command = new DeleteVolunteerCommand(id);
-        
+
         var response = await handler.Handle(command, cancellationToken);
-        
+
         if (response.IsFailure)
         {
             return response.Errors.ToResponse();
         }
-        
+
         return Ok(response.Value);
     }
-    
+
     [Permission("volunteer.create")]
     [HttpPost("{id:guid}/pet")]
     public async Task<ActionResult> AddPet(
@@ -245,7 +244,7 @@ public class VolunteerController: ApplicationController
 
         return Ok(result.Value);
     }
-    
+
     [Permission("volunteer.update")]
     [HttpPost("{volunteerId:guid}/{petId:guid}/petPhoto")]
     public async Task<ActionResult> AddPetPhoto(
@@ -261,7 +260,7 @@ public class VolunteerController: ApplicationController
 
         if (result.IsFailure)
             return result.Errors.ToResponse();
-        
+
         return Ok(result.Value);
     }
 
@@ -280,10 +279,10 @@ public class VolunteerController: ApplicationController
 
         if (result.IsFailure)
             return result.Errors.ToResponse();
-        
+
         return Ok(result.Value);
     }
-    
+
     [Permission("volunteer.update")]
     [HttpPut("{volunteerId:guid}/{petId:guid}/pet")]
     public async Task<ActionResult> UpdatePet(
@@ -302,7 +301,7 @@ public class VolunteerController: ApplicationController
 
         return Ok(result.Value);
     }
-    
+
     [Permission("volunteer.delete")]
     [HttpPut("{volunteerId:guid}/{petId:guid}/delete-pet-photos")]
     public async Task<ActionResult> DeletePetPhoto(
@@ -318,10 +317,10 @@ public class VolunteerController: ApplicationController
 
         if (result.IsFailure)
             return result.Errors.ToResponse();
-        
+
         return Ok(result.Value);
     }
-    
+
     [Permission("volunteer.update")]
     [HttpPut("{volunteerId:guid}/{petId:guid}/pet-help-status")]
     public async Task<ActionResult> UpdatePetStatus(
@@ -340,9 +339,9 @@ public class VolunteerController: ApplicationController
 
         return Ok(result.Value);
     }
-    
+
     //TODO: перенести все реквесты в Contract и убрать ToCommand
-    
+
     [Permission("volunteer.restore")]
     [HttpPut("{volunteerId:guid}/volunteer-recovery")]
     public async Task<ActionResult> VolunteerRestore(
@@ -359,7 +358,7 @@ public class VolunteerController: ApplicationController
 
         return Ok(result.Value);
     }
-    
+
     [Permission("volunteer.update")]
     [HttpPut("{volunteerId:guid}/{petId:guid}/volunteer-recovery")]
     public async Task<ActionResult> PetRestore(
@@ -377,7 +376,7 @@ public class VolunteerController: ApplicationController
 
         return Ok(result.Value);
     }
-    
+
     [Permission("volunteer.update")]
     [HttpPut("{volunteerId:guid}/{petId:guid}/pet-main-photo")]
     public async Task<ActionResult> SetMainPhotoOfPet(
@@ -396,7 +395,7 @@ public class VolunteerController: ApplicationController
 
         return Ok(result.Value);
     }
-    
+
     [Permission("volunteer.delete")]
     [HttpDelete("{volunteerId:guid}/{petId:guid}/pet-removing-soft")]
     public async Task<ActionResult> DeletePetSoft(
@@ -414,7 +413,7 @@ public class VolunteerController: ApplicationController
 
         return Ok(result.Value);
     }
-    
+
     [Permission("volunteer.delete")]
     [HttpDelete("{volunteerId:guid}/{petId:guid}/pet-removing-force")]
     public async Task<ActionResult> DeletePetForce(

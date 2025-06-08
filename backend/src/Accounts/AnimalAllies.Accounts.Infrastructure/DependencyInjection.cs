@@ -61,6 +61,7 @@ public static class DependencyInjection
         services.AddScoped<IRefreshSessionManager, RefreshSessionManager>();
 
         services.Configure<AdminOptions>(configuration.GetSection(AdminOptions.ADMIN));
+        services.Configure<EmailConfirmOptions>(configuration.GetSection(EmailConfirmOptions.EmailConfirm));
         services.AddScoped<AccountSeedService>();
         
         return services;

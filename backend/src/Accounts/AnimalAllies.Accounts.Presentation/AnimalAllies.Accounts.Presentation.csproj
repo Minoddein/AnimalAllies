@@ -10,6 +10,7 @@
       <ProjectReference Include="..\..\Shared\AnimalAllies.Framework\AnimalAllies.Framework.csproj" />
       <ProjectReference Include="..\AnimalAllies.Accounts.Application\AnimalAllies.Accounts.Application.csproj" />
       <ProjectReference Include="..\AnimalAllies.Accounts.Contracts\AnimalAllies.Accounts.Contracts.csproj" />
+      <ProjectReference Include="..\AnimalAllies.Accounts.Infrastructure\AnimalAllies.Accounts.Infrastructure.csproj" />
     </ItemGroup>
 
     <ItemGroup>

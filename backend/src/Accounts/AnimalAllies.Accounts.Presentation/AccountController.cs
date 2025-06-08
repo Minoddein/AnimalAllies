@@ -15,13 +15,14 @@ using AnimalAllies.Accounts.Application.AccountManagement.Queries.GetUsersCount;
 using AnimalAllies.Accounts.Application.AccountManagement.Queries.GetUsersWithPagination;
 using AnimalAllies.Accounts.Application.DTOs;
 using AnimalAllies.Accounts.Contracts.Requests;
+using AnimalAllies.Accounts.Infrastructure.Options;
 using AnimalAllies.Accounts.Presentation.Requests;
 using AnimalAllies.Core.DTOs.ValueObjects;
 using AnimalAllies.Framework;
-using AnimalAllies.Framework.Authorization;
 using AnimalAllies.Framework.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
 using FullNameDto = AnimalAllies.Core.DTOs.ValueObjects.FullNameDto;
 using SocialNetworkDto = AnimalAllies.Core.DTOs.ValueObjects.SocialNetworkDto;
 using UploadFileDto = AnimalAllies.Core.DTOs.FileService.UploadFileDto;
@@ -53,6 +54,7 @@ public class AccountController : ApplicationController
     public async Task<IActionResult> ConfirmEmail(
         [FromQuery] Guid userId,
         [FromQuery] string code,
+        [FromServices] IOptions<EmailConfirmOptions> options,
         [FromServices] ConfirmEmailHandler handler,
         CancellationToken cancellationToken = default)
     {
@@ -64,9 +66,8 @@ public class AccountController : ApplicationController
         var result = await handler.Handle(request, cancellationToken);
         if (result.IsFailure)
             return result.Errors.ToResponse();
-
-        //TODO: в опции
-        return Redirect("http://localhost:3000");
+        
+        return Redirect(options.Value.Url);
     }
 
     [HttpPost("authentication")]
