@@ -5,7 +5,8 @@ namespace AnimalAllies.SharedKernel.Constraints;
 public static partial class Constraints
 {
     public static readonly int MAX_VALUE_LENGTH = 100;
-    public static readonly int MAX_DESCRIPTION_LENGTH = 1500;
+    public static readonly int MAX_DESCRIPTION_LENGTH = 2500;
+    public static readonly int MAX_MEDICAL_NOTES_LENGTH = 5000;
     public static readonly int MAX_PET_COLOR_LENGTH = 50;
     public static readonly int MAX_PET_INFORMATION_LENGTH = 2000;
     public static readonly double MIN_VALUE = 0;

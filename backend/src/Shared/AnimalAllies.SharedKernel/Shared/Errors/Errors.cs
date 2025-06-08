@@ -31,6 +31,11 @@ public static class Errors
         {
             return Error.Validation("Record.already.exist", $"Records already exist");
         }
+
+        public static Error ValueTooLong(string? name = null)
+        {
+            return Error.Validation("value.too.long", $"Value {name} is too long");
+        }
     }
 
     public static class Tokens
