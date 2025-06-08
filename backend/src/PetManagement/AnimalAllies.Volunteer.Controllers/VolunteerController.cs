@@ -64,8 +64,8 @@ public class VolunteerController : ApplicationController
     }
 
     [Permission("volunteer.read")]
-    [HttpGet("dapper")]
-    public async Task<ActionResult> GetDapper(
+    [HttpGet("get-volunteers-with-pagination-dapper")]
+    public async Task<ActionResult> GetVolunteerDapper(
         [FromQuery] GetFilteredVolunteersWithPaginationRequest request,
         [FromServices] GetFilteredVolunteersWithPaginationHandlerDapper handler,
         CancellationToken cancellationToken = default)

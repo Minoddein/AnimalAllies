@@ -6,6 +6,7 @@ using AnimalAllies.SharedKernel.Shared.Ids;
 using AnimalAllies.SharedKernel.Shared.ValueObjects;
 using AnimalAllies.Species.Domain.Entities;
 using AnimalAllies.Volunteer.Application.VolunteerManagement.Commands.UpdatePet;
+using AnimalAllies.Volunteer.Domain.VolunteerManagement.Aggregate.ValueObject;
 using AnimalAllies.Volunteer.Domain.VolunteerManagement.Entities.Pet.ValueObjects;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
@@ -43,6 +44,7 @@ public class UpdatePetTests : VolunteerTestsBase
             VolunteerDescription.Create("Опытный волонтер").Value,
             WorkExperience.Create(3).Value,
             PhoneNumber.Create("+79991234567").Value,
+            Relation.Create(Guid.NewGuid()).Value,
             new ValueObjectList<Requisite>([]));
 
         var petId = PetId.NewGuid();

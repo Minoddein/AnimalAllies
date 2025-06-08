@@ -3,6 +3,7 @@ using AnimalAllies.SharedKernel.Shared.Errors;
 using AnimalAllies.SharedKernel.Shared.Ids;
 using AnimalAllies.SharedKernel.Shared.Objects;
 using AnimalAllies.SharedKernel.Shared.ValueObjects;
+using AnimalAllies.Volunteer.Domain.VolunteerManagement.Aggregate.ValueObject;
 using AnimalAllies.Volunteer.Domain.VolunteerManagement.Entities.Pet;
 using AnimalAllies.Volunteer.Domain.VolunteerManagement.Entities.Pet.ValueObjects;
 
@@ -23,6 +24,7 @@ public class Volunteer: Entity<VolunteerId>, ISoftDeletable
         VolunteerDescription volunteerDescription,
         WorkExperience workExperience,
         PhoneNumber phone,
+        Relation relation,
         ValueObjectList<Requisite> requisites)
     : base(volunteerId)
     {
@@ -31,6 +33,7 @@ public class Volunteer: Entity<VolunteerId>, ISoftDeletable
         Description = volunteerDescription;
         WorkExperience = workExperience;
         Phone = phone;
+        Relation = relation;
         _requisites = requisites;       
     }
     
@@ -39,6 +42,7 @@ public class Volunteer: Entity<VolunteerId>, ISoftDeletable
     public PhoneNumber Phone { get; private set; }
     public VolunteerDescription Description { get; private set; }
     public WorkExperience WorkExperience { get; private set; }
+    public Relation Relation { get; private set; }
     public IReadOnlyList<Requisite> Requisites => _requisites;
     public IReadOnlyList<Pet> Pets => _pets;
     public bool IsDeleted { get; private set; }

@@ -53,6 +53,13 @@ public class VolunteerConfiguration
                 .HasColumnName("email");
         });
 
+        builder.ComplexProperty(x => x.Relation, r =>
+        {
+            r.Property(v => v.RelationId)
+                .HasColumnName("relation_id")
+                .IsRequired();
+        });
+
         builder.ComplexProperty(x => x.FullName, f =>
         {
             f.Property(x => x.FirstName)

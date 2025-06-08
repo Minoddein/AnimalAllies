@@ -5,6 +5,7 @@ using AnimalAllies.SharedKernel.Shared.Ids;
 using AnimalAllies.SharedKernel.Shared.ValueObjects;
 using AnimalAllies.Species.Domain.Entities;
 using AnimalAllies.Volunteer.Application.VolunteerManagement.Commands.RestorePet;
+using AnimalAllies.Volunteer.Domain.VolunteerManagement.Aggregate.ValueObject;
 using AnimalAllies.Volunteer.Domain.VolunteerManagement.Entities.Pet.ValueObjects;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
@@ -42,6 +43,7 @@ public class RestorePetTests : VolunteerTestsBase
             VolunteerDescription.Create("Опытный волонтер").Value,
             WorkExperience.Create(3).Value,
             PhoneNumber.Create("+79991234567").Value,
+            Relation.Create(Guid.NewGuid()).Value,
             new ValueObjectList<Requisite>([]));
 
         var pet = new Domain.VolunteerManagement.Entities.Pet.Pet(
@@ -113,6 +115,7 @@ public class RestorePetTests : VolunteerTestsBase
             VolunteerDescription.Create("Опытный волонтер").Value,
             WorkExperience.Create(3).Value,
             PhoneNumber.Create("+79991234567").Value,
+            Relation.Create(Guid.NewGuid()).Value,
             new ValueObjectList<Requisite>([]));
 
         await _volunteerDbContext.Volunteers.AddAsync(volunteer);
@@ -162,6 +165,7 @@ public class RestorePetTests : VolunteerTestsBase
             VolunteerDescription.Create("Опытный волонтер").Value,
             WorkExperience.Create(3).Value,
             PhoneNumber.Create("+79991234567").Value,
+            Relation.Create(Guid.NewGuid()).Value,
             new ValueObjectList<Requisite>([]));
 
         var pet = new Domain.VolunteerManagement.Entities.Pet.Pet(

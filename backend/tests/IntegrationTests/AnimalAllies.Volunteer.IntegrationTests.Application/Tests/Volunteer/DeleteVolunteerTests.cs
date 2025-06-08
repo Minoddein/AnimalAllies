@@ -3,6 +3,7 @@ using AnimalAllies.SharedKernel.Shared;
 using AnimalAllies.SharedKernel.Shared.Ids;
 using AnimalAllies.SharedKernel.Shared.ValueObjects;
 using AnimalAllies.Volunteer.Application.VolunteerManagement.Commands.DeleteVolunteer;
+using AnimalAllies.Volunteer.Domain.VolunteerManagement.Aggregate.ValueObject;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -64,6 +65,7 @@ public class DeleteVolunteerTests: VolunteerTestsBase
             VolunteerDescription.Create(command.Description).Value,
             WorkExperience.Create(command.WorkExperience).Value,
             PhoneNumber.Create(command.PhoneNumber).Value,
+            Relation.Create(Guid.NewGuid()).Value,
             requisites);
 
         return volunteer;

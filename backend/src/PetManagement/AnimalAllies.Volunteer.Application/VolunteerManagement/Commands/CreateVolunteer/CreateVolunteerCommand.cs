@@ -9,4 +9,5 @@ public record CreateVolunteerCommand(
     string Description,
     int WorkExperience,
     string PhoneNumber,
+    Guid RelationId,
     IEnumerable<RequisiteDto> Requisites) : ICommand;

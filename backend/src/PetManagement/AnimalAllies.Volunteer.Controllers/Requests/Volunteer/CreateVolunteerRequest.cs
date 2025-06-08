@@ -9,6 +9,7 @@ public record CreateVolunteerRequest(
     string Description,
     int WorkExperience,
     string PhoneNumber,
+    Guid RelationId,
     IEnumerable<RequisiteDto> Requisites)
 {
     public CreateVolunteerCommand ToCommand()
@@ -18,5 +19,6 @@ public record CreateVolunteerRequest(
             Description,
             WorkExperience,
             PhoneNumber,
+            RelationId,
             Requisites);
 }

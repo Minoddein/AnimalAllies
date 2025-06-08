@@ -6,6 +6,7 @@ using AnimalAllies.SharedKernel.Shared.Ids;
 using AnimalAllies.SharedKernel.Shared.ValueObjects;
 using AnimalAllies.Species.Domain.Entities;
 using AnimalAllies.Volunteer.Application.VolunteerManagement.Commands.AddPet;
+using AnimalAllies.Volunteer.Domain.VolunteerManagement.Aggregate.ValueObject;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -43,6 +44,7 @@ public class AddPetTests : VolunteerTestsBase
             VolunteerDescription.Create("Опытный волонтер").Value,
             WorkExperience.Create(3).Value,
             PhoneNumber.Create("+79991234567").Value,
+            Relation.Create(Guid.NewGuid()).Value,
             new ValueObjectList<Requisite>([]));
         
         await _volunteerDbContext.Volunteers.AddAsync(volunteer);
@@ -166,6 +168,7 @@ public class AddPetTests : VolunteerTestsBase
             VolunteerDescription.Create("Опытный волонтер").Value,
             WorkExperience.Create(3).Value,
             PhoneNumber.Create("+79991234567").Value,
+            Relation.Create(Guid.NewGuid()).Value,
             new ValueObjectList<Requisite>([]));
         
         await _volunteerDbContext.Volunteers.AddAsync(volunteer);

@@ -2,6 +2,7 @@ using AnimalAllies.SharedKernel.Shared;
 using AnimalAllies.SharedKernel.Shared.Ids;
 using AnimalAllies.SharedKernel.Shared.ValueObjects;
 using AnimalAllies.Volunteer.Domain.VolunteerManagement.Aggregate;
+using AnimalAllies.Volunteer.Domain.VolunteerManagement.Aggregate.ValueObject;
 using AnimalAllies.Volunteer.Domain.VolunteerManagement.Entities.Pet;
 using AnimalAllies.Volunteer.Domain.VolunteerManagement.Entities.Pet.ValueObjects;
 using FluentAssertions;
@@ -88,6 +89,7 @@ public class VolunteerTests
         var volunteerDescription = VolunteerDescription.Create("Test").Value;
         var workExperience = WorkExperience.Create(20).Value;
         var phoneNumber = PhoneNumber.Create("+12345678910").Value;
+        var relationId = Relation.Create(Guid.NewGuid()).Value;
         var requisites = new ValueObjectList<Requisite>([Requisite.Create("Test", "Test").Value]);
 
         var volunteer = new Volunteer(
@@ -97,6 +99,7 @@ public class VolunteerTests
             volunteerDescription,
             workExperience,
             phoneNumber,
+            relationId,
             requisites);
 
         return volunteer;

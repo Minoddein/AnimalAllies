@@ -5,6 +5,7 @@ using AnimalAllies.SharedKernel.Shared.Errors;
 using AnimalAllies.SharedKernel.Shared.Ids;
 using AnimalAllies.SharedKernel.Shared.ValueObjects;
 using AnimalAllies.Volunteer.Application.Repository;
+using AnimalAllies.Volunteer.Domain.VolunteerManagement.Aggregate.ValueObject;
 using FluentValidation;
 using Microsoft.Extensions.Logging;
 
@@ -57,6 +58,8 @@ public class CreateVolunteerHandler : ICommandHandler<CreateVolunteerCommand, Vo
         
         var volunteerId = VolunteerId.NewGuid();
         
+        var relation = Relation.Create(command.RelationId).Value;
+        
         var volunteerEntity = new Domain.VolunteerManagement.Aggregate.Volunteer(
             volunteerId,
             fullName,
@@ -64,6 +67,7 @@ public class CreateVolunteerHandler : ICommandHandler<CreateVolunteerCommand, Vo
             description,
             workExperience,
             phoneNumber,
+            relation,
             volunteerRequisites);
         
         var result = await _repository.Create(volunteerEntity, cancellationToken);

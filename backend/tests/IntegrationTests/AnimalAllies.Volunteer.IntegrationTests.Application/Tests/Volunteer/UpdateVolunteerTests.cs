@@ -4,6 +4,7 @@ using AnimalAllies.SharedKernel.Shared;
 using AnimalAllies.SharedKernel.Shared.Ids;
 using AnimalAllies.SharedKernel.Shared.ValueObjects;
 using AnimalAllies.Volunteer.Application.VolunteerManagement.Commands.UpdateVolunteer;
+using AnimalAllies.Volunteer.Domain.VolunteerManagement.Aggregate.ValueObject;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -29,7 +30,9 @@ namespace AnimalAllies.Volunteer.IntegrationTests.Application.Tests.Volunteer
                 Email.Create("ivan@mail.com").Value,
                 VolunteerDescription.Create("Опытный волонтер").Value,
                 WorkExperience.Create(3).Value,
-                PhoneNumber.Create("+79991234567").Value, new ValueObjectList<Requisite>([]));
+                PhoneNumber.Create("+79991234567").Value,
+                Relation.Create(Guid.NewGuid()).Value,
+                new ValueObjectList<Requisite>([]));
             
             await _volunteerDbContext.Volunteers.AddAsync(originalVolunteer);
             await _volunteerDbContext.SaveChangesAsync();

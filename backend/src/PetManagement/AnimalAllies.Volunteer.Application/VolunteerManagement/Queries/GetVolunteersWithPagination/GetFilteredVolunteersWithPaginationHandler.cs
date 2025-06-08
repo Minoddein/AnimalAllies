@@ -127,17 +127,34 @@ public class GetFilteredVolunteersWithPaginationHandlerDapper :
 
         var sql = new StringBuilder("""
                                     select 
-                                        id,
+                                        v.id,
+                                        relation_id as user_id,
                                         first_name,
                                         second_name,
                                         patronymic,
                                         description,
-                                        email,
-                                        phone_number,
+                                        v.email,
+                                        v.phone_number,
                                         work_experience,
-                                        requisites
-                                        from volunteers.volunteers
-                                            where is_deleted = false
+                                        u.photo as avatar_url,
+                                        v.requisites,
+                                        COUNT(p.id) as animal_count
+                                        from volunteers.volunteers v
+                                        inner join accounts.users u on u.Id = relation_id
+                                        left join volunteers.pets p on v.id = p.volunteer_id and p.is_deleted = false
+                                            where v.is_deleted = false
+                                        group by 
+                                            v.id,
+                                            relation_id,
+                                            first_name,
+                                            second_name,
+                                            patronymic,
+                                            description,
+                                            v.email,
+                                            v.phone_number,
+                                            work_experience,
+                                            u.photo,
+                                            v.requisites
                                     """);
 
         bool hasWhereClause = true;
@@ -191,7 +208,9 @@ public class GetFilteredVolunteersWithPaginationHandlerDapper :
             Items = volunteerDtos.ToList(),
             PageSize = query.PageSize,
             Page = query.Page,
-            TotalCount = volunteerDtos.Count()
+            TotalCount =
+                await connection.ExecuteScalarAsync<int>(
+                    "SELECT COUNT(*) FROM volunteers.volunteers WHERE is_deleted = false")
         };
     }
 }

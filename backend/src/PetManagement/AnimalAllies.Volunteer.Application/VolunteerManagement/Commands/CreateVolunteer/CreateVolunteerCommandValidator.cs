@@ -1,5 +1,6 @@
 using AnimalAllies.Core.Validators;
 using AnimalAllies.SharedKernel.Shared.ValueObjects;
+using AnimalAllies.Volunteer.Domain.VolunteerManagement.Aggregate.ValueObject;
 using FluentValidation;
 
 namespace AnimalAllies.Volunteer.Application.VolunteerManagement.Commands.CreateVolunteer;
@@ -26,5 +27,7 @@ public class CreateVolunteerCommandValidator: AbstractValidator<CreateVolunteerC
         RuleForEach(x => x.Requisites)
             .MustBeValueObject(x => Requisite.Create(x.Title, x.Description));
 
+        RuleFor(x => x.RelationId)
+            .MustBeValueObject(Relation.Create);
     }
 }
