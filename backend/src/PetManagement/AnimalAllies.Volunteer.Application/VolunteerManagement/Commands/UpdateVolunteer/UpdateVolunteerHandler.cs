@@ -43,27 +43,22 @@ public class UpdateVolunteerHandler : ICommandHandler<UpdateVolunteerCommand, Vo
             return Errors.General.NotFound();
         
         var phoneNumber = PhoneNumber.Create(command.Dto.PhoneNumber).Value;
-        var email = Email.Create(command.Dto.Email).Value;
         
         var volunteerByPhoneNumber = await _repository.GetByPhoneNumber(phoneNumber,cancellationToken);
-        var volunteerByEmail = await _repository.GetByEmail(email,cancellationToken);
 
-        if (!volunteerByPhoneNumber.IsFailure || !volunteerByEmail.IsFailure)
+        if (!volunteerByPhoneNumber.IsFailure)
             return Errors.Volunteer.AlreadyExist();
         
         var fullName = FullName.Create(
             command.Dto.FullName.FirstName,
             command.Dto.FullName.SecondName,
             command.Dto.FullName.Patronymic).Value;
-        var description = VolunteerDescription.Create(command.Dto.Description).Value;
         var workExperience = WorkExperience.Create(command.Dto.WorkExperience).Value;
 
 
         volunteer.Value.UpdateInfo(
             fullName,
-            email,
             phoneNumber,
-            description,
             workExperience);
         
         _logger.LogInformation("volunteer with title {fullName} and id {volunteerId} updated ", fullName, command.Id);

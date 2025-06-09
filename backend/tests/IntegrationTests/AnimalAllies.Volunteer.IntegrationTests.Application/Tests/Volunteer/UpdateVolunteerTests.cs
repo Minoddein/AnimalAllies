@@ -39,8 +39,6 @@ namespace AnimalAllies.Volunteer.IntegrationTests.Application.Tests.Volunteer
 
             var updateDto = new UpdateVolunteerMainInfoDto(
                 new FullNameDto("Петр", "Петров", "Петрович"),
-                "petr@mail.com",
-                "Новый опытный волонтер",
                 5,
                 "+79998765432");
 

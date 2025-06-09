@@ -9,15 +9,15 @@ using Microsoft.EntityFrameworkCore;
 
 namespace AnimalAllies.Volunteer.Infrastructure.Repository;
 
-public class VolunteerRepository: IVolunteerRepository
+public class VolunteerRepository : IVolunteerRepository
 {
     private readonly VolunteerWriteDbContext _context;
-    
+
     public VolunteerRepository(VolunteerWriteDbContext context)
     {
         _context = context;
     }
-    
+
     public async Task<Result<VolunteerId>> Create(
         Domain.VolunteerManagement.Aggregate.Volunteer entity,
         CancellationToken cancellationToken = default)
@@ -25,7 +25,6 @@ public class VolunteerRepository: IVolunteerRepository
         await _context.Volunteers.AddAsync(entity, cancellationToken);
         await _context.SaveChangesAsync(cancellationToken);
         return entity.Id;
-        
     }
 
     public async Task<Result<VolunteerId>> Delete(
@@ -47,25 +46,23 @@ public class VolunteerRepository: IVolunteerRepository
 
         return entity.Id;
     }
-    
+
     public async Task<Result<Domain.VolunteerManagement.Aggregate.Volunteer>> GetById(
         VolunteerId id,
         CancellationToken cancellationToken = default)
     {
         var volunteer = await _context.Volunteers
             .Include(x => x.Pets)
-            .FirstOrDefaultAsync(x => x.Id == id,cancellationToken);
-        
-        if (volunteer == null)
-            return Result<Domain.VolunteerManagement.Aggregate.Volunteer>.Failure(Errors.General.NotFound(id.Id));
+            .FirstOrDefaultAsync(x => x.Id == id || x.Relation.RelationId == id.Id, cancellationToken);
 
-        return Result<Domain.VolunteerManagement.Aggregate.Volunteer>.Success(volunteer);
+        return volunteer == null
+            ? Result<Domain.VolunteerManagement.Aggregate.Volunteer>.Failure(Errors.General.NotFound(id.Id))
+            : Result<Domain.VolunteerManagement.Aggregate.Volunteer>.Success(volunteer);
     }
 
     public async Task<Result<Domain.VolunteerManagement.Aggregate.Volunteer>> GetByPhoneNumber(
         PhoneNumber phone, CancellationToken cancellationToken = default)
     {
-        
         var volunteer = await _context.Volunteers
             .Include(x => x.Pets)
             .FirstOrDefaultAsync(x => x.Phone == phone, cancellationToken);
@@ -74,7 +71,6 @@ public class VolunteerRepository: IVolunteerRepository
             return Result<Domain.VolunteerManagement.Aggregate.Volunteer>.Failure(Errors.General.NotFound());
 
         return Result<Domain.VolunteerManagement.Aggregate.Volunteer>.Success(volunteer);
-        
     }
 
     public async Task<Result<Domain.VolunteerManagement.Aggregate.Volunteer>> GetByEmail(
@@ -83,7 +79,7 @@ public class VolunteerRepository: IVolunteerRepository
     {
         var volunteer = await _context.Volunteers
             .Include(x => x.Pets)
-            .FirstOrDefaultAsync(x => x.Email == email,cancellationToken);
+            .FirstOrDefaultAsync(x => x.Email == email, cancellationToken);
 
         if (volunteer == null)
             return Result<Domain.VolunteerManagement.Aggregate.Volunteer>.Failure(Errors.General.NotFound());
@@ -91,7 +87,8 @@ public class VolunteerRepository: IVolunteerRepository
         return Result<Domain.VolunteerManagement.Aggregate.Volunteer>.Success(volunteer);
     }
 
-    public async Task<Result<List<Domain.VolunteerManagement.Aggregate.Volunteer>>> Get(CancellationToken cancellationToken = default)
+    public async Task<Result<List<Domain.VolunteerManagement.Aggregate.Volunteer>>> Get(
+        CancellationToken cancellationToken = default)
     {
         var volunteers = await _context.Volunteers
             .Include(v => v.Pets)
