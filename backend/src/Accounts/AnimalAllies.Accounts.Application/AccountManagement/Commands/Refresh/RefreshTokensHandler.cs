@@ -8,6 +8,7 @@ using AnimalAllies.SharedKernel.Constraints;
 using AnimalAllies.SharedKernel.Shared;
 using AnimalAllies.SharedKernel.Shared.Errors;
 using FluentValidation;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
@@ -48,11 +49,11 @@ public class RefreshTokensHandler : ICommandHandler<RefreshTokensCommand, LoginR
         
         var transaction = await _unitOfWork.BeginTransaction(cancellationToken);
 
+        var refreshSession = await _refreshSessionManager
+            .GetByRefreshToken(command.RefreshToken, cancellationToken);
+        
         try
         {
-            var refreshSession = await _refreshSessionManager
-                .GetByRefreshToken(command.RefreshToken, cancellationToken);
-
             if (refreshSession.IsFailure)
                 return refreshSession.Errors;
 
@@ -75,6 +76,17 @@ public class RefreshTokensHandler : ICommandHandler<RefreshTokensCommand, LoginR
             transaction.Commit();
             
             _logger.LogInformation("RefreshTokensHandler.Handle: refreshToken");
+
+            return InitLoginResponse(accessToken.AccessToken, refreshToken, refreshSession.Value.User);
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            transaction.Commit();
+    
+            var accessToken = await _tokenProvider
+                .GenerateAccessToken(refreshSession.Value.User, cancellationToken);
+            var refreshToken = await _tokenProvider
+                .GenerateRefreshToken(refreshSession.Value.User, accessToken.Jti, cancellationToken);
 
             return InitLoginResponse(accessToken.AccessToken, refreshToken, refreshSession.Value.User);
         }

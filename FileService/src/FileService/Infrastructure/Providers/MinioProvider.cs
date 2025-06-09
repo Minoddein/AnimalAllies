@@ -15,6 +15,7 @@ public class MinioProvider : IFileProvider
     private const int EXPIRATION_FOR_DOWNLOAD_URL = 30;
     private readonly IAmazonS3 _client;
     private readonly ILogger<MinioProvider> _logger;
+    private readonly SemaphoreSlim _semaphoreSlim = new(MAX_DEGREE_OF_PARALLELISM);
 
     public MinioProvider(IAmazonS3 client, ILogger<MinioProvider> logger)
     {
@@ -289,15 +290,23 @@ public class MinioProvider : IFileProvider
         IEnumerable<FileMetadata> filesMetadata,
         CancellationToken cancellationToken = default)
     {
-        var semaphoreSlim = new SemaphoreSlim(MAX_DEGREE_OF_PARALLELISM);
         var filesList = filesMetadata.ToList();
-
         try
         {
-            await IsBucketExist(filesList.Select(f => f.BucketName), cancellationToken);
+            /*await IsBucketExist(filesList.Select(f => f.BucketName), cancellationToken);*/
 
             var tasks = filesList.Select(async file =>
-                await GetPresignedUrlForDownload(file, semaphoreSlim, cancellationToken));
+            {
+                await _semaphoreSlim.WaitAsync(cancellationToken);
+                try
+                {
+                    return await GetPresignedUrlForDownload(file, cancellationToken);
+                }
+                finally
+                {
+                    _semaphoreSlim.Release();
+                }
+            });
 
             var pathsResult = await Task.WhenAll(tasks);
 

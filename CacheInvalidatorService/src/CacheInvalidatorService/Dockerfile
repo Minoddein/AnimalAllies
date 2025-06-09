@@ -2,11 +2,18 @@
 USER $APP_UID
 WORKDIR /app
 
-COPY ["NuGet.Config", "./"]
-
 FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
+
+RUN --mount=type=secret,id=nuget_username \
+    --mount=type=secret,id=nuget_password \
+    dotnet nuget add source "https://gitlab.com/api/v4/projects/63188031/packages/nuget/index.json" \
+    --name "gitlab-mcconder" \
+    --username "$(cat /run/secrets/nuget_username)" \
+    --password "$(cat /run/secrets/nuget_password)" \
+    --store-password-in-clear-text
+
 COPY ["src/CacheInvalidatorService/CacheInvalidatorService.csproj", "src/CacheInvalidatorService/"]
 RUN dotnet restore "src/CacheInvalidatorService/CacheInvalidatorService.csproj"
 COPY . .
