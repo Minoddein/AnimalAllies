@@ -41,62 +41,57 @@ public class RefreshTokensHandler : ICommandHandler<RefreshTokensCommand, LoginR
     }
 
     public async Task<Result<LoginResponse>> Handle(
-        RefreshTokensCommand command, CancellationToken cancellationToken = default)
+    RefreshTokensCommand command, 
+    CancellationToken cancellationToken = default)
     {
-        var validatorResult = await _validator.ValidateAsync(command, cancellationToken);
-        if (!validatorResult.IsValid)
-            return validatorResult.ToErrorList();
+        var validationResult = await _validator.ValidateAsync(command, cancellationToken);
+        if (!validationResult.IsValid)
+            return validationResult.ToErrorList();
         
-        var transaction = await _unitOfWork.BeginTransaction(cancellationToken);
-
-        var refreshSession = await _refreshSessionManager
-            .GetByRefreshToken(command.RefreshToken, cancellationToken);
-        
+        using var transaction = await _unitOfWork.BeginTransaction(cancellationToken);
+    
         try
         {
-            if (refreshSession.IsFailure)
-                return refreshSession.Errors;
-
-            if (refreshSession.Value.ExpiresIn < _dateTimeProvider.UtcNow)
+            var refreshSessionResult = await _refreshSessionManager
+                .GetByRefreshToken(command.RefreshToken, cancellationToken);
+    
+            if (refreshSessionResult.IsFailure)
+                return refreshSessionResult.Errors; 
+    
+            var refreshSession = refreshSessionResult.Value;
+            
+            if (refreshSession.ExpiresIn < _dateTimeProvider.UtcNow)
                 return Errors.Tokens.ExpiredToken();
-
-            if (refreshSession.Value.User.IsBanned)
+            
+            if (refreshSession.User.IsBanned)
+                return Error.Failure("user.banned", "Аккаунт заблокирован");
+            
+            var accessTokenResult = await _tokenProvider
+                .GenerateAccessToken(refreshSession.User, cancellationToken);
+            
+            var refreshTokenResult = await _tokenProvider
+                .GenerateRefreshToken(refreshSession.User, accessTokenResult.Jti, cancellationToken);
+            
+            if (refreshTokenResult == Guid.Empty)
             {
-                return Error.Failure("user.is.banned", "user is banned");
+                return Error.Conflict("refreshTokenResult.Error", "Refresh token already deleted");
             }
-
-            await _refreshSessionManager.Delete(refreshSession.Value, cancellationToken);
+            
+            await _refreshSessionManager.Delete(refreshSession, cancellationToken);
+            
             await _unitOfWork.SaveChanges(cancellationToken);
-
-            var accessToken = await _tokenProvider
-                .GenerateAccessToken(refreshSession.Value.User, cancellationToken);
-            var refreshToken = await _tokenProvider
-                .GenerateRefreshToken(refreshSession.Value.User, accessToken.Jti, cancellationToken);
-
             transaction.Commit();
             
-            _logger.LogInformation("RefreshTokensHandler.Handle: refreshToken");
-
-            return InitLoginResponse(accessToken.AccessToken, refreshToken, refreshSession.Value.User);
+            return InitLoginResponse(
+                accessTokenResult.AccessToken,
+                refreshTokenResult,
+                refreshSession.User);
         }
-        catch (DbUpdateConcurrencyException)
-        {
-            transaction.Commit();
-    
-            var accessToken = await _tokenProvider
-                .GenerateAccessToken(refreshSession.Value.User, cancellationToken);
-            var refreshToken = await _tokenProvider
-                .GenerateRefreshToken(refreshSession.Value.User, accessToken.Jti, cancellationToken);
-
-            return InitLoginResponse(accessToken.AccessToken, refreshToken, refreshSession.Value.User);
-        }
-        catch (Exception)
+        catch (Exception ex)
         {
             transaction.Rollback();
-            
-            _logger.LogError("Error refreshing token");
-            
-            return Error.Failure("Fail.to.refresh","Failed to refresh token");
+            _logger.LogError(ex, "Ошибка при обновлении токенов");
+            return Error.Failure("refresh.failed", "Не удалось обновить токены");
         }
     }
     
