@@ -6,6 +6,7 @@ public record GetFilteredVolunteersWithPaginationQuery(
     string? FirstName,
     string? SecondName,
     string? Patronymic,
+    string? SearchTerm,
     int? WorkExperienceFrom,
     int? WorkExperienceTo,
     string? SortBy,

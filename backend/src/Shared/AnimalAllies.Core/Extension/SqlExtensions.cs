@@ -12,7 +12,7 @@ public static class SqlExtensions
     {
         if (!string.IsNullOrWhiteSpace(sortBy) && !string.IsNullOrWhiteSpace(sortDirection))
         {
-            var validSortDirections = new[]{"asc", "desc"};
+            var validSortDirections = new[] { "asc", "desc" };
 
             if (validSortDirections.Contains(sortDirection?.ToLower()))
             {
@@ -24,7 +24,7 @@ public static class SqlExtensions
             }
         }
     }
-    
+
     public static void ApplyPagination(
         this StringBuilder sqlBuilder,
         int page,
@@ -32,7 +32,7 @@ public static class SqlExtensions
     {
         sqlBuilder.Append($"\nlimit {pageSize} offset {(page - 1) * pageSize}");
     }
-    
+
     public static void ApplyBetweenFilter<TValue>(
         this StringBuilder sqlBuilder,
         ref bool hasWhereClause,
@@ -91,7 +91,7 @@ public static class SqlExtensions
             }
         }
     }
-    
+
     public static void ApplyFilterByEqualsValue<TValue>(
         this StringBuilder sqlBuilder,
         ref bool hasWhereClause,
@@ -105,21 +105,42 @@ public static class SqlExtensions
             hasWhereClause = true;
         }
     }
-    
-    public static void ApplySearhByEqualsValue<TValue>(
+
+    public static void ApplySearchByEqualsValue<TValue>(
         this StringBuilder sqlBuilder,
         ref bool hasWhereClause,
-        string? propertyName,
-        TValue? valueTo)
+        Dictionary<string, TValue> searchConditions,
+        bool isOrAnd = false)
     {
-        if (!string.IsNullOrWhiteSpace(propertyName) && valueTo != null)
+        if (!searchConditions.Any())
+            return;
+        
+        sqlBuilder.Append(hasWhereClause ? " AND (" : " WHERE ");
+        
+        var lastIndex = 0;
+
+        foreach (var (propertyName, valueTo) in searchConditions)
         {
-            sqlBuilder.Append(hasWhereClause ? " AND " : " WHERE ");
-            sqlBuilder.Append($"{propertyName} ILIKE %{valueTo}%");
-            hasWhereClause = true;
+            if (string.IsNullOrWhiteSpace(propertyName) || valueTo == null) continue;
+
+            sqlBuilder.Append($"{propertyName} ILIKE '%{valueTo}%'");
+
+            if (searchConditions.Count - 1 != lastIndex)
+            {
+                sqlBuilder.Append(isOrAnd ? " AND " : " OR ");
+            }
+
+            lastIndex++;
         }
+
+        if (hasWhereClause)
+        {
+            sqlBuilder.Append(") ");
+        }
+        
+        hasWhereClause = true;
     }
-    
+
     public static void ApplySearchByContainsValue(
         this StringBuilder sqlBuilder,
         ref bool hasWhereClause,
@@ -133,5 +154,4 @@ public static class SqlExtensions
             hasWhereClause = true;
         }
     }
-    
 }

@@ -125,6 +125,10 @@ public class GetFilteredVolunteersWithPaginationHandlerDapper :
 
         var parameters = new DynamicParameters();
 
+        var totalCountSql = new StringBuilder("""
+                                           SELECT COUNT(*) FROM volunteers.volunteers WHERE is_deleted = false
+                                           """);
+
         var sql = new StringBuilder("""
                                     select 
                                         v.id,
@@ -143,48 +147,64 @@ public class GetFilteredVolunteersWithPaginationHandlerDapper :
                                         inner join accounts.users u on u.Id = relation_id
                                         left join volunteers.pets p on v.id = p.volunteer_id and p.is_deleted = false
                                             where v.is_deleted = false
-                                        group by 
-                                            v.id,
-                                            relation_id,
-                                            first_name,
-                                            second_name,
-                                            patronymic,
-                                            description,
-                                            v.email,
-                                            v.phone_number,
-                                            work_experience,
-                                            u.photo,
-                                            v.requisites
                                     """);
-
-        bool hasWhereClause = true;
-
-        var stringProperties = new Dictionary<string, string>
-        {
-            { "first_name", query.FirstName },
-            { "second_name", query.SecondName },
-            { "patronymic", query.Patronymic },
-        };
-
-        sql.ApplyFilterByString(ref hasWhereClause, stringProperties);
+        
+        
+        var hasWhereClause = true;
 
         switch (query)
         {
             case { WorkExperienceFrom: not null, WorkExperienceTo: not null }:
                 sql.ApplyBetweenFilter(ref hasWhereClause, "work_experience", (int)query.WorkExperienceFrom,
                     (int)query.WorkExperienceTo);
+                totalCountSql.ApplyBetweenFilter(ref hasWhereClause, "work_experience", (int)query.WorkExperienceFrom,
+                    (int)query.WorkExperienceTo);
                 break;
             case { WorkExperienceFrom: not null, WorkExperienceTo: null }:
                 sql.ApplyFilterByValueFrom(ref hasWhereClause, "work_experience", (int)query.WorkExperienceFrom);
+                totalCountSql.ApplyFilterByValueFrom(ref hasWhereClause, "work_experience", (int)query.WorkExperienceFrom);
                 break;
             case { WorkExperienceFrom: null, WorkExperienceTo: not null }:
-                sql.ApplyFilterByValueTo<int>(ref hasWhereClause, "work_experience", (int)query.WorkExperienceTo);
+                sql.ApplyFilterByValueTo(ref hasWhereClause, "work_experience", (int)query.WorkExperienceTo);
+                totalCountSql.ApplyFilterByValueTo(ref hasWhereClause, "work_experience", (int)query.WorkExperienceTo);
                 break;
         }
 
+        if (query.SearchTerm is not null)
+        {
+            var stringProperties = new Dictionary<string, string>
+            {
+                { "first_name", query.SearchTerm },
+                { "second_name", query.SearchTerm },
+                { "patronymic", query.SearchTerm },
+            };
+            
+            sql.ApplySearchByEqualsValue(ref  hasWhereClause, stringProperties);
+            totalCountSql.ApplySearchByEqualsValue(ref hasWhereClause, stringProperties);
+        }
+        
+
+        sql.Append("""
+                   
+                   group by 
+                   v.id,
+                   relation_id,
+                   first_name,
+                   second_name,
+                   patronymic,
+                   description,
+                   v.email,
+                   v.phone_number,
+                   work_experience,
+                   u.photo,
+                   v.requisites
+                   """);
+        
         sql.ApplySorting(query.SortBy, query.SortDirection);
 
         sql.ApplyPagination(query.Page, query.PageSize);
+        
+        var s = totalCountSql.ToString();
 
         var volunteers =
             await connection.QueryAsync<VolunteerDto, RequisiteDto[], VolunteerDto>(
@@ -198,6 +218,8 @@ public class GetFilteredVolunteersWithPaginationHandlerDapper :
                 splitOn: "requisites",
                 param: parameters);
 
+        var totalCount = await connection.ExecuteScalarAsync<int>(totalCountSql.ToString(), param: parameters);
+        
         _logger.LogInformation("Get volunteers with pagination Page: {Page}, PageSize: {PageSize}",
             query.Page, query.PageSize);
 
@@ -208,9 +230,7 @@ public class GetFilteredVolunteersWithPaginationHandlerDapper :
             Items = volunteerDtos.ToList(),
             PageSize = query.PageSize,
             Page = query.Page,
-            TotalCount =
-                await connection.ExecuteScalarAsync<int>(
-                    "SELECT COUNT(*) FROM volunteers.volunteers WHERE is_deleted = false")
+            TotalCount = totalCount
         };
     }
 }

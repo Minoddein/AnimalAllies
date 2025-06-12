@@ -94,6 +94,8 @@ public class GetSpeciesWithPaginationBySearchTermQueryHandler :
             Breeds = breedsLookup[s.SpeciesId].ToArray()
         }).ToList();
         
+        _logger.LogInformation("Got species with pagination by query term");
+        
         return new PagedList<SpeciesDto>
         {
             Items = result,

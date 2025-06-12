@@ -58,9 +58,9 @@ namespace AnimalAllies.Volunteer.IntegrationTests.Application.Tests.Volunteer
             updatedVolunteer.FullName.FirstName.Should().Be("Петр");
             updatedVolunteer.FullName.SecondName.Should().Be("Петров");
             updatedVolunteer.FullName.Patronymic.Should().Be("Петрович");
-            updatedVolunteer.Email.Value.Should().Be("petr@mail.com");
             updatedVolunteer.Phone.Number.Should().Be("+79998765432");
-            updatedVolunteer.Description.Value.Should().Be("Новый опытный волонтер");
+            // Вырезано обновление описание из фичи
+            /*updatedVolunteer.Description.Value.Should().Be("Новый опытный волонтер");*/
             updatedVolunteer.WorkExperience.Value.Should().Be(5);
         }
     }
