@@ -57,7 +57,7 @@ public class UpdateSkillsHandler : ICommandHandler<UpdateSkillsCommand>
             return result.Errors;
         }
 
-        await _unitOfWork.SaveChanges(cancellationToken);
+        await _repository.Save(volunteer.Value ,cancellationToken);
         
         _logger.LogInformation("Updated Skills for Volunteer {volunteerId}", command.VolunteerId);
         
