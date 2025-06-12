@@ -49,7 +49,7 @@ public class GetVolunteerByIdHandler : IQueryHandler<VolunteerDto, GetVolunteerB
         var sql = new StringBuilder("""
                                     select 
                                     v.id,
-                                    relation_id,
+                                    relation_id as user_id,
                                     u.photo as avatar_url,
                                     first_name,
                                     second_name,
@@ -58,22 +58,24 @@ public class GetVolunteerByIdHandler : IQueryHandler<VolunteerDto, GetVolunteerB
                                     v.email,
                                     v.phone_number,
                                     work_experience,
-                                    requisites
+                                    requisites,
+                                    skills
                                     from volunteers.volunteers v
                                     inner join accounts.users u on u.id = v.relation_id
                                     where v.id = @VolunteerId or relation_id = @VolunteerId
                                     limit 1
                                     """);
 
-        var volunteerQuery = await connection.QueryAsync<VolunteerDto, RequisiteDto[], VolunteerDto>(
+        var volunteerQuery = await connection.QueryAsync<VolunteerDto, RequisiteDto[], SkillDto[], VolunteerDto>(
             sql.ToString(),
-            (volunteer, requisites) =>
+            (volunteer, requisites, skills) =>
             {
                 volunteer.Requisites = requisites;
 
+                volunteer.Skills = skills;
                 return volunteer;
             },
-            splitOn: "requisites",
+            splitOn: "requisites, skills",
             param: parameters);
 
         var result = volunteerQuery.FirstOrDefault();

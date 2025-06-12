@@ -142,6 +142,7 @@ public class GetFilteredVolunteersWithPaginationHandlerDapper :
                                         work_experience,
                                         u.photo as avatar_url,
                                         v.requisites,
+                                        v.skills,
                                         COUNT(p.id) as animal_count
                                         from volunteers.volunteers v
                                         inner join accounts.users u on u.Id = relation_id
@@ -207,15 +208,16 @@ public class GetFilteredVolunteersWithPaginationHandlerDapper :
         var s = totalCountSql.ToString();
 
         var volunteers =
-            await connection.QueryAsync<VolunteerDto, RequisiteDto[], VolunteerDto>(
+            await connection.QueryAsync<VolunteerDto, RequisiteDto[],SkillDto[], VolunteerDto>(
                 sql.ToString(),
-                (volunteer, requisites) =>
+                (volunteer, requisites, skills) =>
                 {
                     volunteer.Requisites = requisites;
 
+                    volunteer.Skills = skills;
                     return volunteer;
                 },
-                splitOn: "requisites",
+                splitOn: "requisites, skills",
                 param: parameters);
 
         var totalCount = await connection.ExecuteScalarAsync<int>(totalCountSql.ToString(), param: parameters);

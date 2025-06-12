@@ -1,9 +1,11 @@
+using AnimalAllies.Core.DTOs;
 using AnimalAllies.Core.DTOs.ValueObjects;
 using AnimalAllies.Core.Extension;
 using AnimalAllies.SharedKernel.Constraints;
 using AnimalAllies.SharedKernel.Shared;
 using AnimalAllies.SharedKernel.Shared.Ids;
 using AnimalAllies.SharedKernel.Shared.ValueObjects;
+using AnimalAllies.Volunteer.Domain.VolunteerManagement.Aggregate.ValueObject;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -80,6 +82,12 @@ public class VolunteerConfiguration
                 r => new RequisiteDto() { Title = r.Title, Description = r.Description },
                 dto => Requisite.Create(dto.Title, dto.Description).Value)
             .HasColumnName("requisites");
+        
+        builder.Property(v => v.Skills)
+            .ValueObjectJsonConverter(
+                s => new SkillDto() { SkillName = s.Value},
+                dto => Skill.Create(dto.SkillName).Value)
+            .HasColumnName("skills");
         
         builder.Property<bool>("IsDeleted")
             .UsePropertyAccessMode(PropertyAccessMode.Field)

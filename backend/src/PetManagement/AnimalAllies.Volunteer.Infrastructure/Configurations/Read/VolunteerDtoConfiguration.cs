@@ -23,6 +23,11 @@ public class VolunteerDtoConfiguration: IEntityTypeConfiguration<VolunteerDto>
                 r => JsonSerializer.Serialize(string.Empty, JsonSerializerOptions.Default),
                 json => JsonSerializer.Deserialize<RequisiteDto[]>(json, JsonSerializerOptions.Default)!);
         
+        builder.Property(i => i.Skills)
+            .HasConversion(
+                r => JsonSerializer.Serialize(string.Empty, JsonSerializerOptions.Default),
+                json => JsonSerializer.Deserialize<SkillDto[]>(json, JsonSerializerOptions.Default)!);
+        
         builder.Property(i => i.SocialNetworks)
             .HasConversion(
                 sn => JsonSerializer.Serialize(string.Empty, JsonSerializerOptions.Default),

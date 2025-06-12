@@ -44,7 +44,8 @@ public class RestorePetTests : VolunteerTestsBase
             WorkExperience.Create(3).Value,
             PhoneNumber.Create("+79991234567").Value,
             Relation.Create(Guid.NewGuid()).Value,
-            new ValueObjectList<Requisite>([]));
+            new ValueObjectList<Requisite>([]),
+            new ValueObjectList<Skill>([]));
 
         var pet = new Domain.VolunteerManagement.Entities.Pet.Pet(
             PetId.NewGuid(),
@@ -116,7 +117,8 @@ public class RestorePetTests : VolunteerTestsBase
             WorkExperience.Create(3).Value,
             PhoneNumber.Create("+79991234567").Value,
             Relation.Create(Guid.NewGuid()).Value,
-            new ValueObjectList<Requisite>([]));
+            new ValueObjectList<Requisite>([]),
+            new ValueObjectList<Skill>([]));
 
         await _volunteerDbContext.Volunteers.AddAsync(volunteer);
         await _volunteerDbContext.SaveChangesAsync();
@@ -166,7 +168,8 @@ public class RestorePetTests : VolunteerTestsBase
             WorkExperience.Create(3).Value,
             PhoneNumber.Create("+79991234567").Value,
             Relation.Create(Guid.NewGuid()).Value,
-            new ValueObjectList<Requisite>([]));
+            new ValueObjectList<Requisite>([]),
+            new ValueObjectList<Skill>([]));
 
         var pet = new Domain.VolunteerManagement.Entities.Pet.Pet(
             PetId.NewGuid(),

@@ -32,7 +32,8 @@ namespace AnimalAllies.Volunteer.IntegrationTests.Application.Tests.Volunteer
                 WorkExperience.Create(3).Value,
                 PhoneNumber.Create("+79991234567").Value,
                 Relation.Create(Guid.NewGuid()).Value,
-                new ValueObjectList<Requisite>([]));
+                new ValueObjectList<Requisite>([]),
+                new ValueObjectList<Skill>([]));
             
             await _volunteerDbContext.Volunteers.AddAsync(originalVolunteer);
             await _volunteerDbContext.SaveChangesAsync();

@@ -15,6 +15,7 @@ public class VolunteerDto
     public int AnimalsCount { get; set; }
     public Guid UserId { get; set; }
     public string AvatarUrl { get; set; } = string.Empty;
+    public SkillDto[] Skills { get; set; } = [];
     public RequisiteDto[] Requisites { get; set; } = [];
     public SocialNetworkDto[] SocialNetworks { get; set; } = [];
     public bool IsDeleted { get; set; }

@@ -68,7 +68,8 @@ public class CreateVolunteerHandler : ICommandHandler<CreateVolunteerCommand, Vo
             workExperience,
             phoneNumber,
             relation,
-            volunteerRequisites);
+            volunteerRequisites,
+            new ValueObjectList<Skill>([]));
         
         var result = await _repository.Create(volunteerEntity, cancellationToken);
         

@@ -14,6 +14,7 @@ using AnimalAllies.Volunteer.Application.VolunteerManagement.Commands.RestoreVol
 using AnimalAllies.Volunteer.Application.VolunteerManagement.Commands.SetMainPhotoOfPet;
 using AnimalAllies.Volunteer.Application.VolunteerManagement.Commands.UpdatePet;
 using AnimalAllies.Volunteer.Application.VolunteerManagement.Commands.UpdatePetStatus;
+using AnimalAllies.Volunteer.Application.VolunteerManagement.Commands.UpdateSkills;
 using AnimalAllies.Volunteer.Application.VolunteerManagement.Commands.UpdateVolunteer;
 using AnimalAllies.Volunteer.Application.VolunteerManagement.Queries.GetFilteredPetsWithPagination;
 using AnimalAllies.Volunteer.Application.VolunteerManagement.Queries.GetPetById;
@@ -206,6 +207,26 @@ public class VolunteerController : ApplicationController
         }
 
         return Ok(response.Value);
+    }
+    
+    [Permission("volunteer.update")]
+    [HttpPut("{id:guid}/skills")]
+    public async Task<IActionResult> UpdateSkillVolunteer(
+        [FromRoute] Guid id,
+        [FromBody] UpdateSkillsRequest request,
+        [FromServices] UpdateSkillsHandler handler,
+        CancellationToken cancellationToken = default)
+    {
+        var command = request.ToCommand(id);
+
+        var response = await handler.Handle(command, cancellationToken);
+
+        if (response.IsFailure)
+        {
+            return response.Errors.ToResponse();
+        }
+
+        return Ok(response);
     }
 
     [Permission("volunteer.delete")]

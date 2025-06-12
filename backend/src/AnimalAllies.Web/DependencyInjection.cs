@@ -5,6 +5,7 @@ using AnimalAllies.Accounts.Infrastructure;
 using AnimalAllies.Accounts.Presentation;
 using AnimalAllies.Core;
 using AnimalAllies.Core.Dapper;
+using AnimalAllies.Core.DTOs;
 using AnimalAllies.Core.DTOs.Accounts;
 using AnimalAllies.Core.DTOs.ValueObjects;
 using AnimalAllies.Framework.Models;
@@ -60,6 +61,7 @@ public static class DependencyInjection
             new JsonTypeHandler<RequisiteDto[]>());
         SqlMapper.AddTypeHandler(typeof(CertificateDto[]), new JsonTypeHandler<CertificateDto[]>());
         SqlMapper.AddTypeHandler(typeof(PetPhotoDto[]), new JsonTypeHandler<PetPhotoDto[]>());
+        SqlMapper.AddTypeHandler(typeof(SkillDto[]), new JsonTypeHandler<SkillDto[]>());
     }
     
     private static IServiceCollection AddMessageBus(this IServiceCollection services, IConfiguration configuration)

@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
@@ -33,15 +34,29 @@ public static class FluentApiExtensions
         Func<TValueObject, TDto> selector)
     {
         var dtos = valueObjects.Select(selector);
+        
+        var options = new JsonSerializerOptions
+        {
+            DefaultIgnoreCondition = JsonIgnoreCondition.Never,
+            WriteIndented = false,
+        };
 
-        return JsonSerializer.Serialize(dtos, JsonSerializerOptions.Default);
+        return JsonSerializer.Serialize(dtos, options);
     }
     
     private static IReadOnlyList<TValueObject> DeserializeDtoCollection<TValueObject,TDto>(
         string json,
         Func<TDto, TValueObject> selector)
     {
-        var dtos = JsonSerializer.Deserialize<IEnumerable<TDto>>(json, JsonSerializerOptions.Default) ?? [];
+        if (string.IsNullOrEmpty(json))
+            return new List<TValueObject>();
+
+        var options = new JsonSerializerOptions
+        {
+            PropertyNameCaseInsensitive = true,
+        };
+        
+        var dtos = JsonSerializer.Deserialize<IEnumerable<TDto>>(json, options) ?? [];
 
         return dtos.Select(selector).ToList();
     }

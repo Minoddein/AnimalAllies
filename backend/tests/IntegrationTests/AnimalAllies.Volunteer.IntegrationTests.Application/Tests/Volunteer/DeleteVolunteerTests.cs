@@ -66,7 +66,8 @@ public class DeleteVolunteerTests: VolunteerTestsBase
             WorkExperience.Create(command.WorkExperience).Value,
             PhoneNumber.Create(command.PhoneNumber).Value,
             Relation.Create(Guid.NewGuid()).Value,
-            requisites);
+            requisites,
+            new ValueObjectList<Skill>([]));
 
         return volunteer;
     }

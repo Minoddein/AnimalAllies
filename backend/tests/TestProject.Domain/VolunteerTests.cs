@@ -100,7 +100,8 @@ public class VolunteerTests
             workExperience,
             phoneNumber,
             relationId,
-            requisites);
+            requisites,
+            new ValueObjectList<Skill>([]));
 
         return volunteer;
     }
