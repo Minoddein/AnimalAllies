@@ -4,6 +4,7 @@ using AnimalAllies.Framework.Authorization;
 using AnimalAllies.Framework.Models;
 using AnimalAllies.SharedKernel.Shared;
 using Discussion.Application.Features.Commands.CloseDiscussion;
+using Discussion.Application.Features.Commands.CreateDiscussion;
 using Discussion.Application.Features.Commands.DeleteMessage;
 using Discussion.Application.Features.Commands.MarkMessagesAsRead;
 using Discussion.Application.Features.Commands.PostMessage;
@@ -82,6 +83,24 @@ public class DiscussionController: ApplicationController
         CancellationToken cancellationToken = default)
     {
         var command = new CloseDiscussionCommand(discussionId, userScopedData.UserId);
+
+        var result = await handler.Handle(command, cancellationToken);
+
+        if (result.IsFailure)
+            result.Errors.ToResponse();
+
+        return Ok(result);
+    }
+    
+    [Permission("discussion.create")]
+    [HttpPost("open-discussion")]
+    public async Task<IActionResult> CreateDiscussion(
+        [FromBody] CreateDiscussionRequest request,
+        [FromServices] UserScopedData userScopedData,
+        [FromServices] CreateDiscussionHandler handler,
+        CancellationToken cancellationToken = default)
+    {
+        var command = new CreateDiscussionCommand(userScopedData.UserId, request.SecondMemberId, request.RelationId);
 
         var result = await handler.Handle(command, cancellationToken);
 

@@ -59,6 +59,7 @@ public class GetDiscussionsByUserIdHandler : IQueryHandler<List<DiscussionDto>, 
                                         -- Информация о пользователе (second_member)
                                         u.id as user_id,
                                         p.id as participant_id,
+                                        u.photo,
                                         p.user_id as participant_user_id,
                                         p.first_name as first_name,
                                         p.second_name as second_name,
