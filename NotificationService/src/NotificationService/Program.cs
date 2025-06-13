@@ -10,32 +10,31 @@ builder.Services.ConfigureApp(builder.Configuration);
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
-builder.Services.AddCors();
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("CorsPolicy", policy =>
+    {
+        policy.WithOrigins("http://localhost:3000")
+            .AllowAnyHeader()
+            .AllowAnyMethod()
+            .AllowCredentials();
+    });
+});
+
 builder.Services.AddEndpoints();
 
 var app = builder.Build();
 
 app.UseExceptionMiddleware();
 
-if (app.Environment.IsDevelopment())
+if (app.Environment.IsDevelopment() || app.Environment.EnvironmentName == "Docker")
 {
     app.UseSwagger();
     app.UseSwaggerUI();
     app.UseHangfireDashboard();
 }
 
-app.UseCors(builder =>
-{
-    builder
-        .WithOrigins("http://localhost:3000")
-        .AllowAnyHeader()
-        .AllowAnyMethod()
-        .AllowCredentials();
-});
-
-app.UseSwagger();
-app.UseSwaggerUI();
-app.UseHangfireDashboard();
+app.UseCors("CorsPolicy");
 
 app.UseHangfireServer();
 

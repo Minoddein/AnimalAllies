@@ -44,6 +44,10 @@ public class Pet : Entity<PetId>, ISoftDeletable
     public HelpStatus HelpStatus { get; private set; }
     public AnimalType AnimalType { get; private set; }
     public Position Position { get; private set; }
+    public History History { get; private set; }
+    public AnimalSex AnimalSex { get; private set; }
+    public MedicalInfo? MedicalInfo { get; private set; }
+    public Temperament Temperament { get; private set; }
     public IReadOnlyList<Requisite> Requisites { get; private set; }
     public IReadOnlyList<PetPhoto> PetPhotoDetails { get; private set; } = [];
     public bool IsDeleted { get; private set; }

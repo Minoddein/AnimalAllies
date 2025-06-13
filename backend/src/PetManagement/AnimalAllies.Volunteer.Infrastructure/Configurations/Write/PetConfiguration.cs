@@ -54,6 +54,65 @@ public class PetConfiguration: IEntityTypeConfiguration<Pet>
             b.Property(x => x.CreationTime)
                 .HasColumnName("creation_time");
         });
+        
+        builder.ComplexProperty(x => x.AnimalSex, b =>
+        {
+            b.IsRequired();
+            b.Property(x => x.Value)
+                .HasColumnName("animal_sex");
+        });
+        
+        builder.ComplexProperty(x => x.History, b =>
+        {
+            b.IsRequired();
+            b.Property(x => x.ArriveDate)
+                .HasColumnName("arrive_date");
+            
+            b.Property(x => x.From)
+                .HasMaxLength(Constraints.MAX_VALUE_LENGTH)
+                .HasColumnName("from");
+            
+            b.Property(x => x.LastOwner)
+                .HasMaxLength(Constraints.MAX_VALUE_LENGTH * 3)
+                .HasColumnName("last_owner")
+                .IsRequired(false);
+        });
+
+        builder.ComplexProperty(x => x.Temperament, b =>
+        {
+            b.IsRequired();
+            b.Property(x => x.ActivityLevel)
+                .HasColumnName("activity_level");
+            b.Property(x => x.AggressionLevel)
+                .HasColumnName("aggression_level");
+            b.Property(x => x.Friendliness)
+                .HasColumnName("friendliness");
+            b.Property(x => x.GoodWithKids)
+                .HasColumnName("good_with_kids");
+            b.Property(x => x.GoodWithPeople)
+                .HasColumnName("good_with_people");
+            b.Property(x => x.GoodWithOtherAnimals)
+                .HasColumnName("good_with_other_animals");
+        });
+        
+        builder.ComplexProperty(x => x.MedicalInfo, b =>
+        {
+            b.IsRequired();
+            b.Property(x => x.HasAllergies)
+                .HasColumnName("has_allergies");
+            b.Property(x => x.HasChronicDiseases)
+                .HasColumnName("has_chronic_diseases");
+            b.Property(x => x.IsSpayedNeutered)
+                .HasColumnName("is_spayed_neutered");
+            b.Property(x => x.LastVaccinationDate)
+                .HasColumnName("last_vaccination_date");
+            b.Property(x => x.MedicalNotes)
+                .HasColumnName("medical_notes");
+            b.Property(x => x.RequiresSpecialDiet)
+                .HasColumnName("requires_special_diet");
+            b.Property(x => x.IsVaccinated)
+                .HasColumnName("is_vaccinated");
+        });
 
         builder.ComplexProperty(x => x.PetPhysicCharacteristics, ppc =>
         {

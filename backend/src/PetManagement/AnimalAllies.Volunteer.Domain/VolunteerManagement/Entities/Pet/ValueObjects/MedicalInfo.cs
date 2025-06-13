@@ -7,22 +7,22 @@ namespace AnimalAllies.Volunteer.Domain.VolunteerManagement.Entities.Pet.ValueOb
 
 public class MedicalInfo : ValueObject
 {
-    public bool IsSpayedNeutered  { get; }
-    public bool IsVaccinated { get; }
+    public bool? IsSpayedNeutered  { get; }
+    public bool? IsVaccinated { get; }
     public DateTime? LastVaccinationDate { get; }
-    public bool HasChronicDiseases { get; }
+    public bool? HasChronicDiseases { get; }
     public string? MedicalNotes { get; }
-    public bool RequiresSpecialDiet { get; }
-    public bool HasAllergies { get; }
+    public bool? RequiresSpecialDiet { get; }
+    public bool? HasAllergies { get; }
 
     private MedicalInfo(
-        bool isSpayedNeutered,
-        bool isVaccinated,
+        bool? isSpayedNeutered,
+        bool? isVaccinated,
         DateTime? lastVaccinationDate,
-        bool hasChronicDiseases,
+        bool? hasChronicDiseases,
         string? medicalNotes,
-        bool requiresSpecialDiet,
-        bool hasAllergies)
+        bool? requiresSpecialDiet,
+        bool? hasAllergies)
     {
         IsSpayedNeutered = isSpayedNeutered;
         IsVaccinated = isVaccinated;
@@ -60,12 +60,12 @@ public class MedicalInfo : ValueObject
 
     protected override IEnumerable<object> GetEqualityComponents()
     {
-        yield return IsSpayedNeutered;
-        yield return IsVaccinated;
+        yield return IsSpayedNeutered ?? false;
+        yield return IsVaccinated ?? false;
         yield return LastVaccinationDate ?? DateTime.MinValue;
-        yield return HasChronicDiseases;
+        yield return HasChronicDiseases ?? false;
         yield return MedicalNotes ?? string.Empty;
-        yield return RequiresSpecialDiet;
-        yield return HasAllergies;
+        yield return RequiresSpecialDiet ?? false;
+        yield return HasAllergies ?? false;
     }
 }

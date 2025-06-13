@@ -216,62 +216,62 @@
       timeout: 3s
       retries: 3
       
-  elasticsearch:
-    container_name: elasticsearch
-    image: docker.elastic.co/elasticsearch/elasticsearch:8.16.1
-    ports:
-      - 9200:9200
-    volumes:
-      - elasticsearch-data:/usr/share/elasticsearch/data
-    environment:
-      - xpack.security.enabled=false
-      - discovery.type=single-node
-    restart: always
-   
-  kibana:
-    container_name: kibana
-    image: docker.elastic.co/kibana/kibana:8.16.1
-    ports:
-      - 5601:5601
-    depends_on:
-      - elasticsearch
-    environment:
-      - ELASTICSEARCH_URL=http://elasticsearch:9200
-    restart: always
-   
-  prometheus:
-    container_name: prometheus
-    image: prom/prometheus
-    ports:
-      - 9090:9090
-    volumes:
-      - ./prometheus.yml:/etc/prometheus/prometheus.yml
-      - prometheus_data:/prometheus
-    restart: always
-    
-  grafana:
-    image: grafana/grafana
-    ports:
-      - "7070:7070"
-    environment:
-      - GF_SECURITY_ADMIN_USER=admin
-      - GF_SECURITY_ADMIN_PASSWORD=admin
-      - GF_INSTALL_PLUGINS=grafana-clock-panel
-      - grafana-simple-json-datasource
-    volumes:
-      - grafana_data:/var/lib/grafana
-    depends_on:
-      - prometheus
-    restart: always
-    
-  jaeger:
-    image: jaegertracing/all-in-one:latest
-    container_name: jaeger
-    ports:
-      - 4317:4317
-      - 4318:4318
-      - 16686:16686
-    restart: always
+  #elasticsearch:
+  #  container_name: elasticsearch
+  #  image: docker.elastic.co/elasticsearch/elasticsearch:8.16.1
+  #  ports:
+  #    - 9200:9200
+  #  volumes:
+  #    - elasticsearch-data:/usr/share/elasticsearch/data
+  #  environment:
+  #    - xpack.security.enabled=false
+  #    - discovery.type=single-node
+  #  restart: always
+  # 
+  #kibana:
+  #  container_name: kibana
+  #  image: docker.elastic.co/kibana/kibana:8.16.1
+  #  ports:
+  #    - 5601:5601
+  #  depends_on:
+  #    - elasticsearch
+  #  environment:
+  #    - ELASTICSEARCH_URL=http://elasticsearch:9200
+  #  restart: always
+  # 
+  #prometheus:
+  #  container_name: prometheus
+  #  image: prom/prometheus
+  #  ports:
+  #    - 9090:9090
+  #  volumes:
+  #    - ./prometheus.yml:/etc/prometheus/prometheus.yml
+  #    - prometheus_data:/prometheus
+  #  restart: always
+  #  
+  #grafana:
+  #  image: grafana/grafana
+  #  ports:
+  #    - "7070:7070"
+  #  environment:
+  #    - GF_SECURITY_ADMIN_USER=admin
+  #    - GF_SECURITY_ADMIN_PASSWORD=admin
+  #    - GF_INSTALL_PLUGINS=grafana-clock-panel
+  #    - grafana-simple-json-datasource
+  #  volumes:
+  #    - grafana_data:/var/lib/grafana
+  #  depends_on:
+  #    - prometheus
+  #  restart: always
+  #  
+  #jaeger:
+  #  image: jaegertracing/all-in-one:latest
+  #  container_name: jaeger
+  #  ports:
+  #    - 4317:4317
+  #    - 4318:4318
+  #    - 16686:16686
+  #  restart: always
       
 volumes:
   rabbitmq_data:
