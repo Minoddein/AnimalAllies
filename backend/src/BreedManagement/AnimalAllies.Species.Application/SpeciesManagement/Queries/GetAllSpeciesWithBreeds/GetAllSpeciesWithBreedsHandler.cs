@@ -28,30 +28,17 @@ public class GetAllSpeciesWithBreedsHandler : IQueryHandler<List<SpeciesDto>, Ge
         GetAllSpeciesWithBreedsQuery query, CancellationToken cancellationToken = default)
     {
         var connection = _sqlConnectionFactory.Create();
+        
+        var speciesSql = "SELECT id as species_id, name as species_name FROM species.species";
+        var speciesList = (await connection.QueryAsync<SpeciesDto>(speciesSql)).ToList();
 
-        var speciesQuery = new StringBuilder();
-
-        speciesQuery.Append("""
-                            select 
-                                s.id as species_id,
-                                s.name as species_name,
-                                b.id as breed_id,
-                                b.name as breed_name
-                            FROM species.species s
-                            LEFT JOIN species.breeds b ON b.species_id = s.id
-                            """);
-
-        var pagedSpecies = (await connection.QueryAsync<SpeciesDto>(speciesQuery.ToString()))
-            .ToList();
-
-        if (!pagedSpecies.Any())
+        if (!speciesList.Any())
         {
             return new List<SpeciesDto>();
         }
 
-
-        var speciesIds = pagedSpecies.Select(s => s.SpeciesId).ToList();
-
+        var speciesIds = speciesList.Select(s => s.SpeciesId).ToList();
+        
         var breedsSql = """
                         SELECT 
                             b.id as breed_id,
@@ -63,18 +50,18 @@ public class GetAllSpeciesWithBreedsHandler : IQueryHandler<List<SpeciesDto>, Ge
 
         var breeds = await connection.QueryAsync<BreedDto>(breedsSql,
             new { SpeciesIds = speciesIds });
-
+        
         var breedsLookup = breeds.GroupBy(b => b.SpeciesId)
             .ToDictionary(g => g.Key, g => g.ToArray());
-
-        var result = pagedSpecies.Select(s =>
+        
+        foreach (var species in speciesList)
         {
-            s.Breeds = breedsLookup.TryGetValue(s.SpeciesId, out var speciesBreeds) ? speciesBreeds : [];
-            return s;
-        });
+            species.Breeds = breedsLookup.TryGetValue(species.SpeciesId, out var speciesBreeds) 
+                ? speciesBreeds 
+                : [];
+        }
 
         _logger.LogInformation("Got species with breeds");
-
-        return result.ToList();
+        return speciesList;
     }
 }

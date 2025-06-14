@@ -4,6 +4,4 @@ public record PetPhysicCharacteristicsDto(
     string Color,
     string HealthInformation,
     double Weight,
-    double Height,
-    bool IsCastrated,
-    bool IsVaccinated);
+    double Height);
