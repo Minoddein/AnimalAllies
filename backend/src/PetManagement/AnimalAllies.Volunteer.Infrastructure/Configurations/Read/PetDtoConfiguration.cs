@@ -11,7 +11,7 @@ public class PetDtoConfiguration: IEntityTypeConfiguration<PetDto>
     public void Configure(EntityTypeBuilder<PetDto> builder)
     {
         builder.ToTable("pets");
-        builder.HasKey(x => x.Id);
+        builder.HasKey(x => x.PetId);
         
         builder.Property(i => i.Requisites)
             .HasConversion(

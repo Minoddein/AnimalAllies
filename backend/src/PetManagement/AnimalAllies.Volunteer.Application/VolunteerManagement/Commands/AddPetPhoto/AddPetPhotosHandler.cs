@@ -85,7 +85,8 @@ public class AddPetPhotosHandler : ICommandHandler<AddPetPhotosCommand, AddPetPh
                 return Errors.General.Null();
 
             List<PetPhoto> photos = [];
-            foreach (var presignedUrlResponse in response)
+            var getUploadPresignedUrlResponses = response.ToList();
+            foreach (var presignedUrlResponse in getUploadPresignedUrlResponses)
             {
                 var path = FilePath.Create(presignedUrlResponse.FileId, presignedUrlResponse.Extension);
                 if (path.IsFailure)
@@ -103,7 +104,7 @@ public class AddPetPhotosHandler : ICommandHandler<AddPetPhotosCommand, AddPetPh
             
 
             var addPetPhotosResponse = new AddPetPhotosResponse(
-                response.Select(r => r.UploadUrl));
+                getUploadPresignedUrlResponses.Select(r => r.UploadUrl));
 
             await _unitOfWork.SaveChanges(cancellationToken);
 
