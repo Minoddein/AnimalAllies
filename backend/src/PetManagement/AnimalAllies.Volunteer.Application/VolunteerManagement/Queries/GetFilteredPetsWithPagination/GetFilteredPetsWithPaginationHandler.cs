@@ -50,7 +50,7 @@ public class GetFilteredPetsWithPaginationHandler : IQueryHandler<PagedList<PetD
                                     select 
                                         p.id as pet_id,
                                         volunteer_id,
-                                        p.name,
+                                        p.name as pet_name,
                                         city,
                                         state,
                                         street,
