@@ -7,7 +7,7 @@ using FluentValidation;
 
 namespace AnimalAllies.Volunteer.Application.VolunteerManagement.Commands.AddPet;
 
-public class AddPetCommandValidator: AbstractValidator<AddPetCommand>
+public class AddPetCommandValidator : AbstractValidator<AddPetCommand>
 {
     public AddPetCommandValidator()
     {
@@ -19,24 +19,27 @@ public class AddPetCommandValidator: AbstractValidator<AddPetCommand>
 
         RuleFor(p => p.PhoneNumber)
             .MustBeValueObject(PhoneNumber.Create);
-        
+
         RuleFor(p => p.Address)
             .MustBeValueObject(p => Address.Create(p.Street, p.City, p.State, p.ZipCode));
 
         RuleFor(p => p.PetDetails.Description)
             .NotEmpty().WithError(Errors.General.ValueIsInvalid(nameof(PetDetails.Description)));
-        
+
         RuleFor(p => p.PetPhysicCharacteristics)
             .MustBeValueObject(p => PetPhysicCharacteristics.Create(
                 p.Color,
                 p.HealthInformation,
                 p.Weight,
-                p.Height,
-                p.IsCastrated,
-                p.IsVaccinated));
-        
+                p.Height));
+
+        RuleFor(p => p.AnimalSex)
+            .MustBeValueObject(AnimalSex.Create);
+
+        RuleFor(p => p.History)
+            .MustBeValueObject(h => History.Create(h.ArriveTime, h.LastOwner, h.From));
+
         RuleForEach(x => x.Requisites)
             .MustBeValueObject(x => Requisite.Create(x.Title, x.Description));
-
     }
 }

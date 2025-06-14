@@ -11,8 +11,6 @@ public class PetPhysicCharacteristics : ValueObject
     public string HealthInformation { get; } 
     public double Weight { get; }
     public double Height { get; }
-    public bool IsCastrated { get; }
-    public bool IsVaccinated { get; }
     
     private PetPhysicCharacteristics(){}
 
@@ -20,25 +18,19 @@ public class PetPhysicCharacteristics : ValueObject
         string color,
         string healthInformation,
         double weight,
-        double height,
-        bool isCastrated,
-        bool isVaccinated)
+        double height)
     {
         Color = color;
         HealthInformation = healthInformation;
         Weight = weight;
         Height = height;
-        IsCastrated = isCastrated;
-        IsVaccinated = isVaccinated;
     }
 
     public static Result<PetPhysicCharacteristics> Create(
         string color,
         string healthInformation,
         double weight,
-        double height,
-        bool isCastrated,
-        bool isVaccinated)
+        double height)
     {
         
         if (string.IsNullOrWhiteSpace(color) || color.Length > Constraints.MAX_PET_COLOR_LENGTH)
@@ -61,7 +53,7 @@ public class PetPhysicCharacteristics : ValueObject
             return Errors.General.ValueIsRequired(nameof(height));
         }
 
-        return (new PetPhysicCharacteristics(color, healthInformation, weight, height, isCastrated, isVaccinated));
+        return (new PetPhysicCharacteristics(color, healthInformation, weight, height));
     }
     
     protected override IEnumerable<object> GetEqualityComponents()
@@ -70,7 +62,5 @@ public class PetPhysicCharacteristics : ValueObject
         yield return HealthInformation;
         yield return Weight;
         yield return Height;
-        yield return IsCastrated;
-        yield return IsVaccinated;
     }
 }

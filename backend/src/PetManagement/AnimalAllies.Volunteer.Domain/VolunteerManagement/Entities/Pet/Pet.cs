@@ -1,4 +1,3 @@
-
 using AnimalAllies.SharedKernel.Shared;
 using AnimalAllies.SharedKernel.Shared.Errors;
 using AnimalAllies.SharedKernel.Shared.Ids;
@@ -23,6 +22,10 @@ public class Pet : Entity<PetId>, ISoftDeletable
         PhoneNumber phoneNumber,
         HelpStatus helpStatus,
         AnimalType animalType,
+        AnimalSex animalSex,
+        History history,
+        Temperament? temperament,
+        MedicalInfo? medicalInfo,
         ValueObjectList<Requisite> requisites)
         : base(petId)
     {
@@ -30,10 +33,14 @@ public class Pet : Entity<PetId>, ISoftDeletable
         PetPhysicCharacteristics = petPhysicCharacteristics;
         PetDetails = petDetails;
         Address = address;
-        PhoneNumber= phoneNumber;
+        PhoneNumber = phoneNumber;
         HelpStatus = helpStatus;
         AnimalType = animalType;
         Requisites = requisites;
+        AnimalSex = animalSex;
+        History = history;
+        Temperament = temperament;
+        MedicalInfo = medicalInfo;
     }
 
     public Name Name { get; private set; }
@@ -47,18 +54,18 @@ public class Pet : Entity<PetId>, ISoftDeletable
     public History History { get; private set; }
     public AnimalSex AnimalSex { get; private set; }
     public MedicalInfo? MedicalInfo { get; private set; }
-    public Temperament Temperament { get; private set; }
+    public Temperament? Temperament { get; private set; }
     public IReadOnlyList<Requisite> Requisites { get; private set; }
     public IReadOnlyList<PetPhoto> PetPhotoDetails { get; private set; } = [];
     public bool IsDeleted { get; private set; }
-    public DateTime? DeletionDate { get; private set; }    
-    
+    public DateTime? DeletionDate { get; private set; }
+
     public void Delete()
     {
         IsDeleted = true;
         DeletionDate = DateTime.UtcNow;
     }
-    
+
     public void Restore()
     {
         IsDeleted = false;
@@ -69,9 +76,9 @@ public class Pet : Entity<PetId>, ISoftDeletable
     {
         if (photos is null)
             return Errors.General.Null("photos");
-        
+
         var newPhotoList = PetPhotoDetails.Union(photos);
-        
+
         PetPhotoDetails = new ValueObjectList<PetPhoto>(newPhotoList);
 
         return Result.Success();
@@ -80,9 +87,9 @@ public class Pet : Entity<PetId>, ISoftDeletable
     public Result DeletePhotos(IEnumerable<FilePath> filePaths)
     {
         var photos = PetPhotoDetails.Where(f => !filePaths.Contains(f.Path));
-        
+
         PetPhotoDetails = new ValueObjectList<PetPhoto>(photos);
-        
+
         return Result.Success();
     }
 
@@ -115,7 +122,7 @@ public class Pet : Entity<PetId>, ISoftDeletable
 
         return Result.Success();
     }
-    
+
     public Result MoveBack()
     {
         var newPosition = Position.Back();
@@ -130,7 +137,7 @@ public class Pet : Entity<PetId>, ISoftDeletable
     public Result UpdateHelpStatus(HelpStatus helpStatus)
     {
         HelpStatus = helpStatus;
-        
+
         return Result.Success();
     }
 

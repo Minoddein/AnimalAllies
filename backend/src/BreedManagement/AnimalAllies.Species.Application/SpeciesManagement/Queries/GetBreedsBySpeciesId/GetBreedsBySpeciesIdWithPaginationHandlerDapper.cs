@@ -99,8 +99,8 @@ public class GetBreedsBySpeciesIdWithPaginationHandlerDapper: IQueryHandler<Page
 
         var sql = new StringBuilder("""
                                     select 
-                                        id,
-                                        name,
+                                        id as breed_id,
+                                        name as breed_name,
                                         species_id
                                         from species.breeds
                                     where species_id = @SpeciesId

@@ -12,4 +12,8 @@ public record AddPetCommand(
     string PhoneNumber,
     string HelpStatus,
     AnimalTypeDto AnimalType,
+    string AnimalSex,
+    HistoryDto History,
+    TemperamentDto? Temperament,
+    MedicalInfoDto? MedicalInfo,
     IEnumerable<RequisiteDto> Requisites) : ICommand;

@@ -6,20 +6,20 @@ namespace AnimalAllies.Volunteer.Domain.VolunteerManagement.Entities.Pet.ValueOb
 
 public class Temperament : ValueObject
 {
-    public int AggressionLevel { get; }
-    public int Friendliness { get; }
-    public int ActivityLevel { get; }
-    public bool GoodWithKids { get; }
-    public bool GoodWithPeople { get; }
-    public bool GoodWithOtherAnimals { get; }
+    public int? AggressionLevel { get; }
+    public int? Friendliness { get; }
+    public int? ActivityLevel { get; }
+    public bool? GoodWithKids { get; }
+    public bool? GoodWithPeople { get; }
+    public bool? GoodWithOtherAnimals { get; }
 
     private Temperament(
-        int aggressionLevel,
-        int friendliness,
-        int activityLevel,
-        bool goodWithKids,
-        bool goodWithPeople,
-        bool goodWithOtherAnimals)
+        int? aggressionLevel,
+        int? friendliness,
+        int? activityLevel,
+        bool? goodWithKids,
+        bool? goodWithPeople,
+        bool? goodWithOtherAnimals)
     {
         AggressionLevel = aggressionLevel;
         Friendliness = friendliness;
@@ -30,12 +30,12 @@ public class Temperament : ValueObject
     }
 
     public static Result<Temperament> Create(
-        int aggressionLevel,
-        int friendliness,
-        int activityLevel,
-        bool goodWithKids,
-        bool goodWithPeople,
-        bool goodWithOtherAnimals)
+        int? aggressionLevel,
+        int? friendliness,
+        int? activityLevel,
+        bool? goodWithKids,
+        bool? goodWithPeople,
+        bool? goodWithOtherAnimals)
     {
         if (aggressionLevel is < 1 or > 10)
             return Errors.General.ValueIsInvalid(nameof(aggressionLevel));
@@ -57,11 +57,11 @@ public class Temperament : ValueObject
 
     protected override IEnumerable<object> GetEqualityComponents()
     {
-        yield return AggressionLevel;
-        yield return Friendliness;
-        yield return ActivityLevel;
-        yield return GoodWithKids;
-        yield return GoodWithPeople;
-        yield return GoodWithOtherAnimals;
+        if (AggressionLevel != null) yield return AggressionLevel;
+        if (Friendliness != null) yield return Friendliness;
+        if (ActivityLevel != null) yield return ActivityLevel;
+        if (GoodWithKids != null) yield return GoodWithKids;
+        if (GoodWithPeople != null) yield return GoodWithPeople;
+        if (GoodWithOtherAnimals != null) yield return GoodWithOtherAnimals;
     }
 }

@@ -39,9 +39,7 @@ public class UpdatePetCommandValidator: AbstractValidator<UpdatePetCommand>
                 p.Color,
                 p.HealthInformation,
                 p.Weight,
-                p.Height,
-                p.IsCastrated,
-                p.IsVaccinated));
+                p.Height));
         
         RuleForEach(x => x.RequisiteDtos)
             .MustBeValueObject(x => Requisite.Create(x.Title, x.Description));

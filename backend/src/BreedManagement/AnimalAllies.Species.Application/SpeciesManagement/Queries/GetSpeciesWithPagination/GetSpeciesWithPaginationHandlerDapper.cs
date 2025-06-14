@@ -136,10 +136,10 @@ public class GetSpeciesWithPaginationHandlerDapper : IQueryHandler<PagedList<Spe
         var connection = _sqlConnectionFactory.Create();
 
         var sql = new StringBuilder("""
-                                    select 
-                                        id,
-                                        name
-                                        from species.species
+                                    SELECT DISTINCT ON (s.id)
+                                        s.id as species_id,
+                                        s.name as species_name
+                                    FROM species.species s
                                     """);
 
         var species = await connection.QueryAsync<SpeciesDto>(sql.ToString());

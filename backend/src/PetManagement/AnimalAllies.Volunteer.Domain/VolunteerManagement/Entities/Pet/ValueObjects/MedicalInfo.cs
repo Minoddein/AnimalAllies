@@ -34,13 +34,13 @@ public class MedicalInfo : ValueObject
     }
 
     public static Result<MedicalInfo> Create(
-        bool isSpayedNeutered,
-        bool isVaccinated,
+        bool? isSpayedNeutered,
+        bool? isVaccinated,
         DateTime? lastVaccinationDate,
-        bool hasChronicDiseases,
+        bool? hasChronicDiseases,
         string? medicalNotes,
-        bool requiresSpecialDiet,
-        bool hasAllergies)
+        bool? requiresSpecialDiet,
+        bool? hasAllergies)
     {
         if (medicalNotes?.Length > Constraints.MAX_MEDICAL_NOTES_LENGTH)
             return Errors.General.ValueTooLong(nameof(medicalNotes));

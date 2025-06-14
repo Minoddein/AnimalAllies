@@ -82,36 +82,49 @@ public class PetConfiguration: IEntityTypeConfiguration<Pet>
         {
             b.IsRequired();
             b.Property(x => x.ActivityLevel)
-                .HasColumnName("activity_level");
+                .HasColumnName("activity_level")
+                .IsRequired(false);
             b.Property(x => x.AggressionLevel)
-                .HasColumnName("aggression_level");
+                .HasColumnName("aggression_level")
+                .IsRequired(false);
             b.Property(x => x.Friendliness)
-                .HasColumnName("friendliness");
+                .HasColumnName("friendliness")
+                .IsRequired(false);
             b.Property(x => x.GoodWithKids)
-                .HasColumnName("good_with_kids");
+                .HasColumnName("good_with_kids")
+                .IsRequired(false);
             b.Property(x => x.GoodWithPeople)
-                .HasColumnName("good_with_people");
+                .HasColumnName("good_with_people")
+                .IsRequired(false);
             b.Property(x => x.GoodWithOtherAnimals)
-                .HasColumnName("good_with_other_animals");
+                .HasColumnName("good_with_other_animals")
+                .IsRequired(false);
         });
         
         builder.ComplexProperty(x => x.MedicalInfo, b =>
         {
             b.IsRequired();
             b.Property(x => x.HasAllergies)
-                .HasColumnName("has_allergies");
+                .HasColumnName("has_allergies")
+                .IsRequired(false);
             b.Property(x => x.HasChronicDiseases)
-                .HasColumnName("has_chronic_diseases");
+                .HasColumnName("has_chronic_diseases")
+                .IsRequired(false);
             b.Property(x => x.IsSpayedNeutered)
-                .HasColumnName("is_spayed_neutered");
+                .HasColumnName("is_spayed_neutered")
+                .IsRequired(false);
             b.Property(x => x.LastVaccinationDate)
-                .HasColumnName("last_vaccination_date");
+                .HasColumnName("last_vaccination_date")
+                .IsRequired(false);
             b.Property(x => x.MedicalNotes)
-                .HasColumnName("medical_notes");
+                .HasColumnName("medical_notes")
+                .IsRequired(false);
             b.Property(x => x.RequiresSpecialDiet)
-                .HasColumnName("requires_special_diet");
+                .HasColumnName("requires_special_diet")
+                .IsRequired(false);
             b.Property(x => x.IsVaccinated)
-                .HasColumnName("is_vaccinated");
+                .HasColumnName("is_vaccinated")
+                .IsRequired(false);
         });
 
         builder.ComplexProperty(x => x.PetPhysicCharacteristics, ppc =>
@@ -128,10 +141,6 @@ public class PetConfiguration: IEntityTypeConfiguration<Pet>
                 .HasColumnName("height");
             ppc.Property(x => x.Weight)
                 .HasColumnName("weight");
-            ppc.Property(x => x.IsCastrated)
-                .HasColumnName("is_castrated");
-            ppc.Property(x => x.IsVaccinated)
-                .HasColumnName("is_vaccinated");
         });
 
         builder.ComplexProperty(x => x.Address, a =>
