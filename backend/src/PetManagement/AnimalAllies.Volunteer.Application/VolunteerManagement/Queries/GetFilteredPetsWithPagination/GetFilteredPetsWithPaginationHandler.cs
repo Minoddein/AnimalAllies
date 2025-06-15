@@ -119,6 +119,11 @@ public class GetFilteredPetsWithPaginationHandler : IQueryHandler<PagedList<PetD
         FilterByValue(ref hasWhereClause, query, sql);
         FilterByValue(ref hasWhereClause, query, totalCountSql);
 
+        if (query.SortBy is null) 
+        {
+            sql.Append(" order by position ");    
+        }
+        
         sql.ApplySorting(query.SortBy, query.SortDirection);
 
         sql.ApplyPagination(query.Page, query.PageSize);
