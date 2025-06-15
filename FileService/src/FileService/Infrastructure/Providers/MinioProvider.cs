@@ -23,10 +23,11 @@ public class MinioProvider : IFileProvider
         _logger = logger;
     }
 
-    public async Task<Result<List<string>>> GetPresignedUrlsForDeleteParallel(IEnumerable<FileMetadata> fileMetadata, CancellationToken cancellationToken)
+    public async Task<Result<List<string>>> GetPresignedUrlsForDeleteParallel(IEnumerable<FileMetadata> fileMetadata,
+        CancellationToken cancellationToken)
     {
         var fileMetadatas = fileMetadata.ToList();
-        
+
         try
         {
             var results = new ConcurrentBag<string>();
@@ -51,15 +52,15 @@ public class MinioProvider : IFileProvider
                     var result = await _client.GetPreSignedURLAsync(deleteRequest);
 
                     if (result is null)
-                        errors.Add(Error.NotFound("object.not.found", 
+                        errors.Add(Error.NotFound("object.not.found",
                             "File does`t exist in minio"));
                     else
                         results.Add(result);
                 });
-            
+
             if (errors.Any())
                 return Error.Failure("file.upload", $"Failed to upload {errors.Count} files");
-    
+
             return results.ToList();
         }
         catch (Exception ex)
@@ -80,12 +81,12 @@ public class MinioProvider : IFileProvider
                 BucketName = fileMetadata.BucketName,
                 Key = fileMetadata.Key
             };
-            
+
             await _client.DeleteObjectAsync(request, cancellationToken);
         }
         catch (Exception e)
         {
-            _logger.LogError(e,"Fail to delete file in minio");
+            _logger.LogError(e, "Fail to delete file in minio");
         }
     }
 
@@ -108,7 +109,7 @@ public class MinioProvider : IFileProvider
 
         return response;
     }
-    
+
     public async Task<Result<string>> GetPresignedUrlPartForUpload(
         FileMetadata fileMetadata,
         CancellationToken cancellationToken)
@@ -125,9 +126,9 @@ public class MinioProvider : IFileProvider
                 UploadId = fileMetadata.UploadId,
                 PartNumber = fileMetadata.PartNumber,
             };
-            
+
             var result = await _client.GetPreSignedURLAsync(presignedRequest);
-    
+
             return result;
         }
         catch (Exception ex)
@@ -224,7 +225,7 @@ public class MinioProvider : IFileProvider
         try
         {
             await IsBucketExist([fileMetadata.BucketName], cancellationToken);
-            
+
             var deleteRequest = new GetPreSignedUrlRequest
             {
                 BucketName = fileMetadata.BucketName,
@@ -233,22 +234,22 @@ public class MinioProvider : IFileProvider
                 Expires = DateTime.UtcNow.AddDays(EXPIRATION_URL),
                 Protocol = Protocol.HTTP,
             };
-            
+
             var url = await _client.GetPreSignedURLAsync(deleteRequest);
-            
+
             if (url is null)
                 return Error.NotFound("object.not.found", "File doesn`t exist in minio");
-            
+
             return url;
         }
-        catch(Exception e)
+        catch (Exception e)
         {
-            _logger.LogError(e,"Fail to remove file in minio with path {path} in bucket {bucket}",
+            _logger.LogError(e, "Fail to remove file in minio with path {path} in bucket {bucket}",
                 fileMetadata.FullPath, fileMetadata.BucketName);
             return Error.Failure("file.delete", "Fail to delete file in minio");
         }
     }
-    
+
 
     public async Task<Result<string>> GetPresignedUrlForDownload(
         FileMetadata fileMetadata,
@@ -285,7 +286,7 @@ public class MinioProvider : IFileProvider
             semaphoreSlim.Release();
         }
     }
-    
+
     public async Task<Result<IReadOnlyList<string>>> DownloadFiles(
         IEnumerable<FileMetadata> filesMetadata,
         CancellationToken cancellationToken = default)
@@ -341,9 +342,9 @@ public class MinioProvider : IFileProvider
                 ContentType = fileMetadata.ContentType,
                 Protocol = Protocol.HTTP,
             };
-            
+
             var result = await _client.GetPreSignedURLAsync(presignedRequest);
-    
+
             return result;
         }
         catch (Exception ex)
@@ -356,25 +357,29 @@ public class MinioProvider : IFileProvider
             return Error.Failure("file.upload", "Fail to upload file in minio");
         }
     }
-    
+
     public async Task<Result<List<string>>> GetPresignedUrlsForUploadParallel(
         IEnumerable<FileMetadata> fileMetadata,
         CancellationToken cancellationToken = default)
     {
         var fileMetadatas = fileMetadata.ToList();
-        
+        var results = new string[fileMetadatas.Count];
+        var errors = new ConcurrentBag<ErrorList>();
+
         try
         {
-            var results = new ConcurrentBag<string>();
-            var errors = new ConcurrentBag<ErrorList>();
-
-            await Parallel.ForEachAsync(fileMetadatas, new ParallelOptions
+            await Parallel.ForEachAsync(
+                fileMetadatas.Select((metadata, index) => (metadata, index)),
+                new ParallelOptions
                 {
                     MaxDegreeOfParallelism = MAX_DEGREE_OF_PARALLELISM,
                     CancellationToken = cancellationToken
                 },
-                async (metadata, token) =>
+                async (item, token) =>
                 {
+                    var metadata = item.metadata;
+                    var index = item.index;
+
                     var presignedRequest = new GetPreSignedUrlRequest
                     {
                         BucketName = metadata.BucketName,
@@ -388,36 +393,43 @@ public class MinioProvider : IFileProvider
                     var result = await _client.GetPreSignedURLAsync(presignedRequest);
 
                     if (result is null)
-                        errors.Add(Error.NotFound("object.not.found", 
-                            "File does`t exist in minio"));
+                    {
+                        errors.Add(Error.NotFound("object.not.found",
+                            $"File doesn't exist in MinIO for key {metadata.Key}"));
+                    }
                     else
-                        results.Add(result);
+                    {
+                        results[index] = result; 
+                    }
                 });
-            
+
             if (errors.Any())
-                return Error.Failure("file.upload", $"Failed to upload {errors.Count} files");
-    
+            {
+                return Error.Failure("file.upload",
+                    $"Failed to generate presigned URLs for {errors.Count} files: {string.Join("; ", 
+                        errors.Select(e => e.Select(x => x.ErrorMessage)))}");
+            }
+
             return results.ToList();
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex,
-                "Fail to upload files in minio");
-
-            return Error.Failure("files.upload", "Fail to upload files in minio");
+            _logger.LogError(ex, "Failed to generate presigned URLs in MinIO");
+            return Error.Failure("files.upload", "Failed to generate presigned URLs in MinIO");
         }
     }
-    
-    private async Task IsBucketExist(IEnumerable<string> bucketNames,CancellationToken cancellationToken)
+
+    private async Task IsBucketExist(IEnumerable<string> bucketNames, CancellationToken cancellationToken)
     {
         HashSet<string> buckets = [..bucketNames];
-        
+
         var response = await _client.ListBucketsAsync(cancellationToken);
 
         foreach (var request in from bucketName in buckets
                  let isExist = response.Buckets
-                     .Exists(b => b.BucketName.Equals(bucketName, StringComparison.OrdinalIgnoreCase)) 
-                 where !isExist select new PutBucketRequest
+                     .Exists(b => b.BucketName.Equals(bucketName, StringComparison.OrdinalIgnoreCase))
+                 where !isExist
+                 select new PutBucketRequest
                  {
                      BucketName = bucketName
                  })
