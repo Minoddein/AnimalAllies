@@ -16,7 +16,8 @@ using AnimalAllies.Volunteer.Application.VolunteerManagement.Commands.UpdatePet;
 using AnimalAllies.Volunteer.Application.VolunteerManagement.Commands.UpdatePetStatus;
 using AnimalAllies.Volunteer.Application.VolunteerManagement.Commands.UpdateSkills;
 using AnimalAllies.Volunteer.Application.VolunteerManagement.Commands.UpdateVolunteer;
-using AnimalAllies.Volunteer.Application.VolunteerManagement.Queries.GetFilteredPetsWithPagination;
+using AnimalAllies.Volunteer.Application.VolunteerManagement.Queries.GetAllFilteredPetsWithPagination;
+using AnimalAllies.Volunteer.Application.VolunteerManagement.Queries.GetFilteredPetsWithPaginationByVolunteerId;
 using AnimalAllies.Volunteer.Application.VolunteerManagement.Queries.GetPetById;
 using AnimalAllies.Volunteer.Application.VolunteerManagement.Queries.GetPetsByBreedId;
 using AnimalAllies.Volunteer.Application.VolunteerManagement.Queries.GetPetsBySpeciesId;
@@ -90,6 +91,23 @@ public class VolunteerController : ApplicationController
         CancellationToken cancellationToken = default)
     {
         var query = request.ToQuery(volunteerId);
+
+        var result = await handler.Handle(query, cancellationToken);
+
+        if (result.IsFailure)
+            result.Errors.ToResponse();
+
+        return Ok(result);
+    }
+    
+    [Permission("volunteer.read")]
+    [HttpGet("pet-all-dapper")]
+    public async Task<ActionResult> GetAllPetsDapper(
+        [FromQuery] GetAllFilteredPetsWithPaginationRequest request,
+        [FromServices] GetAllFilteredPetsWithPaginationHandler handler,
+        CancellationToken cancellationToken = default)
+    {
+        var query = request.ToQuery();
 
         var result = await handler.Handle(query, cancellationToken);
 

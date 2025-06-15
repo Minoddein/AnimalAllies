@@ -1,9 +1,8 @@
 ﻿using AnimalAllies.Core.Abstractions;
 
-namespace AnimalAllies.Volunteer.Application.VolunteerManagement.Queries.GetFilteredPetsWithPagination;
+namespace AnimalAllies.Volunteer.Application.VolunteerManagement.Queries.GetAllFilteredPetsWithPagination;
 
-public record GetFilteredPetsWithPaginationQuery(
-    Guid VolunteerId,
+public record GetAllFilteredPetsWithPaginationQuery(
     Guid? BreedId,
     Guid? SpeciesId,
     string? Name,

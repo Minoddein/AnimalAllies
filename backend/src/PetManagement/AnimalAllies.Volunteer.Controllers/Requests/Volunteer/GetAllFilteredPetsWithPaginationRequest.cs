@@ -1,8 +1,9 @@
-﻿using AnimalAllies.Volunteer.Application.VolunteerManagement.Queries.GetFilteredPetsWithPaginationByVolunteerId;
+﻿using AnimalAllies.Volunteer.Application.VolunteerManagement.Queries.GetAllFilteredPetsWithPagination;
+using AnimalAllies.Volunteer.Application.VolunteerManagement.Queries.GetFilteredPetsWithPaginationByVolunteerId;
 
 namespace AnimalAllies.Volunteer.Presentation.Requests.Volunteer;
 
-public record GetFilteredPetsWithPaginationRequest(
+public record GetAllFilteredPetsWithPaginationRequest(
     Guid? BreedId,
     Guid? SpeciesId,
     string? Name,
@@ -27,9 +28,8 @@ public record GetFilteredPetsWithPaginationRequest(
     int Page,
     int PageSize)
 {
-    public GetFilteredPetsWithPaginationQuery ToQuery(Guid volunteerId)
+    public GetAllFilteredPetsWithPaginationQuery ToQuery()
         => new(
-            volunteerId,
             BreedId,
             SpeciesId,
             Name,
