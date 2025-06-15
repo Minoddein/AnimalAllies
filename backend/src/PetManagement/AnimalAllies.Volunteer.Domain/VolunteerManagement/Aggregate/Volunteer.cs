@@ -96,6 +96,10 @@ public class Volunteer : Entity<VolunteerId>, ISoftDeletable
         PhoneNumber? phoneNumber,
         HelpStatus? helpStatus,
         AnimalType? animalType,
+        AnimalSex? animalSex,
+        History? history,
+        Temperament? temperament,
+        MedicalInfo? medicalInfo,
         ValueObjectList<Requisite>? requisites)
     {
         var pet = GetPetById(petId);
@@ -110,6 +114,10 @@ public class Volunteer : Entity<VolunteerId>, ISoftDeletable
             phoneNumber,
             helpStatus,
             animalType,
+            animalSex,
+            history,
+            temperament,
+            medicalInfo,
             requisites);
 
         return Result.Success();

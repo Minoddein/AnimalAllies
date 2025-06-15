@@ -320,7 +320,7 @@ public class VolunteerController : ApplicationController
         if (result.IsFailure)
             return result.Errors.ToResponse();
 
-        return Ok(result.Value);
+        return Ok(result);
     }
 
     [Permission("volunteer.delete")]

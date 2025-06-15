@@ -42,7 +42,6 @@ public class UpdatePetHandler : ICommandHandler<UpdatePetCommand, Guid>
         _speciesContracts = speciesContracts;
     }
 
-
     public async Task<Result<Guid>> Handle(
         UpdatePetCommand command,
         CancellationToken cancellationToken = default)
@@ -67,35 +66,33 @@ public class UpdatePetHandler : ICommandHandler<UpdatePetCommand, Guid>
             return petIsExist.Errors;
 
         var name = Name.Create(command.Name).Value;
-
         var phoneNumber = PhoneNumber.Create(command.PhoneNumber).Value;
-
         var helpStatus = HelpStatus.Create(command.HelpStatus).Value;
 
         var petPhysicCharacteristics = PetPhysicCharacteristics.Create(
-            command.PetPhysicCharacteristicsDto.Color,
-            command.PetPhysicCharacteristicsDto.HealthInformation,
-            command.PetPhysicCharacteristicsDto.Weight,
-            command.PetPhysicCharacteristicsDto.Height).Value;
+            command.PetPhysicCharacteristics.Color,
+            command.PetPhysicCharacteristics.HealthInformation,
+            command.PetPhysicCharacteristics.Weight,
+            command.PetPhysicCharacteristics.Height).Value;
 
         var petDetails = PetDetails.Create(
-            command.PetDetailsDto.Description,
-            DateOnly.FromDateTime(command.PetDetailsDto.BirthDate),
+            command.PetDetails.Description,
+            DateOnly.FromDateTime(command.PetDetails.BirthDate),
             _dateTimeProvider.UtcNow).Value;
 
         var address = Address.Create(
-            command.AddressDto.Street,
-            command.AddressDto.City,
-            command.AddressDto.State,
-            command.AddressDto.ZipCode).Value;
+            command.Address.Street,
+            command.Address.City,
+            command.Address.State,
+            command.Address.ZipCode).Value;
 
-        var speciesId = SpeciesId.Create(command.AnimalTypeDto.SpeciesId);
+        var speciesId = SpeciesId.Create(command.AnimalType.SpeciesId);
 
         var species = await _speciesContracts.GetSpecies(cancellationToken);
         if (!species.Any())
             return Errors.General.NotFound();
 
-        var isSpeciesExist = species.FirstOrDefault(s => s == command.AnimalTypeDto.SpeciesId);
+        var isSpeciesExist = species.FirstOrDefault(s => s == command.AnimalType.SpeciesId);
         if (isSpeciesExist == Guid.Empty)
             return Errors.General.NotFound();
 
@@ -103,15 +100,47 @@ public class UpdatePetHandler : ICommandHandler<UpdatePetCommand, Guid>
         if (!breeds.Any())
             return Errors.General.NotFound();
 
-        var isBreedExist = breeds.FirstOrDefault(b => b == command.AnimalTypeDto.BreedId);
+        var isBreedExist = breeds.FirstOrDefault(b => b == command.AnimalType.BreedId);
         if (isBreedExist == Guid.Empty)
             return Errors.General.NotFound();
 
-        var animalType = new AnimalType(speciesId, command.AnimalTypeDto.BreedId);
+        var animalType = new AnimalType(speciesId, command.AnimalType.BreedId);
+        var animalSex = AnimalSex.Create(command.AnimalSex).Value;
 
-        var requisites =
-            new ValueObjectList<Requisite>(command.RequisiteDtos
-                .Select(r => Requisite.Create(r.Title, r.Description).Value).ToList());
+        var history = History.Create(
+            command.History.ArriveTime,
+            command.History.LastOwner,
+            command.History.From).Value;
+
+        var temperament = command.Temperament is not null 
+            ? Temperament.Create(
+                command.Temperament.AggressionLevel,
+                command.Temperament.Friendliness,
+                command.Temperament.ActivityLevel,
+                command.Temperament.GoodWithKids,
+                command.Temperament.GoodWithPeople,
+                command.Temperament.GoodWithOtherAnimals)
+            : null;
+        
+        if (temperament is not null && temperament.IsFailure)
+            return temperament.Errors;
+
+        var medicalInfo = command.MedicalInfo is not null
+            ? MedicalInfo.Create(
+                command.MedicalInfo.IsSpayedNeutered,
+                command.MedicalInfo.IsVaccinated,
+                command.MedicalInfo.LastVaccinationDate,
+                command.MedicalInfo.HasChronicDiseases,
+                command.MedicalInfo.MedicalNotes,
+                command.MedicalInfo.RequiresSpecialDiet,
+                command.MedicalInfo.HasAllergies)
+            : null;
+        
+        if (medicalInfo is not null && medicalInfo.IsFailure)
+            return medicalInfo.Errors;
+
+        var requisites = new ValueObjectList<Requisite>(
+            command.Requisites.Select(r => Requisite.Create(r.Title, r.Description).Value).ToList());
 
         var result = volunteerResult.Value.UpdatePet(
             petId,
@@ -122,6 +151,10 @@ public class UpdatePetHandler : ICommandHandler<UpdatePetCommand, Guid>
             phoneNumber,
             helpStatus,
             animalType,
+            animalSex,
+            history,
+            temperament?.Value,
+            medicalInfo?.Value,
             requisites);
 
         if (result.IsFailure)
@@ -129,8 +162,8 @@ public class UpdatePetHandler : ICommandHandler<UpdatePetCommand, Guid>
 
         await _unitOfWork.SaveChanges(cancellationToken);
 
-        _logger.LogInformation("added pet with id {petId} to volunteer with id {volunteerId}", petId.Id,
-            volunteerResult.Value.Id.Id);
+        _logger.LogInformation("Updated pet with id {petId} for volunteer with id {volunteerId}",
+            petId.Id, volunteerResult.Value.Id.Id);
 
         return petId.Id;
     }

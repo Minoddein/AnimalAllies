@@ -27,22 +27,6 @@ public class UpdatePetCommandValidator: AbstractValidator<UpdatePetCommand>
 
         RuleFor(p => p.PhoneNumber)
             .MustBeValueObject(PhoneNumber.Create);
-        
-        RuleFor(p => p.AddressDto)
-            .MustBeValueObject(p => Address.Create(p.Street, p.City, p.State, p.ZipCode));
-
-        RuleFor(p => p.PetDetailsDto.Description)
-            .NotEmpty().WithError(Errors.General.ValueIsInvalid(nameof(PetDetails.Description)));
-        
-        RuleFor(p => p.PetPhysicCharacteristicsDto)
-            .MustBeValueObject(p => PetPhysicCharacteristics.Create(
-                p.Color,
-                p.HealthInformation,
-                p.Weight,
-                p.Height));
-        
-        RuleForEach(x => x.RequisiteDtos)
-            .MustBeValueObject(x => Requisite.Create(x.Title, x.Description));
 
     }
 }

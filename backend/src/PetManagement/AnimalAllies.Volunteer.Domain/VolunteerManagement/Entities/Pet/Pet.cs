@@ -154,6 +154,10 @@ public class Pet : Entity<PetId>, ISoftDeletable
         PhoneNumber? phoneNumber,
         HelpStatus? helpStatus,
         AnimalType? animalType,
+        AnimalSex? animalSex,
+        History? history,
+        Temperament? temperament,
+        MedicalInfo? medicalInfo,
         ValueObjectList<Requisite>? requisites)
     {
         Name = name ?? Name;
@@ -164,5 +168,9 @@ public class Pet : Entity<PetId>, ISoftDeletable
         HelpStatus = helpStatus ?? HelpStatus;
         AnimalType = animalType ?? AnimalType;
         Requisites = requisites ?? Requisites;
+        AnimalSex = animalSex ?? AnimalSex;
+        History = history ?? History;
+        MedicalInfo = medicalInfo ?? MedicalInfo;
+        Temperament = temperament ?? Temperament;
     }
 }

@@ -51,30 +51,49 @@ public class GetPetByIdHandler : IQueryHandler<PetDto, GetPetByIdQuery>
 
         var sql = new StringBuilder("""
                                     select 
-                                        id,
-                                        volunteer_id,
-                                        name,
-                                        city,
-                                        state,
-                                        street,
-                                        zip_code,
-                                        breed_id,
-                                        species_id,
-                                        help_status,
-                                        phone_number,
-                                        birth_date,
-                                        color,
-                                        height,
-                                        weight,
-                                        is_castrated,
-                                        is_vaccinated,
-                                        position,
-                                        health_information,
-                                        pet_details_description,
-                                        requisites,
-                                        pet_photos
-                                        from volunteers.pets
-                                        where id = @PetId limit 1
+                                    p.id as pet_id,
+                                    volunteer_id,
+                                    p.name as pet_name,
+                                    city,
+                                    state,
+                                    street,
+                                    zip_code,
+                                    p.breed_id as pet_breed_id,
+                                    p.species_id as pet_species_id,
+                                    s.name as species_name,
+                                    b.name as breed_name,
+                                    help_status,
+                                    phone_number,
+                                    birth_date,
+                                    color,
+                                    height,
+                                    weight,
+                                    is_spayed_neutered,
+                                    is_vaccinated,
+                                    arrive_date,
+                                    last_owner,
+                                    "from",
+                                    animal_sex as sex,
+                                    last_vaccination_date,
+                                    has_chronic_diseases,
+                                    medical_notes,
+                                    requires_special_diet,
+                                    has_allergies,
+                                    aggression_level,
+                                    friendliness,
+                                    activity_level,
+                                    good_with_kids,
+                                    good_with_people,
+                                    good_with_other_animals,
+                                    pet_details_description as description,
+                                    health_information,
+                                    position,
+                                    requisites,
+                                    pet_photos
+                                    from volunteers.pets p
+                                    inner join species.species s on p.species_id = s.id
+                                    inner join species.breeds b on p.breed_id = b.id
+                                        where p.id = @PetId limit 1
                                     """);
         
         var petsQuery = await connection.QueryAsync<PetDto, RequisiteDto[], PetPhotoDto[], PetDto>(

@@ -11,6 +11,10 @@ public record UpdatePetRequest(
     string PhoneNumber,
     string HelpStatus,
     AnimalTypeDto AnimalTypeDto,
+    string AnimalSex,
+    HistoryDto HistoryDto,
+    TemperamentDto? TemperamentDto,
+    MedicalInfoDto? MedicalInfoDto,
     IEnumerable<RequisiteDto> RequisitesDto)
 {
     public UpdatePetCommand ToCommand(Guid volunteerId,Guid petId)
@@ -23,6 +27,10 @@ public record UpdatePetRequest(
             PhoneNumber,
             HelpStatus,
             AnimalTypeDto,
+            AnimalSex,
+            HistoryDto,
+            TemperamentDto,
+            MedicalInfoDto,
             RequisitesDto
         );
 }
