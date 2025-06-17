@@ -52,30 +52,36 @@ public class UpdateInfoHandler : ICommandHandler<UpdateInfoCommand>
                 .Include(u => u.VolunteerAccount)
                 .FirstOrDefaultAsync(u => u.Id == command.UserId, cancellationToken);
 
-            if (user?.VolunteerAccount is null || user.ParticipantAccount is null)
+            if (user?.VolunteerAccount is null && user?.ParticipantAccount is null)
                 return Errors.General.NotFound();
 
             if (command.FirstName is not null 
                 || command.SecondName is not null 
                 || command.Patronymic is not null)
             {
-                var newFirstName = command.FirstName ?? user.ParticipantAccount.FullName.FirstName;
-                var newSecondName = command.SecondName ?? user.ParticipantAccount.FullName.SecondName;
-                var newPatronymic = command.Patronymic ?? user.ParticipantAccount.FullName.Patronymic;
+                var newFirstName = command.FirstName ?? user?.ParticipantAccount!.FullName.FirstName;
+                var newSecondName = command.SecondName ?? user?.ParticipantAccount!.FullName.SecondName;
+                var newPatronymic = command.Patronymic ?? user?.ParticipantAccount!.FullName.Patronymic;
 
                 var newFullName = FullName.Create(
-                    newFirstName,
-                    newSecondName,
+                    newFirstName!,
+                    newSecondName!,
                     newPatronymic);
 
                 if (newFullName.IsFailure)
                 {
                     return newFullName.Errors;
                 }
-    
-                user.ParticipantAccount.FullName = newFullName.Value;
-                
-                user.VolunteerAccount.FullName = newFullName.Value;
+
+                if (user?.ParticipantAccount is not null)
+                {
+                    user!.ParticipantAccount!.FullName = newFullName.Value;
+                }
+
+                if (user?.VolunteerAccount is not null)
+                {
+                    user.VolunteerAccount.FullName = newFullName.Value;
+                }
             }
 
             if (command.Phone is not null)

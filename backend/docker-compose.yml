@@ -76,7 +76,7 @@
     environment:
       - ASPNETCORE_ENVIRONMENT=Docker
     ports:
-      - "6000:6000"
+      - "5200:5200"
     secrets:
       - nuget_username
       - nuget_password
